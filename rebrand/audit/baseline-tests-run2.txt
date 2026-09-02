@@ -1,0 +1,90 @@
+# Baseline test run 2 — rerun of run-1 failures with CI extras (2026-09-01)
+
+=== Summary: 130 files, 3791 tests passed, 59 failed, 66 skipped (100% complete) in 491.6s (6 workers) ===
+
+## Still-failing files
+tests/computer_use/test_cua_no_overlay.py  9✓ 1✗ 5s, 1.5s
+tests/gateway/test_buzz_adapter.py  185✓ 1✗, 12.7s
+tests/gateway/test_scale_to_zero.py  16✓ 2✗, 1.9s
+tests/gateway/test_shutdown_forensics.py  9✓ 1✗, 1.4s
+tests/gateway/test_systemd_notify.py  2✓ 1✗, 1.3s
+tests/hermes_cli/test_auth_commands.py  26✓ 1✗, 4.6s
+tests/hermes_cli/test_cmd_update.py  39✓ 8✗, 404.6s
+tests/hermes_cli/test_local_quickstart.py  3✓ 2✗, 3.6s
+tests/hermes_cli/test_update_autostash.py  21✓ 9✗, 454.7s
+tests/hermes_cli/test_update_fleet_restart_pending.py  12✓ 1✗, 50.9s
+tests/hermes_cli/test_update_head_moved_gate.py  1✓ 1✗, 50.1s
+tests/hermes_cli/test_update_launchd_fleet_restart.py  24✓ 3✗, 2.4s
+tests/hermes_cli/test_update_yes_flag.py  3✓ 3✗, 152.4s
+tests/hermes_cli/test_user_providers_model_switch.py  10✓ 2✗, 14.0s
+tests/test_guest_durability_barriers.py  2✓ 1✗, 1.1s
+tests/test_hermes_state.py  244✓ 1✗, 37.5s
+tests/test_tui_gateway_server.py  628✓ 1✗, 87.6s
+tests/tools/test_approval.py  117✓ 1✗, 14.7s
+tests/tools/test_execution_flag_detection.py  81✓ 3✗ 1s, 202.5s
+tests/tools/test_file_tools.py  44✓ 2✗ 2s, 5.4s
+tests/tools/test_process_registry.py  85✓ 8✗ 5s, 21.3s
+tests/tools/test_transcription_tools.py  53✓ 1✗, 8.2s
+tests/tools/test_voice_mode.py  36✓ 4✗ 22s, 4.1s
+tests/tools/test_wake_word.py  24✓ 1✗ 4s, 4.0s
+
+## Failing test ids
+FAILED tests/computer_use/test_cua_no_overlay.py::TestEmbeddedDaemonOverlayFlag::test_serve_process_disables_overlay_when_policy_requires_it
+FAILED tests/gateway/test_buzz_adapter.py::TestInboundMediaAuthorizationGate::test_live_media_redacts_long_path_before_bounding
+FAILED tests/gateway/test_scale_to_zero.py::test_suspend_self_non_2xx_is_false_not_raise
+FAILED tests/gateway/test_scale_to_zero.py::test_suspend_self_posts_suspend_for_this_machine
+FAILED tests/gateway/test_shutdown_forensics.py::TestSpawnAsyncDiagnostic::test_spawns_subprocess_and_writes_output
+FAILED tests/gateway/test_systemd_notify.py::test_notify_supports_systemd_abstract_socket
+FAILED tests/hermes_cli/test_auth_commands.py::test_seed_from_singletons_respects_hermes_pkce_suppression
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateBranchFallback::test_update_non_interactive_runs_safe_config_migrations
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateBranchFlag::test_branch_flag_pulls_against_named_branch
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateMigrationPrompt::test_new_options_are_listed_by_name_before_prompt
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateMigrationPrompt::test_version_bump_only_applies_silently_without_prompt
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateMigrationPrompt::test_version_bump_only_surfaces_migration_resets
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateProfileSkillSync::test_active_profile_included_in_skill_sync
+FAILED tests/hermes_cli/test_cmd_update.py::TestCmdUpdateProfileSkillSync::test_single_profile_default_is_synced
+FAILED tests/hermes_cli/test_cmd_update.py::TestNodeRuntimeNpmResolution::test_wsl_update_skips_windows_npm_build_paths
+FAILED tests/hermes_cli/test_local_quickstart.py::test_quickstart_runs_all_three_legs
+FAILED tests/hermes_cli/test_local_quickstart.py::test_quickstart_skips_satisfied_legs
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_ordinary_divergence_skips_rescue_ref
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_guard_skips_rescue_ref_when_pre_pull_sha_missing
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_history_backs_up_before_reset
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_rescue_ref_write_failure_is_non_fatal
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_rescue_ref_write_failure_message_is_honest
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_rescue_refs_expired_by_age
+FAILED tests/hermes_cli/test_update_autostash.py::test_cmd_update_orphan_rescue_refs_pruned_beyond_keep_limit
+FAILED tests/hermes_cli/test_update_autostash.py::test_update_keep_stash_parks_instead_of_restoring
+FAILED tests/hermes_cli/test_update_autostash.py::test_update_without_keep_stash_still_restores
+FAILED tests/hermes_cli/test_update_fleet_restart_pending.py::test_marker_written_after_pull_cleared_after_successful_restart
+FAILED tests/hermes_cli/test_update_head_moved_gate.py::test_update_success_when_head_moves
+FAILED tests/hermes_cli/test_update_launchd_fleet_restart.py::TestGetServicePidsScoping::test_all_profiles_returns_every_gateway_service_pid
+FAILED tests/hermes_cli/test_update_launchd_fleet_restart.py::TestIncompleteWarningMentionsLaunchctl::test_launchd_labels_get_launchctl_hint
+FAILED tests/hermes_cli/test_update_launchd_fleet_restart.py::TestIncompleteWarningMentionsLaunchctl::test_systemd_units_keep_systemctl_hint
+FAILED tests/hermes_cli/test_update_yes_flag.py::TestUnicodeDecodeErrorInUpdatePrompts::test_unicode_decode_error_in_tty_skips_and_prints_hint
+FAILED tests/hermes_cli/test_update_yes_flag.py::TestUpdateYesConfigMigration::test_no_yes_flag_still_prompts_in_tty
+FAILED tests/hermes_cli/test_update_yes_flag.py::TestUpdateYesConfigMigration::test_yes_auto_migrates_without_input
+FAILED tests/hermes_cli/test_user_providers_model_switch.py::test_list_authenticated_providers_enumerates_dict_format_models
+FAILED tests/hermes_cli/test_user_providers_model_switch.py::test_section3_probes_no_key_endpoint_with_singular_default_model
+FAILED tests/test_guest_durability_barriers.py::test_guest_barriers_leave_synchronous_alone_when_unset
+FAILED tests/test_hermes_state.py::TestFTS5Search::test_search_projection_skips_context_enrichment_queries
+FAILED tests/test_tui_gateway_server.py::test_model_options_preserves_canonical_custom_row_after_agent_init
+FAILED tests/tools/test_approval.py::TestDetectDangerousRm::test_nonrecursive_verification_artifact_cleanup_is_not_dangerous
+FAILED tests/tools/test_execution_flag_detection.py::test_real_binaries_execute_leading_dash_program_payload[man-args4-None-True]
+FAILED tests/tools/test_execution_flag_detection.py::test_real_binaries_execute_leading_dash_program_payload[man-args5-None-True]
+FAILED tests/tools/test_execution_flag_detection.py::test_real_binaries_execute_leading_dash_program_payload[sort-args2-{bulk}-False]
+FAILED tests/tools/test_file_tools.py::TestPatchHandler::test_replace_mode_calls_patch_replace
+FAILED tests/tools/test_file_tools.py::TestWriteFileHandler::test_writes_content
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_failed_systemd_probe_retries_after_cache_ttl
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_pty_spawn_failure_does_not_fallback_when_scope_reap_fails
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_pty_spawn_failure_reaps_scope_before_distinct_pipe_fallback
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_pty_spawn_is_wrapped_in_systemd_scope
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_systemd_post_spawn_failure_never_kills_gateway_process_group
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_systemd_run_user_scope_available_caches_after_probe
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_systemd_scope_first_probe_is_serialized
+FAILED tests/tools/test_process_registry.py::TestSystemdCgroupIsolation::test_wraps_in_systemd_scope_when_supervisor_and_available
+FAILED tests/tools/test_transcription_tools.py::TestTranscribeLocalExtended::test_config_device_and_compute_type_passed_to_whisper
+FAILED tests/tools/test_voice_mode.py::TestPulseSocketReachable::test_listening_socket_reachable_via_xdg_runtime
+FAILED tests/tools/test_voice_mode.py::TestPulseSocketReachable::test_stale_socket_file_not_reachable
+FAILED tests/tools/test_voice_mode.py::TestWSL2PowerShellFallback::test_powershell_pipeline_preserves_real_exit_status
+FAILED tests/tools/test_voice_mode.py::TestWSL2PowerShellFallback::test_wsl2_unique_temp_filename
+FAILED tests/tools/test_wake_word.py::test_openwakeword_ensures_base_models_for_custom_path
