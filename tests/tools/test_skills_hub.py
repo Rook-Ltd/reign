@@ -44,8 +44,8 @@ class TestParseFrontmatterQuick:
         assert fm["name"] == "test-skill"
         assert fm["description"] == "A test."
 
-        nested = "---\nname: test\nmetadata:\n  hermes:\n    tags: [a, b]\n---\n\nBody.\n"
-        assert GitHubSource._parse_frontmatter_quick(nested)["metadata"]["hermes"]["tags"] == ["a", "b"]
+        nested = "---\nname: test\nmetadata:\n  reign:\n    tags: [a, b]\n---\n\nBody.\n"
+        assert GitHubSource._parse_frontmatter_quick(nested)["metadata"]["reign"]["tags"] == ["a", "b"]
 
     def test_degenerate_frontmatter_returns_empty(self):
         for content in (
@@ -144,7 +144,7 @@ class TestTrustLevelFor:
             assert repo in tap_repos, (
                 f"Trusted repo {repo!r} is in TRUSTED_REPOS but missing "
                 "from GitHubSource.DEFAULT_TAPS — its skills will not be "
-                "browsable via `hermes skills browse`."
+                "browsable via `reign skills browse`."
             )
 
 
@@ -719,15 +719,15 @@ class TestGithubProviderLabeling:
         assert meta.extra.get("provider") == "NVIDIA"
 
 def _make_index_source(skills):
-    """Build a HermesIndexSource pre-loaded with a fixed skill list."""
-    from tools.skills_hub import HermesIndexSource
-    src = HermesIndexSource(auth=GitHubAuth())
+    """Build a ReignIndexSource pre-loaded with a fixed skill list."""
+    from tools.skills_hub import ReignIndexSource
+    src = ReignIndexSource(auth=GitHubAuth())
     src._index = {"skills": skills}
     src._loaded = True
     return src
 
 
-class TestHermesIndexSearch:
+class TestReignIndexSearch:
     def test_search_matches_identifier_and_provider(self):
         # NVIDIA skill whose name/description does NOT contain "nvidia" — only
         # the identifier and the provider label do. The old substring-only
@@ -781,7 +781,7 @@ class TestProviderFilter:
         other = SkillMeta(name="cuda-clone", description="gpu", source="clawhub",
                           identifier="clawhub/cuda-clone", trust_level="community")
         src = MagicMock()
-        src.source_id.return_value = "hermes-index"
+        src.source_id.return_value = "reign-index"
         src.is_available = True
         src.search.return_value = [nv, other]
         results = unified_search("cuda", [src], source_filter="nvidia", limit=25)
@@ -897,7 +897,7 @@ class TestOptionalSkillSourceBinaryAssets:
 
 class TestOptionalSkillSourceLiveRepoFallback:
     """Skills merged to main after the local install was cut must still be
-    searchable and installable without `hermes update` (live-repo fallback)."""
+    searchable and installable without `reign update` (live-repo fallback)."""
 
     def _make_source(self, tmp_path, remote_dirs):
         optional_root = tmp_path / "optional-skills"
@@ -1457,7 +1457,7 @@ class TestInstallPathSafety:
         """Installing a skill whose name matches an existing category directory
         that contains other skills must NOT silently wipe that entire directory.
 
-        Regression test for GitHub issue #75983: ``hermes skills install … --name
+        Regression test for GitHub issue #75983: ``reign skills install … --name
         research`` deleted the whole ``skills/research/`` category bucket,
         destroying 16 unrelated skills.
         """
@@ -1848,11 +1848,11 @@ class TestParallelSearchSourcesTimeout:
 
 
 # ---------------------------------------------------------------------------
-# _load_hermes_index — centralized index fetch (Browse-hub landing / search)
+# _load_reign_index — centralized index fetch (Browse-hub landing / search)
 # ---------------------------------------------------------------------------
 
 
-class TestLoadHermesIndex:
+class TestLoadReignIndex:
     """Regression coverage for the Skills-Hub index fetch.
 
     The centralized index is a large body served with Content-Encoding: br.
@@ -1868,8 +1868,8 @@ class TestLoadHermesIndex:
         """Point the on-disk cache at an empty tmp dir so no real cache leaks in."""
         import tools.skills_hub as hub
 
-        cache_file = tmp_path / "hermes-index.json"
-        monkeypatch.setattr(hub, "_hermes_index_cache_file", lambda: cache_file)
+        cache_file = tmp_path / "reign-index.json"
+        monkeypatch.setattr(hub, "_reign_index_cache_file", lambda: cache_file)
         return cache_file
 
     def test_fetch_does_not_request_brotli(self, monkeypatch, tmp_path):
@@ -1889,7 +1889,7 @@ class TestLoadHermesIndex:
 
         monkeypatch.setattr(hub.httpx, "get", fake_get)
 
-        data = hub._load_hermes_index()
+        data = hub._load_reign_index()
         assert data == {"skills": [{"name": "x"}]}
 
         accept = captured["headers"].get("Accept-Encoding", "")
@@ -1906,7 +1906,7 @@ class TestLoadHermesIndex:
         cache_file = self._isolate_cache(monkeypatch, tmp_path)
         cache_file.write_text(json.dumps({"skills": [{"name": "stale"}]}))
         # Force the cache to look expired so the network path runs.
-        old = time.time() - (hub.HERMES_INDEX_TTL + 100)
+        old = time.time() - (hub.REIGN_INDEX_TTL + 100)
         import os
 
         os.utime(cache_file, (old, old))
@@ -1916,7 +1916,7 @@ class TestLoadHermesIndex:
 
         monkeypatch.setattr(hub.httpx, "get", fake_get)
 
-        data = hub._load_hermes_index()
+        data = hub._load_reign_index()
         assert data == {"skills": [{"name": "stale"}]}
 
 

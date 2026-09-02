@@ -11,7 +11,7 @@ built-in: this module builds ONE prompt that instructs the live agent to
   1. Stay in planning mode for the turn — read-only inspection is allowed,
      but no implementation, no mutating commands, no side effects.
   2. Write a concrete, bite-sized, TDD-shaped markdown plan under
-     ``.hermes/plans/`` in the active workspace via ``write_file``.
+     ``.reign/plans/`` in the active workspace via ``write_file``.
 
 There is no engine and no model-tool footprint: the agent does the work with
 its existing toolset, so this works identically on local, Docker, and remote
@@ -36,8 +36,8 @@ For this turn, you are in PLAN MODE — planning only.
 - You may inspect the repo or other context with read-only commands/tools
   when needed.
 - Your deliverable is a markdown plan saved inside the active workspace under
-  `.hermes/plans/YYYY-MM-DD_HHMMSS-<slug>.md` (create the directory if
-  needed; Hermes file tools are backend-aware, so this relative path keeps
+  `.reign/plans/YYYY-MM-DD_HHMMSS-<slug>.md` (create the directory if
+  needed; Reign file tools are backend-aware, so this relative path keeps
   the plan with the workspace on local, docker, ssh, modal, and daytona
   backends). If the runtime provides a specific target path, use that exact
   path instead.

@@ -11,7 +11,7 @@ cross-correlating four log files and two external APIs to answer "what
 killed the gateway?".
 
 This module closes that gap with a tiny state machine persisted to
-``<HERMES_HOME>/state/gateway.lifecycle.json``:
+``<REIGN_HOME>/state/gateway.lifecycle.json``:
 
 * On startup, :func:`record_startup` reads the sentinel left by the
   previous life.  ``phase == "running"`` means that life never reached any
@@ -60,19 +60,19 @@ _LOW_MEM_AVAILABLE_KIB = 64 * 1024  # < 64 MiB available
 _LOW_MEM_AVAILABLE_FRACTION = 0.05  # < 5% of MemTotal available
 
 
-def _process_hermes_home() -> Path:
-    """HERMES_HOME for process-level identity files (ignore task overrides)."""
-    val = os.environ.get("HERMES_HOME", "").strip()
+def _process_reign_home() -> Path:
+    """REIGN_HOME for process-level identity files (ignore task overrides)."""
+    val = os.environ.get("REIGN_HOME", "").strip()
     if val:
         return Path(val)
-    from hermes_constants import get_hermes_home
+    from reign_constants import get_reign_home
 
-    return get_hermes_home()
+    return get_reign_home()
 
 
 def get_lifecycle_sentinel_path(home: Optional[Path] = None) -> Path:
-    """Return ``<HERMES_HOME>/state/gateway.lifecycle.json``."""
-    base = home if home is not None else _process_hermes_home()
+    """Return ``<REIGN_HOME>/state/gateway.lifecycle.json``."""
+    base = home if home is not None else _process_reign_home()
     return base.joinpath(*_LIFECYCLE_RELATIVE)
 
 
@@ -134,7 +134,7 @@ def _write_sentinel(payload: Dict[str, Any], home: Optional[Path]) -> None:
 def _append_exit_diag(record: Dict[str, Any], home: Optional[Path]) -> None:
     """Append a JSON line to gateway-exit-diag.log (same format as the CLI's
     ``_exit_diag`` records so existing tooling greps both)."""
-    base = home if home is not None else _process_hermes_home()
+    base = home if home is not None else _process_reign_home()
     path = base.joinpath(*_EXIT_DIAG_RELATIVE)
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -229,7 +229,7 @@ def check_state_db_integrity(home: Optional[Path] = None) -> str:
     Called only after an unclean death, because that is when the store may
     have been torn: a SIGKILL landing on a gateway mid-WAL-checkpoint can
     leave half-written b-tree pages behind (see
-    ``_enforce_macos_synchronous_full`` in :mod:`hermes_state` — macOS
+    ``_enforce_macos_synchronous_full`` in :mod:`reign_state` — macOS
     ``fsync`` guarantees neither data-on-platter nor write ordering).
 
     ``quick_check(1)`` stops at the first problem, so this costs ~2s on a
@@ -242,7 +242,7 @@ def check_state_db_integrity(home: Optional[Path] = None) -> str:
     -shm sidecar for a read-only open. The PRAGMA itself writes nothing.
     Never raises — this is forensics, not lifecycle.
     """
-    base = home if home is not None else _process_hermes_home()
+    base = home if home is not None else _process_reign_home()
     path = base.joinpath(*_STATE_DB_RELATIVE)
     if not path.exists():
         return "absent"
@@ -282,7 +282,7 @@ def record_startup(home: Optional[Path] = None) -> Optional[Dict[str, Any]]:
                 logger.error(
                     "state.db FAILED integrity check after an unclean gateway "
                     "exit: %s — sessions may read as missing until it is "
-                    "repaired. Run `hermes doctor`.",
+                    "repaired. Run `reign doctor`.",
                     verdict,
                 )
             record = {
@@ -366,7 +366,7 @@ def read_prior_exit_label(profile_home: Path) -> str:
     """Container-boot helper: one-word summary of how the profile's last
     gateway life ended.  ``clean`` / ``unclean`` / ``unknown`` (no sentinel
     or never ran).  Read-only and exception-free — used by
-    ``hermes_cli.container_boot`` to annotate ``container-boot.log``.
+    ``reign_cli.container_boot`` to annotate ``container-boot.log``.
     """
     try:
         sentinel = _read_json(get_lifecycle_sentinel_path(profile_home))

@@ -9,7 +9,7 @@ launcher for the path where no agent-browser daemon is involved.
 Lifecycle: ``tools.browser_tool`` owns the session cache, the inactivity
 reaper and the atexit sweep; it calls :func:`launch_lightpanda` /
 :func:`stop_lightpanda` and :func:`reap_orphaned_lightpanda` for processes
-left behind by a crashed Hermes.
+left behind by a crashed Reign.
 """
 
 import json
@@ -65,11 +65,11 @@ def _home_candidates() -> list:
         home / ".local" / "bin" / "lightpanda",
     ]
     try:
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        candidates.append(Path(get_hermes_home()) / "bin" / "lightpanda")
+        candidates.append(Path(get_reign_home()) / "bin" / "lightpanda")
     except Exception as e:  # pragma: no cover - defensive
-        logger.debug("hermes home unavailable for lightpanda lookup: %s", e)
+        logger.debug("reign home unavailable for lightpanda lookup: %s", e)
     return candidates
 
 
@@ -79,7 +79,7 @@ def find_lightpanda_binary() -> Optional[str]:
     Order: PATH (with the same Homebrew/managed-node fallbacks agent-browser
     gets), then the locations the Lightpanda installer and agent-browser use
     (``~/.lightpanda/lightpanda``, ``~/.local/bin/lightpanda``), then
-    ``$HERMES_HOME/bin/lightpanda``. Lightpanda has no Windows build.
+    ``$REIGN_HOME/bin/lightpanda``. Lightpanda has no Windows build.
     """
     if os.name == "nt":
         logger.debug("Lightpanda has no Windows build")
@@ -108,9 +108,9 @@ def _pick_free_loopback_port() -> int:
 
 
 def _state_dir() -> Path:
-    from hermes_constants import get_hermes_home
+    from reign_constants import get_reign_home
 
-    path = Path(get_hermes_home()) / "cache" / "browser-use" / "lightpanda"
+    path = Path(get_reign_home()) / "cache" / "browser-use" / "lightpanda"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -131,7 +131,7 @@ def _browser_env() -> dict:
 
 def _cdp_ready(url: str) -> bool:
     try:
-        from hermes_cli.browser_connect import is_browser_debug_ready
+        from reign_cli.browser_connect import is_browser_debug_ready
 
         return is_browser_debug_ready(url, timeout=0.2)
     except Exception as e:
@@ -199,7 +199,7 @@ def launch_lightpanda(
 
     Returns ``(server, None)`` once ``/json/version`` answers, or
     ``(None, error)`` with an actionable message. The child's stderr goes to
-    ``$HERMES_HOME/cache/browser-use/lightpanda/<session>.log`` so a chatty
+    ``$REIGN_HOME/cache/browser-use/lightpanda/<session>.log`` so a chatty
     process can never block on a pipe; only the tail is read on failure.
     """
     binary = find_lightpanda_binary()
@@ -207,7 +207,7 @@ def launch_lightpanda(
         if os.name == "nt":
             return None, (
                 "browser.engine is 'lightpanda' but Lightpanda has no Windows "
-                "build. Set browser.engine to auto (or run Hermes under WSL2)."
+                "build. Set browser.engine to auto (or run Reign under WSL2)."
             )
         return None, (
             "browser.engine is 'lightpanda' but no lightpanda binary was found "
@@ -343,10 +343,10 @@ def _is_lightpanda_process(pid: int, port, start_time) -> bool:
 
 
 def reap_orphaned_lightpanda() -> int:
-    """Kill ``lightpanda serve`` processes whose owning Hermes is gone.
+    """Kill ``lightpanda serve`` processes whose owning Reign is gone.
 
     Records are written by :func:`launch_lightpanda`; a live owner (another
-    Hermes process, or this one still tracking the session) is never
+    Reign process, or this one still tracking the session) is never
     touched, and a PID is only signalled after psutil confirms it is still
     a ``lightpanda serve`` on the recorded port. Returns the reap count.
     """

@@ -207,10 +207,10 @@ test('primary SSH reuse rejects a descriptor with different effective dialing co
   )
 })
 
-test('primary SSH reuse rejects a descriptor with a different remote Hermes path', async () => {
+test('primary SSH reuse rejects a descriptor with a different remote Reign path', async () => {
   const registry = migrateV1ToRegistry({
     mode: 'ssh',
-    remote: { mode: 'ssh', host: 'build-host', remoteHermesPath: '/srv/hermes', user: 'alice' },
+    remote: { mode: 'ssh', host: 'build-host', remoteReignPath: '/srv/reign', user: 'alice' },
     profiles: {}
   })
 
@@ -226,7 +226,7 @@ test('primary SSH reuse rejects a descriptor with a different remote Hermes path
         ssh: {
           effectiveConfigFingerprint: 'same-effective-config',
           host: 'build-host',
-          remoteHermesPath: '/opt/hermes',
+          remoteReignPath: '/opt/reign',
           remoteProfile: '',
           user: 'alice'
         }
@@ -242,23 +242,23 @@ test('primary SSH reuse rejects a descriptor with a different remote Hermes path
 test('registry primary reuses a matching primary backend descriptor', () => {
   const registry = normalizeRegistry({
     version: REGISTRY_VERSION,
-    primary: 'hermes-vps',
+    primary: 'reign-vps',
     launchMode: 'primary',
-    lastUsed: 'hermes-vps',
+    lastUsed: 'reign-vps',
     connections: [
       { id: LOCAL_CONNECTION_ID, kind: 'local', label: 'This device' },
-      { id: 'hermes-vps', kind: 'ssh', label: 'Hermes VPS', host: 'hermes-vps' }
+      { id: 'reign-vps', kind: 'ssh', label: 'Reign VPS', host: 'reign-vps' }
     ]
   })
 
   const descriptor = {
-    connectionId: 'hermes-vps',
+    connectionId: 'reign-vps',
     mode: 'remote' as const,
     remoteKind: 'ssh' as const,
-    ssh: { host: 'hermes-vps' }
+    ssh: { host: 'reign-vps' }
   }
 
-  assert.equal(registrySourceOwnsPrimaryBackend(registry, 'hermes-vps', descriptor), true)
+  assert.equal(registrySourceOwnsPrimaryBackend(registry, 'reign-vps', descriptor), true)
   assert.equal(registrySourceOwnsPrimaryBackend(registry, LOCAL_CONNECTION_ID, descriptor), false)
 })
 
@@ -529,7 +529,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
     host: 'work-host',
     keyPath: '/keys/a',
     kind: 'ssh' as const,
-    remoteHermesPath: '/srv/hermes',
+    remoteReignPath: '/srv/reign',
     remoteProfile: 'alpha',
     user: 'root'
   }
@@ -544,7 +544,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
       { ...base, id: 'ssh-base', label: 'SSH base' },
       { ...base, id: 'ssh-port', label: 'SSH port', port: 2222 },
       { ...base, id: 'ssh-key', keyPath: '/keys/b', label: 'SSH key' },
-      { ...base, id: 'ssh-path', label: 'SSH path', remoteHermesPath: '/opt/hermes' },
+      { ...base, id: 'ssh-path', label: 'SSH path', remoteReignPath: '/opt/reign' },
       { ...base, id: 'ssh-profile', label: 'SSH profile', remoteProfile: 'beta' }
     ]
   }
@@ -555,7 +555,7 @@ test('resolvedConnectionId keeps same-host SSH routes distinct by port, key, pat
   assert.equal(resolve(base), 'ssh-base')
   assert.equal(resolve({ ...base, port: 2222 }), 'ssh-port')
   assert.equal(resolve({ ...base, keyPath: '/keys/b' }), 'ssh-key')
-  assert.equal(resolve({ ...base, remoteHermesPath: '/opt/hermes' }), 'ssh-path')
+  assert.equal(resolve({ ...base, remoteReignPath: '/opt/reign' }), 'ssh-path')
   assert.equal(resolve({ ...base, remoteProfile: 'beta' }), 'ssh-profile')
   assert.equal(
     resolvedConnectionId(registry, {
@@ -622,7 +622,7 @@ test('uniqueLabel counts up (never "X 2 2") and clamps long candidates', () => {
 
 // --- backendScopeKey (composite pool keys) ---
 
-// The electron and @hermes/shared implementations MUST stay byte-identical —
+// The electron and @reign/shared implementations MUST stay byte-identical —
 // the renderer keys its socket registry with the shared copy while the main
 // process keys the backend pool with this one. This contract test is the
 // enforcement (see the NOTE on backendScopeKey).
@@ -630,7 +630,7 @@ test('backendScopeKey: electron and shared implementations agree everywhere', as
   // Non-literal specifier on purpose: tsconfig.electron.json's project
   // boundary excludes apps/shared sources, but vitest resolves the workspace
   // package fine at runtime — which is exactly what this test needs.
-  const shared = (await import(String('@hermes/shared'))) as {
+  const shared = (await import(String('@reign/shared'))) as {
     backendScopeKey: typeof backendScopeKey
     backendScopePrefix: typeof backendScopePrefix
     LOCAL_CONNECTION_ID: string
@@ -753,7 +753,7 @@ test('roster: source profile metadata follows the connection-qualified row', () 
 
   const vpsMeta = {
     display_name: 'Emma',
-    ui_meta: { 'hermes-bots': { title: 'Emma', shape: 'blobatar::sun', color: '#8b5cf6' } },
+    ui_meta: { 'reign-bots': { title: 'Emma', shape: 'blobatar::sun', color: '#8b5cf6' } },
     has_avatar: true
   }
 
@@ -1064,14 +1064,14 @@ test('merge preserves fields the editor does not carry (org, ssh extras)', () =>
     kind: 'ssh' as const,
     label: 'Box',
     port: 2222,
-    remoteHermesPath: '/opt/hermes',
+    remoteReignPath: '/opt/reign',
     remoteProfile: 'research',
     user: 'k'
   }
 
   const labelOnly = mergeConnectionInput({ id: 's', kind: 'ssh', label: 'Renamed box' }, ssh)
 
-  assert.equal(labelOnly.remoteHermesPath, '/opt/hermes')
+  assert.equal(labelOnly.remoteReignPath, '/opt/reign')
   assert.equal(labelOnly.remoteProfile, 'research')
   assert.equal(labelOnly.host, 'homelab.lan')
   assert.equal(labelOnly.user, 'k')
@@ -1273,7 +1273,7 @@ test('normalizeRegistry round-trips a valid registry unchanged in shape', () => 
       {
         id: 'cloud-1',
         kind: 'cloud',
-        label: 'Hermes Cloud',
+        label: 'Reign Cloud',
         url: 'https://a.hermes.cloud',
         authMode: 'oauth',
         org: 'nous'
@@ -1469,7 +1469,7 @@ test('Apply remote preserves an existing URL identity and label without duplicat
   let registry = emptyRegistry()
 
   registry = upsertConnection(registry, {
-    id: 'hermes-alex',
+    id: 'reign-alex',
     kind: 'remote',
     label: 'Existing gateway',
     url: 'https://gateway.example.com',
@@ -1485,11 +1485,11 @@ test('Apply remote preserves an existing URL identity and label without duplicat
   const matches = applied.connections.filter(connection => connection.url === 'https://gateway.example.com')
 
   assert.equal(matches.length, 1)
-  assert.equal(matches[0].id, 'hermes-alex')
+  assert.equal(matches[0].id, 'reign-alex')
   assert.equal(matches[0].label, 'Existing gateway')
   assert.equal(matches[0].authMode, 'oauth')
-  assert.equal(applied.primary, 'hermes-alex')
-  assert.equal(applied.lastUsed, 'hermes-alex')
+  assert.equal(applied.primary, 'reign-alex')
+  assert.equal(applied.lastUsed, 'reign-alex')
 })
 
 test('Apply local moves primary/current to This device without deleting registered remotes', () => {

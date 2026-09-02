@@ -21,12 +21,12 @@ def server():
     with patch.dict(
         "sys.modules",
         {
-            "hermes_constants": MagicMock(
-                get_hermes_home=MagicMock(return_value="/tmp/hermes_test_moa_emit")
+            "reign_constants": MagicMock(
+                get_reign_home=MagicMock(return_value="/tmp/reign_test_moa_emit")
             ),
-            "hermes_cli.env_loader": MagicMock(),
-            "hermes_cli.banner": MagicMock(),
-            "hermes_state": MagicMock(),
+            "reign_cli.env_loader": MagicMock(),
+            "reign_cli.banner": MagicMock(),
+            "reign_state": MagicMock(),
         },
     ):
         import importlib

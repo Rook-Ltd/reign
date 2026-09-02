@@ -28,21 +28,21 @@ intentionally different — do not "deduplicate" them.
   timestamp is stripped later by ``_cache_scope_from_session_id`` exactly as
   before.
 
-A host that mints one physical ``session_id`` per RESPONSE (Hermes Studio's
+A host that mints one physical ``session_id`` per RESPONSE (Reign Studio's
 group chat, and ``POST /v1/responses`` with client-managed history, which
 mints ``str(uuid4())`` per request) re-keys every conversation-affinity hint
-Hermes sends — ``prompt_cache_key`` on both OpenAI-wire transports, plus the
+Reign sends — ``prompt_cache_key`` on both OpenAI-wire transports, plus the
 OpenRouter/Nous sticky ``session_id`` and xAI's ``x-grok-conv-id`` through
 ``portal_tags`` (issue #96811). Those rows carry no lineage, so the walk
 above correctly returns the physical id and the scope moves every reply.
 
-Hermes must not infer the logical conversation from the id's SYNTAX (that
+Reign must not infer the logical conversation from the id's SYNTAX (that
 rule collides independent client-supplied ids and merges Studio members
 truncated past its 96-character boundary — the #79017 failure class). The
 host has to declare it, and one carrier already means exactly that:
 ``gateway_session_key`` — the "stable per-chat key" (``agent:main:telegram:
 dm:123``) built by ``gateway.session.build_session_key`` from the
-``X-Hermes-Session-Key`` header, which branching deliberately does NOT key
+``X-Reign-Session-Key`` header, which branching deliberately does NOT key
 off. ``declared_conversation_scope()`` consumes it, and it wins over the
 lineage walk because it is stable across rotation AND across per-response
 ids. Two boundaries it must not cross:
@@ -109,12 +109,12 @@ def _agent_source(
     identity read in :func:`declared_conversation_scope` — where ``""`` means
     "the row was read and carries no source". ``None`` means "not read yet"
     and keeps the original lookup, which is the path a ``SessionDB`` without
-    :meth:`~hermes_state.SessionDB.declared_scope_identity` still takes.
+    :meth:`~reign_state.SessionDB.declared_scope_identity` still takes.
 
     Before the row lands — this module resolves the first scope ahead of
     ``_ensure_db_session`` — it uses the SAME resolver persistence will use,
     ``run_agent._session_source_for_agent``, not ``agent.platform``. The two
-    diverge whenever ``HERMES_SESSION_SOURCE`` overrides the platform, and the
+    diverge whenever ``REIGN_SESSION_SOURCE`` overrides the platform, and the
     divergence is not a cosmetic one: the declared scope is non-``None``
     immediately, so ``resolve_prompt_cache_scope`` memoizes it for this session
     id and never re-resolves once the authoritative row appears. Both sides of
@@ -175,7 +175,7 @@ def _conversation_generation(session_key: str, source: str, session_db: Any) -> 
 def declared_conversation_scope(agent: Any) -> Optional[str]:
     """Return the host-declared logical conversation scope, or None.
 
-    Resolved from ``agent._gateway_session_key`` (the ``X-Hermes-Session-Key``
+    Resolved from ``agent._gateway_session_key`` (the ``X-Reign-Session-Key``
     /``build_session_key`` per-chat key) qualified by the conversation
     generation currently live on it (:func:`_conversation_generation`), hashed
     together into ``gwk_<sha256[:24]>`` so no platform/chat/user identifier

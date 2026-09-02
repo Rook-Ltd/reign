@@ -14,11 +14,11 @@ import logging
 from datetime import datetime
 from typing import Optional
 
-from hermes_cli.config import get_hermes_home
+from reign_cli.config import get_reign_home
 
 logger = logging.getLogger(__name__)
 
-_SESSIONS_DIR = get_hermes_home() / "sessions"
+_SESSIONS_DIR = get_reign_home() / "sessions"
 _SESSIONS_INDEX = _SESSIONS_DIR / "sessions.json"
 
 
@@ -132,7 +132,7 @@ def _find_session_id(
     """
     # Primary: state.db
     try:
-        from hermes_state import get_shared_session_db
+        from reign_state import get_shared_session_db
         db = get_shared_session_db()
         try:
             finder = getattr(db, "find_session_by_origin", None)
@@ -146,7 +146,7 @@ def _find_session_id(
                 if session_id:
                     return str(session_id)
         finally:
-            from hermes_state import release_or_close
+            from reign_state import release_or_close
             release_or_close(db)
     except Exception as e:
         logger.debug("Mirror state.db session lookup failed: %s", e)
@@ -212,7 +212,7 @@ def _append_to_sqlite(session_id: str, message: dict) -> None:
     """Append a message to the SQLite session database."""
     db = None
     try:
-        from hermes_state import get_shared_session_db
+        from reign_state import get_shared_session_db
         db = get_shared_session_db()
         db.append_message(
             session_id=session_id,
@@ -223,5 +223,5 @@ def _append_to_sqlite(session_id: str, message: dict) -> None:
         logger.debug("Mirror SQLite write failed: %s", e)
     finally:
         if db is not None:
-            from hermes_state import release_or_close
+            from reign_state import release_or_close
             release_or_close(db)

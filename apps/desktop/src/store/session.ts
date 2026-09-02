@@ -1,9 +1,9 @@
-import type { ConnectionState } from '@hermes/shared'
+import type { ConnectionState } from '@reign/shared'
 import { atom, computed } from 'nanostores'
 
 import { lastVisibleMessageIsUser } from '@/app/chat/thread-loading'
 import type { ContextSuggestion } from '@/app/types'
-import type { HermesConnection } from '@/global'
+import type { ReignConnection } from '@/global'
 import type { ChatMessage } from '@/lib/chat-messages'
 import {
   activeConnectionScopeSuffix,
@@ -12,7 +12,7 @@ import {
 } from '@/lib/connection-scoped'
 import { persistBoolean, persistString, readJson, storedBoolean, storedString, writeJson } from '@/lib/storage'
 import { syncCronModelImpactConnection } from '@/store/cron-model-impact-scope'
-import type { SessionInfo, UsageStats } from '@/types/hermes'
+import type { SessionInfo, UsageStats } from '@/types/reign'
 
 import type { SessionOwnerRoute, SessionOwnerScope } from './session-request-router'
 import { clearUnreadOnOpen } from './session-unread-remote'
@@ -20,7 +20,7 @@ import { clearUnreadOnOpen } from './session-unread-remote'
 type Updater<T> = T | ((current: T) => T)
 export type ComposerModelSource = '' | 'default' | 'manual'
 
-const WORKSPACE_CWD_KEY = 'hermes.desktop.workspace-cwd'
+const WORKSPACE_CWD_KEY = 'reign.desktop.workspace-cwd'
 
 // The composer's model/effort/fast is sticky UI state, NOT the profile default
 // (that lives in Settings → Model). Persisting it in localStorage makes a pick
@@ -28,11 +28,11 @@ const WORKSPACE_CWD_KEY = 'hermes.desktop.workspace-cwd'
 // Model/provider/source are scoped to the remote (connection, profile) owner so
 // a provider authenticated on one profile cannot contaminate another profile's
 // session.create. Local/single-backend users retain the historical bare keys.
-const COMPOSER_MODEL_KEY = 'hermes.desktop.composer.model'
-const COMPOSER_PROVIDER_KEY = 'hermes.desktop.composer.provider'
-const COMPOSER_MODEL_SOURCE_KEY = 'hermes.desktop.composer.model-source'
-const COMPOSER_EFFORT_KEY = 'hermes.desktop.composer.reasoning-effort'
-const COMPOSER_FAST_KEY = 'hermes.desktop.composer.fast'
+const COMPOSER_MODEL_KEY = 'reign.desktop.composer.model'
+const COMPOSER_PROVIDER_KEY = 'reign.desktop.composer.provider'
+const COMPOSER_MODEL_SOURCE_KEY = 'reign.desktop.composer.model-source'
+const COMPOSER_EFFORT_KEY = 'reign.desktop.composer.reasoning-effort'
+const COMPOSER_FAST_KEY = 'reign.desktop.composer.fast'
 
 // Unlike presentation-oriented $connection, this scope is published from the
 // gateway activation coordinate before profile-change effects can reseed the
@@ -40,7 +40,7 @@ const COMPOSER_FAST_KEY = 'hermes.desktop.composer.fast'
 // paint, but must not be written through the previous backend's storage key.
 let composerSelectionScope: string | null = ''
 
-function composerScopeForConnection(connection: HermesConnection | null): string | null {
+function composerScopeForConnection(connection: ReignConnection | null): string | null {
   if (!connection) {
     return null
   }
@@ -78,8 +78,8 @@ function storedComposerString(base: string): string | null {
 // discarded on first read to prevent cross-profile bleed — ownership of the old
 // global values is unknowable, and guessing the owning profile is exactly the
 // cross-profile corruption this storage boundary prevents (#67709).
-const LAST_SESSION_KEY = 'hermes.desktop.lastSessionId'
-const LAST_ROUTE_KEY = 'hermes.desktop.lastRoute'
+const LAST_SESSION_KEY = 'reign.desktop.lastSessionId'
+const LAST_ROUTE_KEY = 'reign.desktop.lastRoute'
 
 function profileNavigationKey(base: string, profile: string): string {
   const key = profile.trim() || 'default'
@@ -252,7 +252,7 @@ export function setRememberedRoute(path: null | string, profile: string): void {
 
 let configuredDefaultProjectDir = ''
 
-function workspaceCwdKey(connection: HermesConnection | null = $connection.get()): string {
+function workspaceCwdKey(connection: ReignConnection | null = $connection.get()): string {
   if (connection?.mode !== 'remote') {
     return WORKSPACE_CWD_KEY
   }
@@ -269,7 +269,7 @@ export type NewChatWorkspaceTarget = null | string | undefined
 export const getConfiguredDefaultProjectDir = (): string => configuredDefaultProjectDir
 
 export async function syncConfiguredDefaultProjectDir(shouldPublish: () => boolean = () => true): Promise<string> {
-  const settings = window.hermesDesktop?.settings?.getDefaultProjectDir
+  const settings = window.reignDesktop?.settings?.getDefaultProjectDir
 
   if (!settings) {
     if (shouldPublish()) {
@@ -292,7 +292,7 @@ export async function syncConfiguredDefaultProjectDir(shouldPublish: () => boole
  *  packaged, optional Settings override). Clears stale install-dir paths that
  *  PR #37586's localStorage stickiness can preserve across the #37536 fix. */
 export async function ensureDefaultWorkspaceCwd(shouldPublish: () => boolean = () => true): Promise<void> {
-  const sanitize = window.hermesDesktop?.sanitizeWorkspaceCwd
+  const sanitize = window.reignDesktop?.sanitizeWorkspaceCwd
 
   if (!sanitize || !shouldPublish()) {
     return
@@ -666,7 +666,7 @@ export function touchSessionActivity(
   })
 }
 
-export const $connection = atom<HermesConnection | null>(null)
+export const $connection = atom<ReignConnection | null>(null)
 export const $gatewayState = atom<ConnectionState>('idle')
 export const $sessions = atom<SessionInfo[]>([])
 // Cron-job sessions (source === 'cron') are fetched as their own list so the
@@ -790,7 +790,7 @@ export const $sessionResumeRequest = atom<SessionResumeRequest | null>(null)
 // stays valid across restarts; forgetSessionOwnerHintsForConnection drops
 // them when a connection is removed from the registry.
 const SESSION_OWNER_HINT_LIMIT = 256
-const SESSION_OWNER_HINTS_KEY = 'hermes.desktop.sessionOwnerHints.v1'
+const SESSION_OWNER_HINTS_KEY = 'reign.desktop.sessionOwnerHints.v1'
 const sessionOwnerHints = new Map<string, { id: string; route: SessionOwnerRoute }>()
 
 function sessionOwnerHintKey(sessionId: string, route: Pick<SessionOwnerRoute, 'connectionId' | 'profile'>): string {
@@ -1058,7 +1058,7 @@ function rescopeComposerSelection(nextScope: string | null): void {
 
 /** Publish an exact registry route before active-profile effects can persist a
  * forced default. A registry id is authority even while its descriptive
- * HermesConnection lookup is unavailable. */
+ * ReignConnection lookup is unavailable. */
 export function setComposerSelectionOwner(connectionId: string, profile: string): void {
   rescopeComposerSelection(
     `.registry.${encodeURIComponent(connectionId)}.${encodeURIComponent(profile.trim() || 'default')}`
@@ -1070,7 +1070,7 @@ export function clearComposerSelectionOwner(): void {
   rescopeComposerSelection(null)
 }
 
-export const setConnection = (next: Updater<HermesConnection | null>) => {
+export const setConnection = (next: Updater<ReignConnection | null>) => {
   updateAtom($connection, next)
   // Repoint connection-scoped persistence (pins, manual session order,
   // remembered navigation) at the new backend's storage scope before any
@@ -1261,7 +1261,7 @@ export const setCurrentReasoningEffort = (next: Updater<string>) => {
 // The profile's `agent.reasoning_effort`, mirrored from config so surfaces that
 // need to render or apply "the default" resolve the user's configured level
 // instead of assuming DEFAULT_REASONING_EFFORT (lib/reasoning-effort). Empty
-// until config loads, and re-seeded on every profile switch by useHermesConfig.
+// until config loads, and re-seeded on every profile switch by useReignConfig.
 export const $defaultReasoningEffort = atom('')
 
 export const setDefaultReasoningEffort = (next: string) => updateAtom($defaultReasoningEffort, next)

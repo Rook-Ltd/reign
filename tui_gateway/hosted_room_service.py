@@ -44,7 +44,7 @@ _HOSTED_ROOM_TERMINAL_GRACE_SECONDS = 30.0
 
 def _hosted_room_turn_timeout_seconds() -> float:
     try:
-        agent_timeout = float(os.getenv("HERMES_AGENT_TIMEOUT", "1800"))
+        agent_timeout = float(os.getenv("REIGN_AGENT_TIMEOUT", "1800"))
     except (TypeError, ValueError):
         agent_timeout = 1800.0
     if agent_timeout <= 0:

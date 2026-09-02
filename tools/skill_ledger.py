@@ -1,9 +1,9 @@
 """Per-mutation skill audit ledger + single-edit rollback (tracker #79686 P3).
 
 Every skill mutation — regardless of actor — appends one JSONL entry to
-``~/.hermes/skills/.curator_ledger.jsonl`` describing who changed what, with
+``~/.reign/skills/.curator_ledger.jsonl`` describing who changed what, with
 before/after file manifests whose contents are stored content-addressed
-(sha256-deduped) under ``~/.hermes/.curator_backups/blobs/``.
+(sha256-deduped) under ``~/.reign/.curator_backups/blobs/``.
 
 Design decisions (Teknium-approved):
   - JSONL, not the state DB: the ledger is a durable, human-greppable audit
@@ -12,7 +12,7 @@ Design decisions (Teknium-approved):
     The curator *invariant* (never hard-delete autonomously) is unchanged and
     applies only to autonomous actors; foreground user deletes stay
     hard-delete — but they are still ledgered so they're recoverable via
-    ``hermes curator rollback <entry-id>``.
+    ``reign curator rollback <entry-id>``.
   - Per-file content-addressed blobs (not tarballs): a mutation typically
     touches one file, so a whole-tree tarball per mutation would be wasteful,
     and identical content across entries dedupes to a single blob.
@@ -38,7 +38,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-from hermes_constants import get_hermes_home
+from reign_constants import get_reign_home
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +54,7 @@ _BACKUP_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}Z(-\d{2})?$")
 _ARCHIVE_TS_SUFFIX_RE = re.compile(r"^(.+)-\d{14}$")
 # Actions whose rollback must restore a COMPLETE skill package. These are
 # the actions where a hollow before-capture (support files re-homed out of
-# the tree first) makes `hermes curator rollback` restore a shell of a
+# the tree first) makes `reign curator rollback` restore a shell of a
 # skill instead of the package (issue #96962).
 _PACKAGE_RESTORE_ACTIONS = frozenset({"delete", "archive", "purge"})
 _VALID_ACTORS = {ACTOR_CURATOR, ACTOR_AGENT, ACTOR_USER}
@@ -102,18 +102,18 @@ def derive_actor() -> str:
 # ---------------------------------------------------------------------------
 
 def ledger_path() -> Path:
-    return get_hermes_home() / "skills" / ".curator_ledger.jsonl"
+    return get_reign_home() / "skills" / ".curator_ledger.jsonl"
 
 
 def blobs_dir() -> Path:
-    return get_hermes_home() / ".curator_backups" / "blobs"
+    return get_reign_home() / ".curator_backups" / "blobs"
 
 
 def ledger_enabled() -> bool:
     """Config gate ``skills.ledger`` (default True). Lazy import so this
     module stays importable without the CLI config layer."""
     try:
-        from hermes_cli.config import cfg_get, load_config
+        from reign_cli.config import cfg_get, load_config
 
         return bool(cfg_get(load_config(), "skills", "ledger", default=True))
     except Exception as e:  # pragma: no cover — best-effort config read
@@ -190,7 +190,7 @@ def snapshot_paths(
 # ---------------------------------------------------------------------------
 
 def _skills_dir() -> Path:
-    return get_hermes_home() / "skills"
+    return get_reign_home() / "skills"
 
 
 def _package_rel(root: Path) -> Optional[str]:
@@ -322,7 +322,7 @@ def fill_snapshot_from_curator_backup(
     live tree), else under the live skills dir. Backup members carry a
     leading package-dir segment (arcname = top-level dir name); it is
     stripped when *root* already names the package. Every fill target must
-    stay under ``skills/`` and HERMES_HOME.
+    stay under ``skills/`` and REIGN_HOME.
     """
     out = list(existing or [])
     prefixes = package_prefixes(root, skill, out)
@@ -359,7 +359,7 @@ def fill_snapshot_from_curator_backup(
             continue
         base = dest_root if dest_root is not None else skills
         dest = base.joinpath(*parts)
-        if not _is_within(skills, dest) or not _is_within(get_hermes_home(), dest):
+        if not _is_within(skills, dest) or not _is_within(get_reign_home(), dest):
             continue
         try:
             rel_key = (
@@ -531,9 +531,9 @@ def _is_within(root: Path, path: Path) -> bool:
 
 
 def _validate_entry_paths(entry: Dict[str, Any]) -> Optional[str]:
-    """All paths in an entry must live under HERMES_HOME. Defense in depth —
+    """All paths in an entry must live under REIGN_HOME. Defense in depth —
     a hand-edited ledger must not become a write-anywhere primitive."""
-    home = get_hermes_home()
+    home = get_reign_home()
     for section in ("before", "after"):
         for item in entry.get(section) or []:
             p = Path(str(item.get("path", "")))
@@ -567,7 +567,7 @@ def rollback_entry(entry_id: str) -> Tuple[bool, str]:
     # (``files: 1`` = SKILL.md). Fill the before-state from the newest
     # curator backup so the rollback restores the complete package, not a
     # shell. Disk hashes already in the entry win; this only adds missing
-    # paths. The filled set is re-validated against HERMES_HOME below.
+    # paths. The filled set is re-validated against REIGN_HOME below.
     if entry.get("action") in _PACKAGE_RESTORE_ACTIONS:
         skill_root: Optional[Path] = None
         for item in before:

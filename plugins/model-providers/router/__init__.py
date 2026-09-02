@@ -1,4 +1,4 @@
-"""Ramp Router (router.com) provider plugin for Hermes Agent.
+"""Ramp Router (router.com) provider plugin for Reign.
 
 Provider profile for `Ramp Router <https://docs.router.com>`_, Ramp's LLM
 gateway: one OpenAI Responses-compatible endpoint at
@@ -14,7 +14,7 @@ Wire notes (verified live against api.router.com, Aug 2026):
   Responses. Per-model reasoning-effort validation, reasoning summaries,
   and prompt caching are Responses-surface features, so
   ``api_mode="codex_responses"`` plus the ``api.router.com`` host mandate
-  in ``hermes_cli/providers.py`` keep every path on the native wire —
+  in ``reign_cli/providers.py`` keep every path on the native wire —
   the same shape as the ``api.openai.com`` mandate.
 * **Account-scoped catalog.** Valid model IDs are whatever the key's
   ``GET /v1/models`` returns (BYOK accounts see extra entries), so this
@@ -36,7 +36,7 @@ Wire notes (verified live against api.router.com, Aug 2026):
   Responses transport path needs no Router-specific request surgery.
 
 The capability cache mirrors the OpenRouter reasoning-caps design in
-``hermes_cli/models.py``: cache-only lookups on the per-request hot path
+``reign_cli/models.py``: cache-only lookups on the per-request hot path
 (never HTTP), seeded for free whenever ``fetch_models()`` runs (picker,
 setup, doctor), hydrated from a disk mirror across processes, and refreshed
 by a background warmer when cold or stale.
@@ -52,7 +52,7 @@ import time
 from pathlib import Path
 from typing import Any, Optional
 
-from hermes_cli import __version__ as _HERMES_VERSION
+from reign_cli import __version__ as _REIGN_VERSION
 from providers import register_provider
 from providers.base import ProviderProfile, _profile_user_agent
 
@@ -86,12 +86,12 @@ def _resolve_api_key() -> str:
 
     ``RAMP_ROUTER_API_KEY`` is Router's documented variable;
     ``ROUTER_API_KEY`` is accepted as a convenience alias. Falls back to the
-    raw environment when the hermes_cli helper is unavailable (e.g. stripped
+    raw environment when the reign_cli helper is unavailable (e.g. stripped
     test environments).
     """
     resolvers = []
     try:
-        from hermes_cli.config import get_env_value_prefer_dotenv
+        from reign_cli.config import get_env_value_prefer_dotenv
 
         resolvers.append(get_env_value_prefer_dotenv)
     except Exception:
@@ -170,9 +170,9 @@ def _parse_efforts(items: Any) -> Optional[dict[str, list[str]]]:
 
 def _disk_path() -> Optional[Path]:
     try:
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        return get_hermes_home() / "cache" / "router_catalog.json"
+        return get_reign_home() / "cache" / "router_catalog.json"
     except Exception:
         return None
 
@@ -235,7 +235,7 @@ def _fetch_catalog_items(
     url = (base_url or _base_url()).rstrip("/") + "/models"
     import urllib.request
 
-    from hermes_cli.urllib_security import open_credentialed_url
+    from reign_cli.urllib_security import open_credentialed_url
 
     req = urllib.request.Request(url)
     key = api_key or _resolve_api_key()
@@ -280,7 +280,7 @@ def _warm_efforts_async() -> None:
     """Refresh the efforts cache in the background, at most once per process."""
     global _warm_started
     if os.environ.get("PYTEST_CURRENT_TEST"):
-        # Match the canonical caps warmer (hermes_cli/models.py): a mid-suite
+        # Match the canonical caps warmer (reign_cli/models.py): a mid-suite
         # background fetch would make cache state timing-dependent in tests.
         return
     with _efforts_lock:
@@ -375,10 +375,10 @@ router = RouterProfile(
     env_vars=("RAMP_ROUTER_API_KEY", "ROUTER_API_KEY", "RAMP_ROUTER_BASE_URL"),
     base_url=_base_url(),
     auth_type="api_key",
-    # Identify Hermes traffic to the gateway (Router attributes coding-agent
+    # Identify Reign traffic to the gateway (Router attributes coding-agent
     # clients by User-Agent prefix, the way it already recognizes OpenCode's
     # versioned UA) — and Router's WAF rejects blank/default client UAs.
-    default_headers={"User-Agent": f"Hermes-Agent/{_HERMES_VERSION}"},
+    default_headers={"User-Agent": f"Reign/{_REIGN_VERSION}"},
     # Most of the catalog's frontier routes accept image input; capability is
     # still model-dependent and governed by the live catalog.
     supports_vision=True,

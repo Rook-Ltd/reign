@@ -12,8 +12,8 @@ video generation provider. Mirrors the ``image_generate`` design:
 - Each provider lives under ``plugins/video_gen/<name>/``.
 
 The tool itself is intentionally backend-agnostic and ships **no in-tree
-provider** — turn on a backend by enabling a plugin (``hermes plugins
-enable video_gen/<name>``) and selecting it in ``hermes tools`` → Video
+provider** — turn on a backend by enabling a plugin (``reign plugins
+enable video_gen/<name>``) and selecting it in ``reign tools`` → Video
 Generation.
 
 Unified surface
@@ -122,7 +122,7 @@ VIDEO_GENERATE_SCHEMA: Dict[str, Any] = {
 
 def _read_video_gen_section() -> Dict[str, Any]:
     try:
-        from hermes_cli.config import load_config
+        from reign_cli.config import load_config
 
         cfg = load_config()
         section = cfg.get("video_gen") if isinstance(cfg, dict) else None
@@ -159,7 +159,7 @@ def check_video_generation_requirements() -> bool:
     """
     try:
         from agent.video_gen_registry import list_providers
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from reign_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         for provider in list_providers():
@@ -186,7 +186,7 @@ def _resolve_active_provider():
     """
     try:
         from agent.video_gen_registry import get_active_provider
-        from hermes_cli.plugins import _ensure_plugins_discovered
+        from reign_cli.plugins import _ensure_plugins_discovered
 
         _ensure_plugins_discovered()
         provider = get_active_provider()
@@ -203,8 +203,8 @@ def _missing_provider_error(configured: Optional[str]) -> str:
     if configured:
         msg = (
             f"video_gen.provider='{configured}' is set but no plugin "
-            f"registered that name. Run `hermes plugins list` to see "
-            f"installed video gen backends, or `hermes tools` → Video "
+            f"registered that name. Run `reign plugins list` to see "
+            f"installed video gen backends, or `reign tools` → Video "
             f"Generation to pick one."
         )
         return json.dumps(error_response(
@@ -212,7 +212,7 @@ def _missing_provider_error(configured: Optional[str]) -> str:
             provider=configured,
         ))
     msg = (
-        "No video generation backend is configured. Run `hermes tools` → "
+        "No video generation backend is configured. Run `reign tools` → "
         "Video Generation to enable one (xAI, FAL, or Google Veo)."
     )
     return json.dumps(error_response(
@@ -381,7 +381,7 @@ def _handle_video_generate(args: Dict[str, Any], **_kw: Any) -> str:
 #
 # Memoization: model_tools.get_tool_definitions() keys its cache on
 # config.yaml mtime, so when the user changes provider/model via
-# `hermes tools` or `/skills`, the schema rebuilds automatically.
+# `reign tools` or `/skills`, the schema rebuilds automatically.
 
 
 _GENERIC_DESCRIPTION = (
@@ -391,7 +391,7 @@ _GENERIC_DESCRIPTION = (
     "reference-to-video. Video edit/extend workflows are not part of this "
     "unified surface; use a dedicated provider-specific tool when one is "
     "available. The backend and model family are user-configured via "
-    "`hermes tools` → Video Generation; the agent does not pick them. "
+    "`reign tools` → Video Generation; the agent does not pick them. "
     "Long-running generations may take 30 seconds to several minutes — "
     "the call blocks until the video is ready. Returns the result in the "
     "`video` field — either an HTTP URL or an absolute file path. To show "
@@ -448,7 +448,7 @@ def _build_dynamic_video_schema() -> Dict[str, Any]:
     if provider is None:
         parts.append(
             "\nNo video backend is available. Calls will return an error "
-            "until the user picks one via `hermes tools` → Video Generation."
+            "until the user picks one via `reign tools` → Video Generation."
         )
         return {
             "description": "\n".join(parts),

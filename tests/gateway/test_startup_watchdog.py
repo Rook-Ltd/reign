@@ -2,7 +2,7 @@
 
 The watchdog covers the pre-event-loop window: armed at process entry
 (before the gateway package imports — the implementation is the stdlib-only
-top-level module ``hermes_startup_watchdog``; ``gateway.startup_watchdog``
+top-level module ``reign_startup_watchdog``; ``gateway.startup_watchdog``
 is a re-export shim), disarmed once the gateway's asyncio loop is confirmed
 live. If neither happens within the deadline — and the process shows no CPU
 progress, so slow-but-alive schema migrations are exempt — it must dump
@@ -20,8 +20,8 @@ from pathlib import Path
 
 import pytest
 
-import hermes_startup_watchdog as sw
-from hermes_startup_watchdog import (
+import reign_startup_watchdog as sw
+from reign_startup_watchdog import (
     SERVICE_RESTART_EXIT_CODE,
     StartupWatchdogHandle,
     arm_startup_watchdog,
@@ -36,8 +36,8 @@ from hermes_startup_watchdog import (
 
 @pytest.fixture(autouse=True)
 def _isolate(tmp_path, monkeypatch):
-    """Every test gets a fresh singleton and its own HERMES_HOME."""
-    monkeypatch.setenv("HERMES_HOME", str(tmp_path))
+    """Every test gets a fresh singleton and its own REIGN_HOME."""
+    monkeypatch.setenv("REIGN_HOME", str(tmp_path))
     monkeypatch.delenv(sw.ENV_STARTUP_WATCHDOG, raising=False)
     monkeypatch.delenv(sw.ENV_STARTUP_WATCHDOG_TIMEOUT_S, raising=False)
     sw._reset_for_tests()
@@ -94,7 +94,7 @@ class TestContracts:
     def test_implementation_module_is_stdlib_only(self):
         """Import-lightness is a correctness property (arm-before-imports,
         no import-lock dependence at fire time): the implementation module
-        must not import the gateway/agent/hermes_cli graphs at module level."""
+        must not import the gateway/agent/reign_cli graphs at module level."""
         import ast
         import inspect
 
@@ -103,9 +103,9 @@ class TestContracts:
         forbidden_roots = {
             "gateway",
             "agent",
-            "hermes_cli",
-            "hermes_state",
-            "hermes_constants",
+            "reign_cli",
+            "reign_state",
+            "reign_constants",
             "tools",
             "plugins",
         }
@@ -137,8 +137,8 @@ class TestContracts:
         repo_root = Path(__file__).resolve().parents[2]
         arm_sites = {
             # (file, reason) — each must contain an arm_startup_watchdog call
-            "hermes_cli/main.py": "argv fast-path (standard `hermes gateway run`)",
-            "hermes_cli/gateway.py": "run_gateway() config-bridge re-arm",
+            "reign_cli/main.py": "argv fast-path (standard `reign gateway run`)",
+            "reign_cli/gateway.py": "run_gateway() config-bridge re-arm",
             "gateway/run.py": "gateway.run.main() backstop arm",
             "cli.py": "legacy `--gateway` entry point",
         }
@@ -148,11 +148,11 @@ class TestContracts:
             source = path.read_text()
             tree = ast.parse(source)
             # Collect both direct calls and aliased imports (main.py uses
-            # `from hermes_startup_watchdog import arm_startup_watchdog as _arm_sw`
+            # `from reign_startup_watchdog import arm_startup_watchdog as _arm_sw`
             # then calls `_arm_sw()` to keep the fast-path import-light).
             aliases = set()
             for node in ast.walk(tree):
-                if isinstance(node, ast.ImportFrom) and node.module == "hermes_startup_watchdog":
+                if isinstance(node, ast.ImportFrom) and node.module == "reign_startup_watchdog":
                     for alias in node.names:
                         if alias.name == "arm_startup_watchdog":
                             aliases.add(alias.asname or "arm_startup_watchdog")
@@ -446,22 +446,22 @@ class TestProgressLease:
         assert record["last_lease_phase"] == "brief_phase"
 
     def test_schema_init_declares_lease(self):
-        """hermes_state_schema._init_schema must hold a progress lease so
+        """reign_state_schema._init_schema must hold a progress lease so
         multi-GB migrations aren't misread as deadlocks (wiring contract)."""
         import inspect
 
-        import hermes_state_schema
+        import reign_state_schema
 
-        src = inspect.getsource(hermes_state_schema.SessionSchemaMixin._init_schema)
+        src = inspect.getsource(reign_state_schema.SessionSchemaMixin._init_schema)
         assert "report_startup_progress" in src
 
     def test_repair_declares_lease(self):
         """repair_state_db_schema (I/O-bound, ~zero CPU) must hold a lease."""
         import inspect
 
-        import hermes_state
+        import reign_state
 
-        src = inspect.getsource(hermes_state.repair_state_db_schema)
+        src = inspect.getsource(reign_state.repair_state_db_schema)
         assert "report_startup_progress" in src
 
 

@@ -106,7 +106,7 @@ def _gateway_room_grant_secret_for_home(home_value: str) -> bytes:
             temporary.unlink(missing_ok=True)
     return hmac.new(
         material,
-        b"hermes-hosted-room-installation-grant-v1",
+        b"reign-hosted-room-installation-grant-v1",
         hashlib.sha256,
     ).digest()
 
@@ -121,11 +121,11 @@ def gateway_room_grant_secret(root: Path | str | None = None) -> bytes:
     """
 
     if root is None:
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        # Profile routing uses a context-local HERMES_HOME override. The process
+        # Profile routing uses a context-local REIGN_HOME override. The process
         # environment retains the installation root and is the authority here.
-        root = os.environ.get("HERMES_HOME") or get_hermes_home()
+        root = os.environ.get("REIGN_HOME") or get_reign_home()
     home = Path(root).expanduser().resolve()
     return _gateway_room_grant_secret_for_home(str(home))
 
@@ -140,7 +140,7 @@ def derive_room_grant_secret(api_key: str) -> bytes:
         raise HostedRoomGrantError("room grants require a strong gateway API key")
     return hmac.new(
         api_key.encode("utf-8"),
-        b"hermes-hosted-room-grant-v1",
+        b"reign-hosted-room-grant-v1",
         hashlib.sha256,
     ).digest()
 
@@ -365,13 +365,13 @@ def catalog_mapping(
     # A Desktop-managed gateway exits with the app.  Treat the caller's flag
     # as an upper bound so every local catalog construction site stays honest,
     # including older call sites that still pass ``True`` explicitly.
-    persistent_process = bool(persistent_process and os.getenv("HERMES_DESKTOP") != "1")
+    persistent_process = bool(persistent_process and os.getenv("REIGN_DESKTOP") != "1")
     checked_policy = RoomExecutionPolicy.from_mapping(
         execution_policy
         or execution_policy_mapping(
             target_profile=(
                 str(target_profile or "").strip()
-                or (os.getenv("HERMES_PROFILE") or "default").strip()
+                or (os.getenv("REIGN_PROFILE") or "default").strip()
                 or "default"
             )
         )
@@ -449,31 +449,31 @@ def local_room_link_endpoint(value: Any | None = None) -> dict[str, Any]:
 def _room_link_url_from_config(home: str) -> str | None:
     """Read the restart-scoped user setting without polling config on probes."""
     from gateway.config import load_gateway_config
-    from hermes_constants import (
-        get_hermes_home,
-        reset_hermes_home_override,
-        set_hermes_home_override,
+    from reign_constants import (
+        get_reign_home,
+        reset_reign_home_override,
+        set_reign_home_override,
     )
 
-    if str(get_hermes_home()) == home:
+    if str(get_reign_home()) == home:
         value = load_gateway_config().room_link_url
     else:
-        token = set_hermes_home_override(home)
+        token = set_reign_home_override(home)
         try:
             value = load_gateway_config().room_link_url
         finally:
-            reset_hermes_home_override(token)
+            reset_reign_home_override(token)
     return value.strip() if isinstance(value, str) and value.strip() else None
 
 
 def _configured_room_link_url() -> str | None:
     """Resolve the explicit endpoint with environment override precedence."""
-    override = os.getenv("HERMES_ROOM_LINK_URL")
+    override = os.getenv("REIGN_ROOM_LINK_URL")
     if override is not None:
         return override
-    from hermes_constants import get_default_hermes_root, get_hermes_home
+    from reign_constants import get_default_reign_root, get_reign_home
 
-    home = get_hermes_home()
+    home = get_reign_home()
     configured = _room_link_url_from_config(str(home))
     if configured:
         return configured
@@ -482,7 +482,7 @@ def _configured_room_link_url() -> str | None:
     # setting. Named profiles may override it, but otherwise inherit the
     # process gateway's root endpoint so adding a Bot does not require
     # repeating network configuration in every profile.
-    root = get_default_hermes_root()
+    root = get_default_reign_root()
     if root != home:
         return _room_link_url_from_config(str(root))
     return None

@@ -9,7 +9,7 @@ and a trust-aware install policy that determines whether a skill is allowed
 based on both the scan verdict and the source's trust level.
 
 Trust levels:
-  - builtin:   Ships with Hermes. Never scanned, always trusted.
+  - builtin:   Ships with Reign. Never scanned, always trusted.
   - trusted:   openai/skills and anthropics/skills only. Caution verdicts allowed.
   - community: Everything else. Any findings = blocked unless --force.
 
@@ -125,7 +125,7 @@ MODIFY_VERB_RE = (
 
 # Config-file groups shared by the agent-config persistence tiers below.
 _AGENT_CONFIG_FILES = r'(?:AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules)'
-_HERMES_CONFIG_FILES = r'\.hermes/(?:config\.yaml|SOUL\.md)'
+_REIGN_CONFIG_FILES = r'\.reign/(?:config\.yaml|SOUL\.md)'
 # Path prefixes (real files are e.g. .claude/settings.json), so consume any
 # trailing filename characters rather than requiring a clean end-of-word.
 _OTHER_AGENT_CONFIG_FILES = r'\.(?:claude/settings|codex/config)[\w.]*'
@@ -229,9 +229,9 @@ THREAT_PATTERNS = [
     (r'\$HOME/\.docker|\~/\.docker',
      "docker_dir_access", "high", "exfiltration",
      "references Docker config (may contain registry creds)"),
-    (r'\$HOME/\.hermes/\.env|\~/\.hermes/\.env',
-     "hermes_env_access", "critical", "exfiltration",
-     "directly references Hermes secrets file"),
+    (r'\$HOME/\.reign/\.env|\~/\.reign/\.env',
+     "reign_env_access", "critical", "exfiltration",
+     "directly references Reign secrets file"),
     # Match `cat <secrets-file>` (reading credentials) but NOT `cat > <file>`
     # or `cat >> <file>`, which are output redirections that WRITE a file
     # (e.g. a setup doc telling the user to write their own keys into their
@@ -576,7 +576,7 @@ THREAT_PATTERNS = [
     #     For AGENT config files (AGENTS.md/CLAUDE.md/...) this is critical:
     #     that sentence shape is exactly how persistence attacks instruct
     #     the agent, and project-skill quarantine only acts on "dangerous".
-    #     For Hermes/other config files it is high (caution) — legitimate
+    #     For Reign/other config files it is high (caution) — legitimate
     #     setup docs routinely instruct users to edit config.yaml.
     #   * Bare references are informational (low) for auditability.
     (_prose_modify_re(_AGENT_CONFIG_FILES),
@@ -591,15 +591,15 @@ THREAT_PATTERNS = [
     (r'AGENTS\.md|CLAUDE\.md|\.cursorrules|\.clinerules',
      "agent_config_ref", "low", "persistence",
      "references agent config files (informational; only modification intent is scored)"),
-    (_prose_modify_re(_HERMES_CONFIG_FILES),
-     "hermes_config_mod", "high", "persistence",
-     "modification language aimed at Hermes configuration files (verify intent)"),
-    (_shell_write_re(_HERMES_CONFIG_FILES),
-     "hermes_config_mod_shell", "critical", "persistence",
-     "shell write (redirect/sed -i/tee/cp/mv) targeting Hermes configuration files"),
-    (r'\.hermes/config\.yaml|\.hermes/SOUL\.md',
-     "hermes_config_ref", "low", "persistence",
-     "references Hermes configuration files (informational; only modification intent is scored)"),
+    (_prose_modify_re(_REIGN_CONFIG_FILES),
+     "reign_config_mod", "high", "persistence",
+     "modification language aimed at Reign configuration files (verify intent)"),
+    (_shell_write_re(_REIGN_CONFIG_FILES),
+     "reign_config_mod_shell", "critical", "persistence",
+     "shell write (redirect/sed -i/tee/cp/mv) targeting Reign configuration files"),
+    (r'\.reign/config\.yaml|\.reign/SOUL\.md',
+     "reign_config_ref", "low", "persistence",
+     "references Reign configuration files (informational; only modification intent is scored)"),
     (_prose_modify_re(_OTHER_AGENT_CONFIG_FILES),
      "other_agent_config_mod", "high", "persistence",
      "modifies other agents' configuration files"),
@@ -1227,7 +1227,7 @@ def _unicode_char_name(char: str) -> str:
 # ---------------------------------------------------------------------------
 
 # Ignore-file names a skill may ship to exclude dev/docs artifacts from the
-# scan. `.skillignore` is the Hermes-native name; `.clawhubignore` is honored
+# scan. `.skillignore` is the Reign-native name; `.clawhubignore` is honored
 # for compatibility with skills published through ClawHub.
 _SKILL_IGNORE_FILENAMES = (".skillignore", ".clawhubignore")
 

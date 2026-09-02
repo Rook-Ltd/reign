@@ -1,1 +1,1 @@
-# Hermes plugins package
+# Reign plugins package

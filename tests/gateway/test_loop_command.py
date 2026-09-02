@@ -10,7 +10,7 @@ from gateway.config import GatewayConfig, Platform, PlatformConfig
 from gateway.platforms.base import MessageEvent, MessageType
 from gateway.run import GatewayRunner
 from gateway.session import SessionSource
-from hermes_cli import goals, loops
+from reign_cli import goals, loops
 
 
 class _FakeSessionEntry:
@@ -30,9 +30,9 @@ class _FakeSessionStore:
 
 @pytest.fixture
 def loop_env(tmp_path, monkeypatch):
-    home = tmp_path / ".hermes"
+    home = tmp_path / ".reign"
     home.mkdir()
-    monkeypatch.setenv("HERMES_HOME", str(home))
+    monkeypatch.setenv("REIGN_HOME", str(home))
     goals._DB_CACHE.clear()
     # Pre-warm the SessionDB cache from this sync (non-loop) context. Inside
     # the async tests, a cold cache makes GoalManager.set() kick the bounded
@@ -103,7 +103,7 @@ async def test_gateway_loop_status_pause_stop(loop_env):
 
 @pytest.mark.asyncio
 async def test_gateway_loop_goal_note_when_goal_active(loop_env):
-    from hermes_cli.goals import GoalManager
+    from reign_cli.goals import GoalManager
 
     GoalManager(session_id="sid-gateway-loop").set("finish the migration")
     runner = _make_runner()

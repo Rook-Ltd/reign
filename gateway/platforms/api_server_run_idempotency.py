@@ -34,9 +34,9 @@ class RunIdempotencyStore:
     def __init__(self, db_path: str = None):
         if db_path is None:
             try:
-                from hermes_cli.config import get_hermes_home
+                from reign_cli.config import get_reign_home
 
-                db_path = str(get_hermes_home() / "runs_idempotency.db")
+                db_path = str(get_reign_home() / "runs_idempotency.db")
             except Exception:
                 db_path = ":memory:"
         self._db_path = None if db_path == ":memory:" else db_path
@@ -50,7 +50,7 @@ class RunIdempotencyStore:
             )
             self._conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._db_path = None
-        from hermes_state import apply_wal_with_fallback
+        from reign_state import apply_wal_with_fallback
 
         apply_wal_with_fallback(self._conn, db_label="runs_idempotency.db")
         self._conn.execute(

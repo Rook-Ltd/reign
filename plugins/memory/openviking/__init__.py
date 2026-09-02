@@ -52,7 +52,7 @@ from urllib.request import url2pathname
 from agent.message_content import flatten_message_text
 from agent.memory_provider import MemoryProvider
 from agent.skill_commands import extract_user_instruction_from_skill_message
-from hermes_cli import __version__ as _HERMES_VERSION
+from reign_cli import __version__ as _REIGN_VERSION
 from tools.registry import tool_error
 from utils import atomic_json_write, env_var_enabled
 
@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 _DEFAULT_ENDPOINT = "http://127.0.0.1:1933"
 _OPENVIKING_SERVICE_ENDPOINT = "https://api.vikingdb.cn-beijing.volces.com/openviking"
 _DEFAULT_AGENT = ""
-_OPENVIKING_USER_AGENT = f"openviking-memory-hermes/{_HERMES_VERSION}"
+_OPENVIKING_USER_AGENT = f"openviking-memory-reign/{_REIGN_VERSION}"
 _OVCLI_CONFIG_ENV = "OPENVIKING_CLI_CONFIG_FILE"
 _OVCLI_DEFAULT_RELATIVE_PATH = ".openviking/ovcli.conf"
 _OVCLI_SAVED_PREFIX = "ovcli.conf."
@@ -82,7 +82,7 @@ _SESSION_DRAIN_TIMEOUT = 10.0
 _DEFERRED_COMMIT_TIMEOUT = (_TIMEOUT * 2) + 5.0
 _SESSION_MESSAGE_BATCH_LIMIT = 100
 _REMOTE_RESOURCE_PREFIXES = ("http://", "https://", "git@", "ssh://", "git://")
-_SYNC_TRACE_ENV = "HERMES_OPENVIKING_SYNC_TRACE"
+_SYNC_TRACE_ENV = "REIGN_OPENVIKING_SYNC_TRACE"
 _DEFAULT_RECALL_LIMIT = 6
 _DEFAULT_RECALL_SCORE_THRESHOLD = 0.15
 _DEFAULT_RECALL_MAX_INJECTED_CHARS = 4000
@@ -244,7 +244,7 @@ def _format_openviking_exception(error: Exception) -> str:
 
 
 def _derive_openviking_user_text(content: Any) -> str:
-    """Strip Hermes slash-skill scaffolding before sending content to OpenViking.
+    """Strip Reign slash-skill scaffolding before sending content to OpenViking.
 
     Defense-in-depth: MemoryManager already strips skill scaffolding for the
     whole provider fan-out (see ``MemoryManager._strip_skill_scaffolding``), so
@@ -958,7 +958,7 @@ def _normalize_openviking_url(url: str) -> str:
     # Local / LAN self-host remains allowed; reject cloud-metadata and other
     # always-blocked floors so a poisoned endpoint cannot SSRF via memory sync.
     # Never silently replace an explicitly unsafe endpoint with localhost: that
-    # could attach Hermes to an unrelated deployment and forward credentials to
+    # could attach Reign to an unrelated deployment and forward credentials to
     # a destination the user did not configure.
     try:
         check_url = candidate
@@ -972,7 +972,7 @@ def _normalize_openviking_url(url: str) -> str:
     except Exception as exc:
         logger.debug("OpenViking endpoint safety validation failed", exc_info=True)
         raise _OpenVikingEndpointError(
-            "OpenViking endpoint safety validation failed; Hermes refused the connection."
+            "OpenViking endpoint safety validation failed; Reign refused the connection."
         ) from exc
 
     return candidate
@@ -1125,9 +1125,9 @@ def _is_local_openviking_url(value: str) -> bool:
     return scheme == "http" and (parsed.hostname or "").lower() in _LOCAL_OPENVIKING_HOSTS
 
 
-def _load_hermes_openviking_config() -> dict:
+def _load_reign_openviking_config() -> dict:
     try:
-        from hermes_cli.config import load_config_readonly
+        from reign_cli.config import load_config_readonly
 
         config = load_config_readonly()
         memory_config = config.get("memory", {}) if isinstance(config, dict) else {}
@@ -1479,10 +1479,10 @@ def _local_openviking_bind(endpoint: str) -> tuple[str, int]:
 
 def _openviking_server_log_path() -> Path:
     try:
-        from hermes_constants import get_hermes_home
-        home = get_hermes_home()
+        from reign_constants import get_reign_home
+        home = get_reign_home()
     except Exception:
-        home = Path(os.environ.get("HERMES_HOME", "")).expanduser() if os.environ.get("HERMES_HOME") else Path.home() / ".hermes"
+        home = Path(os.environ.get("REIGN_HOME", "")).expanduser() if os.environ.get("REIGN_HOME") else Path.home() / ".reign"
     return home / _OPENVIKING_SERVER_LOG_RELATIVE_PATH
 
 
@@ -1567,7 +1567,7 @@ def _start_local_openviking_server(endpoint: str) -> tuple[str, str]:
         listener = _describe_local_port_listener(host, port)
         return (
             _LOCAL_SERVER_OCCUPIED,
-            f"Port {host}:{port} is occupied by {listener}. Hermes did not start "
+            f"Port {host}:{port} is occupied by {listener}. Reign did not start "
             "openviking-server because the listener has not passed OpenViking's /health check.",
         )
     server_cmd = shutil.which("openviking-server")
@@ -1580,13 +1580,13 @@ def _start_local_openviking_server(endpoint: str) -> tuple[str, str]:
     try:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         # Do not let the server child inherit this process's PYTHONPATH.
-        # The Hermes Desktop backend can include the Hermes venv's
+        # The Reign Desktop backend can include the Reign venv's
         # site-packages in PYTHONPATH. If inherited, openviking-server would
-        # import aiohttp and friends from the Hermes venv instead of its own
+        # import aiohttp and friends from the Reign venv instead of its own
         # (its venv's site-packages are shadowed because PYTHONPATH precedes
         # them) —
-        # and on Windows the loaded DLLs then lock the Hermes venv,
-        # aborting `hermes update` with access-denied on .pyd files.
+        # and on Windows the loaded DLLs then lock the Reign venv,
+        # aborting `reign update` with access-denied on .pyd files.
         # Strip PYTHONPATH so the server resolves packages from its own
         # venv. (#78153)
         child_env = os.environ.copy()
@@ -1702,7 +1702,7 @@ def _runtime_openviking_timeout_message(endpoint: str) -> str:
         f"Local OpenViking server at {endpoint} is not reachable. "
         "Tried to start openviking-server, but it did not become reachable "
         f"within {_LOCAL_OPENVIKING_AUTOSTART_TIMEOUT:.0f} seconds. "
-        "OpenViking memory is temporarily unavailable; Hermes will retry on a later access or when "
+        "OpenViking memory is temporarily unavailable; Reign will retry on a later access or when "
         "the config changes."
     )
 
@@ -2032,7 +2032,7 @@ def _link_ovcli_profile(
         os.environ.pop(key, None)
 
 
-def _save_hermes_only_config(
+def _save_reign_only_config(
     *,
     config: dict,
     provider_config: dict,
@@ -2079,7 +2079,7 @@ def _print_openviking_ready(message: str, path: Optional[Path] = None) -> None:
     print(f"  {message}")
     if path is not None:
         print(f"  Config file: {path}")
-    print("  Start a new Hermes session to activate.\n")
+    print("  Start a new Reign session to activate.\n")
 
 
 def _run_existing_profile_setup(
@@ -2197,7 +2197,7 @@ def _run_create_profile_setup(
     save_choice = select(
         "  Save OpenViking config",
         [
-            ("Keep in Hermes only", "write values only to Hermes .env"),
+            ("Keep in Reign only", "write values only to Reign .env"),
             ("Mirror to OpenViking store", "write ~/.openviking/ovcli.conf.<name> and link it"),
         ],
         default=1,
@@ -2224,13 +2224,13 @@ def _run_create_profile_setup(
         _print_openviking_ready("Created and linked OpenViking profile.", ovcli_path)
         return True
 
-    _save_hermes_only_config(
+    _save_reign_only_config(
         config=config,
         provider_config=provider_config,
         env_path=env_path,
         values=values,
     )
-    _print_openviking_ready("Connection saved to Hermes .env.")
+    _print_openviking_ready("Connection saved to Reign .env.")
     return True
 
 
@@ -2269,7 +2269,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         # credentials, and identity on this provider instance — a different
         # snapshot invalidates the cache automatically.
         self._user_space_cache: Optional[tuple[Any, str]] = None
-        self._hermes_home = ""
+        self._reign_home = ""
         self._run_id = uuid.uuid4().hex
         self._run_lock_file: Optional[Any] = None
         self._run_lock_path: Optional[Path] = None
@@ -2282,7 +2282,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         # MemoryManager's background sync executor while on_session_end /
         # on_session_switch run on the caller's thread, so the snapshot+reset
         # of the turn counter and the session-id rotation must be atomic
-        # against a concurrent increment. See hermes-agent#28296 review.
+        # against a concurrent increment. See reign#28296 review.
         self._session_state_lock = threading.Lock()
         # Commit only after session writes drain. The set is keyed by the sid
         # the writer is POSTing under (snapshotted at spawn), so on_session_end
@@ -2327,7 +2327,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         """Check if OpenViking endpoint is configured. No network calls."""
         if os.environ.get("OPENVIKING_ENDPOINT"):
             return True
-        provider_config = _load_hermes_openviking_config()
+        provider_config = _load_reign_openviking_config()
         # A non-secret endpoint saved to config.yaml (e.g. via the Dashboard)
         # counts as configured even without an env var or ovcli config.
         if _clean_config_value(provider_config.get("endpoint")):
@@ -2459,7 +2459,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
             },
         ]
 
-    def save_config(self, values: Dict[str, Any], hermes_home: str) -> None:
+    def save_config(self, values: Dict[str, Any], reign_home: str) -> None:
         """Validate and persist Dashboard configuration for the active profile."""
         normalized = dict(values or {})
         normalized.pop("api_key", None)
@@ -2468,7 +2468,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         if endpoint:
             normalized["endpoint"] = _normalize_openviking_url(endpoint)
 
-        from hermes_cli.config import load_config, save_config
+        from reign_cli.config import load_config, save_config
 
         config = load_config()
         memory_config = config.get("memory")
@@ -2517,13 +2517,13 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 display[key] = "(set)"
         return display
 
-    def post_setup(self, hermes_home: str, config: dict) -> None:
+    def post_setup(self, reign_home: str, config: dict) -> None:
         """Custom setup that can reuse OpenViking's shared CLI config."""
-        from hermes_cli.config import save_config
-        from hermes_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
+        from reign_cli.config import save_config
+        from reign_cli.memory_setup import _CANCELLED, _curses_select, _print_cancelled_setup, _prompt
 
-        hermes_home_path = Path(hermes_home)
-        env_path = hermes_home_path / ".env"
+        reign_home_path = Path(reign_home)
+        env_path = reign_home_path / ".env"
         if not isinstance(config.get("memory"), dict):
             config["memory"] = {}
         provider_config = config["memory"].get("openviking", {})
@@ -2644,7 +2644,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 if not healthy:
                     warning_message = (
                         f"OpenViking server at {endpoint} is still not reachable after auto-start. "
-                        "OpenViking memory is temporarily unavailable; Hermes will retry on a later access or when "
+                        "OpenViking memory is temporarily unavailable; Reign will retry on a later access or when "
                         "the config changes."
                     )
                 else:
@@ -2663,7 +2663,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
             except Exception as e:
                 warning_message = (
                     f"OpenViking server at {endpoint} could not be attached after auto-start: {e}. "
-                    "OpenViking memory is temporarily unavailable; Hermes will retry on a later access or when "
+                    "OpenViking memory is temporarily unavailable; Reign will retry on a later access or when "
                     "the config changes."
                 )
 
@@ -2689,7 +2689,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         if not _is_local_openviking_url(endpoint):
             _emit_runtime_warning(
                 f"Remote OpenViking server at {endpoint} is not reachable. "
-                "OpenViking memory is temporarily unavailable; Hermes will retry on a later access or when "
+                "OpenViking memory is temporarily unavailable; Reign will retry on a later access or when "
                 "the config changes. "
                 "Check the configured endpoint and network connectivity.",
                 warning_callback,
@@ -2715,7 +2715,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 self._runtime_start_pending = False
                 warning_message = (
                     f"Local OpenViking server at {endpoint} is not reachable. {start_message} "
-                    "OpenViking memory is temporarily unavailable; Hermes will retry on a later access or when "
+                    "OpenViking memory is temporarily unavailable; Reign will retry on a later access or when "
                     "the config changes."
                 )
                 self._client = None
@@ -2758,7 +2758,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         )
         connection_error = ""
         try:
-            settings = _resolve_connection_settings(_load_hermes_openviking_config())
+            settings = _resolve_connection_settings(_load_reign_openviking_config())
         except _OpenVikingEndpointError as exc:
             connection_error = str(exc)
             settings = {
@@ -2780,14 +2780,14 @@ class OpenVikingMemoryProvider(MemoryProvider):
         self._env_refresh_enabled = True
         self._session_id = session_id
         self._turn_count = 0
-        hermes_home = str(kwargs.get("hermes_home") or "").strip()
-        if not hermes_home:
+        reign_home = str(kwargs.get("reign_home") or "").strip()
+        if not reign_home:
             try:
-                from hermes_constants import get_hermes_home
-                hermes_home = str(get_hermes_home())
+                from reign_constants import get_reign_home
+                reign_home = str(get_reign_home())
             except Exception:
-                hermes_home = str(Path.home() / ".hermes")
-        self._hermes_home = hermes_home
+                reign_home = str(Path.home() / ".reign")
+        self._reign_home = reign_home
         self._acquire_run_lock()
         self._profile_prefetched_sessions.clear()
 
@@ -2820,7 +2820,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
                 elif health_state != "healthy":
                     _emit_runtime_warning(
                         f"{health_message} OpenViking memory is temporarily unavailable; "
-                        "Hermes will retry on a later access or when the config changes.",
+                        "Reign will retry on a later access or when the config changes.",
                         warning_callback,
                     )
                     self._client = None
@@ -2843,8 +2843,8 @@ class OpenVikingMemoryProvider(MemoryProvider):
 
         ``/reload`` only refreshes ``os.environ`` — the existing provider
         instance is not re-initialized — so OPENVIKING_* values added to
-        ``~/.hermes/.env`` after startup never reach the live client and tools
-        keep running against stale auth until the user restarts hermes (#21130).
+        ``~/.reign/.env`` after startup never reach the live client and tools
+        keep running against stale auth until the user restarts reign (#21130).
 
         Re-resolve the connection settings on each access (same layering as
         ``initialize``) and rebuild + health-check only when a value actually
@@ -2866,7 +2866,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
             return None
 
         try:
-            settings = _resolve_connection_settings(_load_hermes_openviking_config())
+            settings = _resolve_connection_settings(_load_reign_openviking_config())
         except _OpenVikingEndpointError as exc:
             failed_key = ("invalid-endpoint", str(exc))
             failed = self._failed_refresh
@@ -2944,7 +2944,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         self._failed_refresh = (settings_key, time.monotonic())
         if health_state == "responded":
             logger.warning(
-                "%s OpenViking memory is temporarily unavailable; Hermes will retry on a "
+                "%s OpenViking memory is temporarily unavailable; Reign will retry on a "
                 "later access (after cooldown) or when the config changes.",
                 health_message,
             )
@@ -3234,9 +3234,9 @@ class OpenVikingMemoryProvider(MemoryProvider):
             self._committed_session_ids.discard(sid)
 
     def _pending_session_dir(self) -> Optional[Path]:
-        if not self._hermes_home:
+        if not self._reign_home:
             return None
-        return Path(self._hermes_home) / _PENDING_SESSIONS_RELATIVE_DIR
+        return Path(self._reign_home) / _PENDING_SESSIONS_RELATIVE_DIR
 
     def _pending_session_marker_path(self, sid: str) -> Optional[Path]:
         sid = str(sid or "").strip()
@@ -3246,9 +3246,9 @@ class OpenVikingMemoryProvider(MemoryProvider):
         return directory / f"{quote(sid, safe='')}.json"
 
     def _run_lock_dir(self) -> Optional[Path]:
-        if not self._hermes_home:
+        if not self._reign_home:
             return None
-        return Path(self._hermes_home) / _RUN_LOCKS_RELATIVE_DIR
+        return Path(self._reign_home) / _RUN_LOCKS_RELATIVE_DIR
 
     def _run_lock_path_for(self, run_id: str) -> Optional[Path]:
         run_id = str(run_id or "").strip()
@@ -3746,7 +3746,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
     def _recall_config(self) -> Dict[str, Any]:
         # Read from config.yaml → memory.openviking as primary source, env vars
         # as override. Behavioural settings belong in config.yaml (AGENTS.md).
-        provider_config = _load_hermes_openviking_config()
+        provider_config = _load_reign_openviking_config()
         cfg = provider_config
 
         return {
@@ -3799,7 +3799,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         }
 
     def _profile_token_budget(self) -> int:
-        cfg = _load_hermes_openviking_config()
+        cfg = _load_reign_openviking_config()
         return self._setting_int(
             "OPENVIKING_PROFILE_TOKEN_BUDGET",
             cfg.get("profile_token_budget", _DEFAULT_PROFILE_TOKEN_BUDGET),
@@ -4357,7 +4357,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         user_content: str,
         assistant_content: str,
     ) -> List[Dict[str, Any]]:
-        """Slice the completed turn out of Hermes' full canonical transcript."""
+        """Slice the completed turn out of Reign' full canonical transcript."""
         if not messages:
             return []
 
@@ -4476,7 +4476,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         *,
         assistant_peer_id: str = "",
     ) -> List[Dict[str, Any]]:
-        """Convert Hermes canonical messages into OpenViking batch payloads."""
+        """Convert Reign canonical messages into OpenViking batch payloads."""
         assistant_peer_id = str(assistant_peer_id or "").strip()
         tool_calls_by_id: Dict[str, Dict[str, Any]] = {}
         completed_tool_ids: set[str] = set()
@@ -4791,7 +4791,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         ``initialize()`` cached, so subsequent ``sync_turn()`` writes land in
         the already-closed old session and ``on_session_end()`` tries to
         commit it a second time. The new session never accumulates messages,
-        and memory extraction never fires for it. See hermes-agent#28296.
+        and memory extraction never fires for it. See reign#28296.
 
         Flushes any in-flight sync under the old session_id, commits the old
         session if it has pending turns (same extraction semantics as
@@ -5093,7 +5093,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
     ) -> Dict[str, Any]:
         summary_level = level in {"abstract", "overview"}
         # OpenViking expects directory URIs for pseudo summary files
-        # (e.g. viking://user/hermes/.overview.md).
+        # (e.g. viking://user/reign/.overview.md).
         resolved_uri = self._normalize_summary_uri(uri) if summary_level else uri
         used_fallback = False
 
@@ -5262,7 +5262,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         if not client:
             return tool_error("OpenViking server not connected")
 
-        session_id = f"hermes-remember-{uuid.uuid4().hex[:12]}"
+        session_id = f"reign-remember-{uuid.uuid4().hex[:12]}"
         session_uri = _user_scoped_uri(
             self._user_space(client),
             f"sessions/{session_id}",
@@ -5272,7 +5272,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
             "Inspect session_uri before recovery. If history/archive_* exists, do not "
             "retry. If messages.jsonl contains the fact and no archive exists, run "
             "recovery_command with the same OpenViking profile and credentials as "
-            "Hermes. Otherwise, do not resubmit automatically; report the uncertain "
+            "Reign. Otherwise, do not resubmit automatically; report the uncertain "
             "state to the user."
         )
         message: Dict[str, Any] = {
@@ -5281,7 +5281,7 @@ class OpenVikingMemoryProvider(MemoryProvider):
         }
 
         # Use a dedicated session so explicit remember does not commit or
-        # otherwise alter the live Hermes conversation session.
+        # otherwise alter the live Reign conversation session.
         try:
             client.post(f"/api/v1/sessions/{session_id}/messages", message)
         except Exception as e:

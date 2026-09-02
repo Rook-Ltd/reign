@@ -136,7 +136,29 @@ Original Phase 1 checklist:
 - Inspect each built-in skin for imagery/naming (decision 6).
 - Baseline: `npm run build` in `ui-tui/`, `scripts/run_tests.sh` in Docker or with `HERMES_HOME` pointed at a scratch dir. Must be green before any change.
 
-### Phase 2 — Codemod
+### Phase 2 — Codemod (DONE 2026-09-02)
+Implemented as `rebrand/rebrand.py` + `rebrand/mapping.yaml` (`--dry-run`, apply, `--check`). Idempotent; a second run is a no-op.
+
+| Result | Count |
+|---|---|
+| Paths deleted (non-English docs, zh-Hans mirror, junk mutex paths, wake-word models) | 8 (325 files) |
+| Files rewritten | 5,973 |
+| Files renamed via `git mv` | 1,545 |
+| Residual hermes/nous lines after allowlist | ~75 in 19 files, all reviewed: test-fixture URLs, third-party links, Nous Portal OAuth codes, docs community-stories data |
+
+Lockfiles regenerated: `uv.lock` (project now `reign`), root / website / photon sidecar / whatsapp-bridge `package-lock.json`. `uv sync` installs `reign`, `reign-agent`, `reign-acp` entry points. TUI rebuilt with `@reign/ink`, zero hermes strings in `dist/entry.js`.
+
+Notes for Phase 3 that came out of the codemod:
+- `pyproject` scripts: upstream had `hermes` and `hermes-agent`; both mapped to `reign`, so the second is now `reign-agent = run_agent:main`.
+- `apps/desktop/package.json` maintainer still reads `Rook <support@nousresearch.com>` (email was protected). Fix by hand.
+- `website/docusaurus.config.ts` still declares the `zh-Hans` locale whose files were deleted. Remove the i18n entry.
+- `tools/wake_word.py` defaults still point at the deleted `hey_reign` openWakeWord model. Switch default provider to `sherpa`, phrase `hey reign`, and fix `tests/tools/test_wake_word.py` expectations.
+- `README.md` line ~165 and docs still link to `hermes-agent.nousresearch.com/docs` (decision 8). Review in-product links.
+- `website/src/data/userStories.json` is Nous community marketing content linking to the Nous Discord archive. Decide keep/remove with the docs landing page.
+- Telegram managed-bot test fixtures embed `?name=Hermes+Agent` deep links; if the code builds that from the agent name, Phase 4 will show it.
+- Three binary assets still carry Nous names and content: `apps/bootstrap-installer/public/nous-girl.jpg`, `apps/desktop/public/nous-girl.jpg`, `website/static/img/nous-logo.png`. Replaced in Phase 3 with the image pass.
+
+Original Phase 2 checklist:
 - `rebrand/rebrand.py` driven by `rebrand/mapping.yaml`: ordered, case-aware replacements (`hermes-agent`→`reign` first, then `Hermes Agent`→`Reign`, `hermes`→`reign`, `Hermes`→`Reign`, `HERMES`→`REIGN`, `Nous Research`→`Rook`, tagline), with allowlists for model names, URLs, LICENSE/NOTICE, lockfiles, and binaries.
 - Python module/dir renames via `git mv`; import rewrite; test path fixes.
 - `pyproject.toml`, `package.json`, Docker files, compose, install scripts, entry points → `reign`.

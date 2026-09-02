@@ -21,7 +21,7 @@
  */
 import { atom } from 'nanostores'
 
-import { setSessionUnreadRemote } from '@/hermes'
+import { setSessionUnreadRemote } from '@/reign'
 
 import { $sessions, setSessions } from './session'
 

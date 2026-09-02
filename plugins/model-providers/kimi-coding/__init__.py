@@ -10,7 +10,7 @@ This module covers the chat_completions path (/v1 endpoint).
 from typing import Any
 from urllib.parse import urlparse
 
-from hermes_cli import __version__ as _HERMES_VERSION
+from reign_cli import __version__ as _REIGN_VERSION
 from providers import register_provider
 from providers.base import OMIT_TEMPERATURE, ProviderProfile
 
@@ -119,8 +119,8 @@ kimi = KimiProfile(
     default_max_tokens=32000,
     default_headers={
         "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-        "X-Title": "Hermes Agent",
-        "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+        "X-Title": "Reign",
+        "User-Agent": f"ReignAgent/{_REIGN_VERSION}",
     },
     default_aux_model="kimi-k2-turbo-preview",
 )
@@ -134,8 +134,8 @@ kimi_cn = KimiProfile(
     default_max_tokens=32000,
     default_headers={
         "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-        "X-Title": "Hermes Agent",
-        "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+        "X-Title": "Reign",
+        "User-Agent": f"ReignAgent/{_REIGN_VERSION}",
     },
     default_aux_model="kimi-k2-turbo-preview",
 )

@@ -1,6 +1,6 @@
 """Session-persistent kernels for REMOTE terminal backends (docker/ssh/modal).
 
-Closes the gap tracked in hermes-agent#96873: local execute_code holds a
+Closes the gap tracked in reign#96873: local execute_code holds a
 persistent kernel child (tools/code_kernel.py); remote backends previously
 re-shipped and re-ran a fresh script per call, losing all interpreter state.
 
@@ -57,7 +57,7 @@ _CELL_POLL_INTERVAL = 0.5
 # deliberately transport-agnostic (pure files) and stdlib-only. Cells and
 # tool-RPC share the kernel dir but use distinct prefixes.
 REMOTE_KERNEL_RUNNER_SOURCE = '''\
-"""Auto-generated Hermes REMOTE session-kernel runner (file cell protocol)."""
+"""Auto-generated Reign REMOTE session-kernel runner (file cell protocol)."""
 import contextlib
 import io
 import json
@@ -66,7 +66,7 @@ import sys
 import time
 import traceback
 
-KDIR = os.environ["HERMES_KERNEL_DIR"]
+KDIR = os.environ["REIGN_KERNEL_DIR"]
 CELLS = os.path.join(KDIR, "cells")
 CAPTURE_LIMIT = {capture_limit}
 IDLE_EXIT_SECONDS = {idle_exit}
@@ -230,11 +230,11 @@ def _spawn_remote_kernel(env, env_type: str, owner: str, task_env_id: str,
         MAX_STDOUT_BYTES,
         _ship_file_to_remote,
         _env_temp_dir,
-        generate_hermes_tools_module,
+        generate_reign_tools_module,
     )
     import secrets as _secrets
 
-    kernel_dir = f"{_env_temp_dir(env)}/hermes_rkernel_{uuid.uuid4().hex[:12]}"
+    kernel_dir = f"{_env_temp_dir(env)}/reign_rkernel_{uuid.uuid4().hex[:12]}"
     q_dir = shlex.quote(kernel_dir)
     try:
         env.execute(f"mkdir -p {q_dir}/cells {q_dir}/rpc", cwd="/", timeout=15)
@@ -245,15 +245,15 @@ def _spawn_remote_kernel(env, env_type: str, owner: str, task_env_id: str,
             idle_exit=idle_exit,
         )
         _ship_file_to_remote(env, f"{kernel_dir}/kernel_runner.py", runner_src)
-        tools_src = generate_hermes_tools_module(
+        tools_src = generate_reign_tools_module(
             list(sandbox_tools), transport="file",
         )
-        _ship_file_to_remote(env, f"{kernel_dir}/hermes_tools.py", tools_src)
+        _ship_file_to_remote(env, f"{kernel_dir}/reign_tools.py", tools_src)
 
         env_prefix = (
-            f"HERMES_KERNEL_DIR={q_dir} "
-            f"HERMES_RPC_DIR={shlex.quote(kernel_dir + '/rpc')} "
-            f"HERMES_RPC_TOKEN={shlex.quote(rpc_token)} "
+            f"REIGN_KERNEL_DIR={q_dir} "
+            f"REIGN_RPC_DIR={shlex.quote(kernel_dir + '/rpc')} "
+            f"REIGN_RPC_TOKEN={shlex.quote(rpc_token)} "
             f"PYTHONDONTWRITEBYTECODE=1 PYTHONPATH={q_dir}"
         )
         started = env.execute(

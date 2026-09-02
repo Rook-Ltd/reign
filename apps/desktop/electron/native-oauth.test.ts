@@ -103,7 +103,7 @@ test('resolveLoginStrategy returns embedded for all-password even without native
 
 test('resolveLoginStrategy returns native for native_pkce gateway with non-password provider', () => {
   const statusBody = { auth_required: true, auth_flows: ['cookie', 'native_pkce'] }
-  const providers = [{ name: 'nous', displayName: 'Nous Research', supportsPassword: false }]
+  const providers = [{ name: 'nous', displayName: 'Rook', supportsPassword: false }]
 
   assert.equal(resolveLoginStrategy(statusBody, { providers }), 'native')
 })
@@ -167,7 +167,7 @@ test('buildNativeAuthorizeUrl omits provider when not given and preserves prefix
 
   const parsed = new URL(url)
 
-  assert.equal(parsed.pathname, '/hermes/auth/native/authorize')
+  assert.equal(parsed.pathname, '/reign/auth/native/authorize')
   assert.equal(parsed.searchParams.get('provider'), null)
 })
 

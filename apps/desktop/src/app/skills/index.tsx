@@ -26,7 +26,7 @@ import {
   profileScopeKey,
   setSkillEnabled,
   setToolsetEnabled
-} from '@/hermes'
+} from '@/reign'
 import { useI18n } from '@/i18n'
 import { isDesktopToolsetVisible } from '@/lib/desktop-toolsets'
 import { compactNumber } from '@/lib/format'
@@ -39,7 +39,7 @@ import { $gateway, activeGatewayConnectionId } from '@/store/gateway'
 import { $hubActions, installHubSkill, OFFICIAL_SKILLS_KEY } from '@/store/hub-actions'
 import { notify, notifyError } from '@/store/notifications'
 import { $activeGatewayProfile, normalizeProfileKey } from '@/store/profile'
-import type { OfficialSkillInfo, SkillInfo, ToolsetInfo } from '@/types/hermes'
+import type { OfficialSkillInfo, SkillInfo, ToolsetInfo } from '@/types/reign'
 
 import { useOnProfileSwitch } from '../hooks/use-on-profile-switch'
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
@@ -300,8 +300,8 @@ export function SkillsView({
   // one gateway is registered. Only then is the (heavier) union agent roster
   // fetched to feed the selector — single-connection setups keep the exact
   // legacy profiles list. Both feature-detected for older Electron mains.
-  const registryBridge = window.hermesDesktop?.connections
-  const rosterBridge = window.hermesDesktop?.getAgentRoster
+  const registryBridge = window.reignDesktop?.connections
+  const rosterBridge = window.reignDesktop?.getAgentRoster
 
   const { data: registryData } = useQuery({
     queryKey: ['capabilities-connections-registry'],
@@ -664,7 +664,7 @@ export function SkillsView({
 
   // Learned/local skills are editable + archivable, mirroring the memory
   // graph (same /api/learning/node endpoints — delete archives, restorable
-  // via `hermes curator restore`).
+  // via `reign curator restore`).
   const [skillEditor, setSkillEditor] = useState<null | { content: string; name: string }>(null)
   const [skillDraft, setSkillDraft] = useState('')
   const [skillSaving, setSkillSaving] = useState(false)
@@ -796,7 +796,7 @@ export function SkillsView({
 
     return (profilesData?.profiles ?? []).map(p => ({
       key: p.name,
-      label: p.is_default ? 'Hermes (default)' : p.name,
+      label: p.is_default ? 'Reign (default)' : p.name,
       value: p.name
     }))
   }, [multiConnection, profilesData, rosterData])
@@ -933,7 +933,7 @@ export function SkillsView({
                       />
                     ))}
                     {/* The built-in optional-skills catalog, below the
-                        installed list: every official skill Hermes ships but
+                        installed list: every official skill Reign ships but
                         hasn't installed yet, with a one-click install that
                         flips the row into the installed section above. */}
                     {visibleOfficial.length > 0 && (

@@ -96,12 +96,12 @@ def get_hosted_room_service():
 
 
 _WORKER_UNAVAILABLE = (
-    "Group Chat worker is unavailable. Restart the Hermes gateway and try again."
+    "Group Chat worker is unavailable. Restart the Reign gateway and try again."
 )
 
 
 def _profile_name() -> str:
-    return (os.getenv("HERMES_PROFILE") or "default").strip() or "default"
+    return (os.getenv("REIGN_PROFILE") or "default").strip() or "default"
 
 
 def _requested_profile(params: dict) -> str:
@@ -148,9 +148,9 @@ def _profile_execution_policy(profile: str) -> dict:
     """Resolve execution policy under the exact multiplexed profile home."""
 
     from gateway.hosted_room_execution_policy import execution_policy_mapping
-    from hermes_constants import (
-        reset_hermes_home_override,
-        set_hermes_home_override,
+    from reign_constants import (
+        reset_reign_home_override,
+        set_reign_home_override,
     )
 
     token = None
@@ -160,12 +160,12 @@ def _profile_execution_policy(profile: str) -> dict:
             home = _bound_server._profile_home(profile)
             if home is None:
                 raise ValueError(f"profile '{profile}' is unavailable")
-            token = set_hermes_home_override(str(home))
+            token = set_reign_home_override(str(home))
     try:
         return execution_policy_mapping(target_profile=profile)
     finally:
         if token is not None:
-            reset_hermes_home_override(token)
+            reset_reign_home_override(token)
 
 
 def _room_link_run_storage_durable() -> bool:

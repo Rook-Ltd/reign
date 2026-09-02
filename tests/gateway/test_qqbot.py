@@ -957,13 +957,13 @@ class TestDefaultInteractionDispatch:
 
     @pytest.mark.asyncio
     async def test_update_prompt_click_writes_response_file(self, tmp_path, monkeypatch):
-        """update_prompt:y click writes 'y' to ~/.hermes/.update_response."""
+        """update_prompt:y click writes 'y' to ~/.reign/.update_response."""
         adapter = self._make_adapter()
-        hermes_home = tmp_path / "hermes_home"
-        hermes_home.mkdir()
+        reign_home = tmp_path / "reign_home"
+        reign_home.mkdir()
         monkeypatch.setattr(
-            "hermes_constants.get_hermes_home",
-            lambda: hermes_home,
+            "reign_constants.get_reign_home",
+            lambda: reign_home,
         )
 
         from gateway.platforms.qqbot.keyboards import parse_interaction_event
@@ -973,7 +973,7 @@ class TestDefaultInteractionDispatch:
         })
         await adapter._default_interaction_dispatch(event)
 
-        response = hermes_home / ".update_response"
+        response = reign_home / ".update_response"
         assert response.exists()
         assert response.read_text() == "y"
 

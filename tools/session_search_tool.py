@@ -23,7 +23,7 @@ mode parameter):
      previews, timestamps).
 
 All four modes operate on the SQLite session DB via the FTS5 index and
-the get_anchored_view / get_messages_around primitives in hermes_state.
+the get_anchored_view / get_messages_around primitives in reign_state.
 No LLM calls anywhere — every shape returns actual messages from the DB.
 
 History: PR #20238 (JabberELF) seeded a fast/summary dual-mode split; the
@@ -37,10 +37,10 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from hermes_state_common import _RESET_END_REASONS
+from reign_state_common import _RESET_END_REASONS
 
 # Sources that are excluded from session browsing/searching by default.
-# Third-party integrations tag their sessions with HERMES_SESSION_SOURCE=tool;
+# Third-party integrations tag their sessions with REIGN_SESSION_SOURCE=tool;
 # delegate subagent runs are tagged "subagent"; kanban dispatcher workers are
 # tagged "kanban" — none belongs in the user's session history.
 _HIDDEN_SESSION_SOURCES = ("kanban", "subagent", "tool")
@@ -355,8 +355,8 @@ def _resolve_profile_db(profile: str):
     if profile is None or not str(profile).strip():
         return None
 
-    from hermes_cli import profiles as profiles_mod
-    from hermes_state import SessionDB
+    from reign_cli import profiles as profiles_mod
+    from reign_state import SessionDB
 
     canon = profiles_mod.normalize_profile_name(profile)
     profiles_mod.validate_profile_name(canon)
@@ -377,7 +377,7 @@ def _session_link(session_id: str, profile: str = None) -> str:
     name = (profile or "").strip()
     if not name:
         try:
-            from hermes_cli.profiles import get_active_profile_name
+            from reign_cli.profiles import get_active_profile_name
 
             resolved = get_active_profile_name()
             name = "" if resolved == "custom" else resolved
@@ -400,8 +400,8 @@ def _locate_session_db(session_id: str):
     from pathlib import Path
 
     try:
-        from hermes_cli import profiles as profiles_mod
-        from hermes_state import SessionDB
+        from reign_cli import profiles as profiles_mod
+        from reign_state import SessionDB
     except Exception:
         return None, None
 
@@ -1100,13 +1100,13 @@ def session_search(
     owned_dbs: List[Any] = []
     if db is None:
         try:
-            from hermes_state import get_shared_session_db
+            from reign_state import get_shared_session_db
 
             db = get_shared_session_db()
             owned_dbs.append(db)
         except Exception:
             logging.debug("SessionDB unavailable for session_search", exc_info=True)
-            from hermes_state import format_session_db_unavailable
+            from reign_state import format_session_db_unavailable
 
             return tool_error(format_session_db_unavailable(), success=False)
 
@@ -1128,7 +1128,7 @@ def session_search(
     finally:
         for owned_db in reversed(owned_dbs):
             try:
-                from hermes_state import release_or_close
+                from reign_state import release_or_close
                 release_or_close(owned_db)
             except Exception:
                 logging.debug("Failed to close session_search SessionDB", exc_info=True)
@@ -1137,7 +1137,7 @@ def session_search(
 def check_session_search_requirements() -> bool:
     """Requires the SQLite state database."""
     try:
-        from hermes_state import _default_db_path
+        from reign_state import _default_db_path
         return _default_db_path().parent.exists()
     except ImportError:
         return False
@@ -1146,7 +1146,7 @@ def check_session_search_requirements() -> bool:
 SESSION_SEARCH_SCHEMA = {
     "name": "session_search",
     "description": (
-        "Search past Hermes sessions (FTS5 over the local session DB), or read/"
+        "Search past Reign sessions (FTS5 over the local session DB), or read/"
         "scroll inside one. Four shapes, picked by args: `query` = discovery "
         "(top-N matching sessions, top result fully hydrated); `session_id` + "
         "`around_message_id` = scroll (window of messages around an anchor); "
@@ -1237,7 +1237,7 @@ SESSION_SEARCH_SCHEMA = {
             "profile": {
                 "type": "string",
                 "description": (
-                    "Optional. Read sessions from another Hermes profile's database "
+                    "Optional. Read sessions from another Reign profile's database "
                     "(read-only). Use when resolving an `@session:<profile>/<id>` link: "
                     "pass the profile segment here with session_id as the id segment. "
                     "Omit to use the current profile."

@@ -1,0 +1,70 @@
+
+<binary path>
+   apps/bootstrap-installer/public/nous-girl.jpg
+   apps/desktop/public/nous-girl.jpg
+   website/static/img/nous-logo.png
+
+agent/auxiliary_client.py
+   1539: # shares one normalization path with the rest of the NOUS resolution.
+
+apps/desktop/src/app/settings/constants.ts
+   48: prefix: 'NOUS_',
+
+apps/desktop/src/components/ui/decode-text.tsx
+   11: *    (matches the nousnet-web download-button decode effect).
+
+datagen-config-examples/example_browser_tasks.jsonl
+   2: {"prompt": "Navigate to https://en.wikipedia.org/wiki/Hermes and extract the first paragraph of the article, the image caption, and the list of items in the inf
+
+optional-skills/creative/pretext/templates/donut-orbit.html
+   6: <title>NOUS · pretext</title>
+   605: // NOUS uses the same cell-shader/reveal language as bb-ascii's source logo.
+   677: // Slightly dilate/smooth the measured NOUS silhouette so surrounding text
+   1240: gui.add(ctrls, "orbContainNous", 0, 3, 0.05).name("orb contain NOUS");
+   1241: gui.add(ctrls, "orbFadeDuration", 0.1, 3, 0.05).name("orb fade on NOUS");
+   1242: gui.add(ctrls, "nousAfterWire", 0, 4, 0.05).name("NOUS after wire").onFinishChange(() => restartScene());
+   1243: gui.add(ctrls, "nousLetterSpacing", 0, 4, 0.05).name("NOUS spacing");
+
+scripts/contributor_audit.py
+   52: re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
+
+scripts/release.py
+   1243: "hermes@noushq.ai": "benbarclay",
+   1751: "nouseman666@gmail.com": "nouseman666",  # PR #19088
+
+tests/gateway/test_slack.py
+   1203: assert payload["text"] == "<https://example.com/hermes|Hermes>"
+
+tests/gateway/test_slack_block_kit_adapter.py
+   79: assert kwargs["text"] == "<https://example.com/hermes|Hermes>"
+
+tests/reign_cli/test_cron_model_impact.py
+   38: _job(), current_provider=" NOUS ", current_model="NEW/MODEL", config={}
+
+tests/reign_cli/test_debug.py
+   1039: c = self._captured("/debug NOUS")
+
+tests/reign_cli/test_telegram_managed_bot.py
+   92: "deep_link": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+   93: "qr_payload": "https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+   106: deep_link="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+   107: qr_payload="https://t.me/newbot/HermesSetupBot/hermes_abcdefghijklmnop_bot?name=Hermes+Agent",
+
+web/src/index.css
+   144: /* Nousnet's reign layout bumps `small` and `code` to readable
+
+web/src/pages/EnvPage.tsx
+   50: { prefix: "NOUS_", name: "Nous Portal", priority: 0 },
+
+website/src/data/userStories.json
+   732: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/plugins-skills-and-skins/1498945272632315974-Reverie-Core--Agentic-cognition-layer-f
+   787: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/plugins-skills-and-skins/1499394737088626810-Meta-Ads-Kit-for-Hermes.txt",
+   853: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492207991162671255-Hermes-Agent-for-my-team.txt",
+   1007: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1489107955327570081-HERMES-TUI-Companion.txt",
+   1018: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492970295915446524-Meet-Hermes-Conrad....-GUI.txt",
+   1051: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1493622814887120926-Installed-Hermes-on-Kubernetes.txt",
+   1117: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/plugins-skills-and-skins/1503091259760316436-Claude-Hermes-MCP.txt",
+   1161: "url": "https://github.com/teknium1/nous-discord-archive/blob/main/archives/community-projects-showcase/1492721511658815539-Hermes-for-app-builders..txt",
+   ... 40 more
+
+residual: 75 lines in 16 files

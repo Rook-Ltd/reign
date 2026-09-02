@@ -43,7 +43,7 @@ describe('connection display helpers', () => {
       org: 'Editorial',
       port: 2222,
       remoteProfile: 'production',
-      user: 'hermes'
+      user: 'reign'
     }
 
     expect(connectionMatchesQuery(gateway, 'GENEVE')).toBe(true)
@@ -70,7 +70,7 @@ describe('connection display helpers', () => {
       host: 'studio.example.test',
       keyPath: '/secret/key',
       port: 2222,
-      user: 'hermes'
+      user: 'reign'
     }
 
     expect(connectionEndpoint(remote)).toBe('https://work.example.test:9443')

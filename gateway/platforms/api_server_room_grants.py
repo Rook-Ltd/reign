@@ -76,7 +76,7 @@ def _http_routes(self) -> list[tuple[str, str, Any]]:
 def _room_grant_token(request: "web.Request") -> str:
     authorization = str(request.headers.get("Authorization") or "")
     scheme, separator, token = authorization.partition(" ")
-    if not separator or scheme.lower() != "hermesroom":
+    if not separator or scheme.lower() != "reignroom":
         return ""
     return token.strip()
 
@@ -210,7 +210,7 @@ async def _handle_room_member_invitation(
         )
     return web.json_response(
         {
-            "object": "hermes.room_member.invitation",
+            "object": "reign.room_member.invitation",
             "grant": token,
             "target_profile": profile,
             "catalog": catalog,
@@ -261,7 +261,7 @@ async def _handle_room_member_capabilities(
         return _room_grant_error_response(exc, _openai_error=_openai_error)
     return web.json_response(
         {
-            "object": "hermes.room_member.capabilities",
+            "object": "reign.room_member.capabilities",
             "room_id": claims["room_id"],
             "home_install_id": claims["home_install_id"],
             "authority_gateway_id": claims["authority_gateway_id"],
@@ -349,7 +349,7 @@ async def _handle_room_member_grant_refresh(
         return _room_grant_error_response(exc, _openai_error=_openai_error)
     return web.json_response(
         {
-            "object": "hermes.room_member.grant",
+            "object": "reign.room_member.grant",
             "grant": token,
             "expires_at": now + dispatch_ttl,
             "status_expires_at": hard_expiry,
@@ -417,7 +417,7 @@ async def _handle_room_member_grant_revoke(
         )
     return web.json_response(
         {
-            "object": "hermes.room_member.grant.revocation",
+            "object": "reign.room_member.grant.revocation",
             "revoked": True,
         }
     )

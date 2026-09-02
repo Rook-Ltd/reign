@@ -48,12 +48,12 @@ IGNORED_PATTERNS = [
     re.compile(r"^github-actions(\[bot\])?$", re.IGNORECASE),
     re.compile(r"^dependabot", re.IGNORECASE),
     re.compile(r"^renovate", re.IGNORECASE),
-    re.compile(r"^Hermes\s+(Agent|Audit)$", re.IGNORECASE),
+    re.compile(r"^Reign\s+(Agent|Audit)$", re.IGNORECASE),
     re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
     re.compile(r"^Ubuntu$", re.IGNORECASE),
     # v0.20.0 audit additions:
     re.compile(r"^Blut-?Agent$", re.IGNORECASE),          # self-described AI agent account
-    re.compile(r".*\[bot\]$", re.IGNORECASE),             # any GitHub [bot] suffix (hermes-seaeye[bot] etc.)
+    re.compile(r".*\[bot\]$", re.IGNORECASE),             # any GitHub [bot] suffix (reign-seaeye[bot] etc.)
     re.compile(r"^TRON$", re.IGNORECASE),                 # AgentMail agent
     re.compile(r"^Happy$", re.IGNORECASE),                # happy.engineering AI agent
     re.compile(r"^Orca$", re.IGNORECASE),                 # Stably AI agent

@@ -1,4 +1,4 @@
-"""Compatibility shim — the real implementation is ``hermes_startup_watchdog``.
+"""Compatibility shim — the real implementation is ``reign_startup_watchdog``.
 
 The startup-liveness watchdog (OOF-298) must be armable *before* the
 ``gateway`` package is imported: ``gateway/__init__`` eagerly pulls in the
@@ -11,7 +11,7 @@ working for code that runs after the package is loaded (the disarm site in
 ``gateway.run``, tests, operators poking at a REPL).
 """
 
-from hermes_startup_watchdog import (  # noqa: F401
+from reign_startup_watchdog import (  # noqa: F401
     DEFAULT_STARTUP_WATCHDOG_TIMEOUT_S,
     ENV_STARTUP_WATCHDOG,
     ENV_STARTUP_WATCHDOG_TIMEOUT_S,

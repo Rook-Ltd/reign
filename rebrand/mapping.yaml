@@ -1,0 +1,116 @@
+# Reign rebrand mapping. Applied by rebrand/rebrand.py in this order:
+#   1. delete        - paths removed from the tree (git rm)
+#   2. protect       - regexes whose matches are shielded from all replacements
+#   3. replace       - ordered content substitutions (first match wins per position)
+#   4. rename_paths  - per-path-component substitutions (git mv)
+# Everything is case-sensitive unless a rule says otherwise.
+
+exclude_files:            # never touched by content replace, never renamed
+  - LICENSE
+  - NOTICE
+  - REIGN-REBRAND-PLAN.md
+  - "contributors/**"     # git author identities, not branding
+  - "brand/**"
+  - "rebrand/**"
+  - "**/package-lock.json" # regenerated after the run
+  - uv.lock
+  - flake.lock
+  - "tools/wakewords/**"  # deleted below
+  - ".git/**"
+
+delete:
+  - README.es.md
+  - README.zh-CN.md
+  - README.ur-pk.md
+  - SECURITY.es.md
+  - CONTRIBUTING.es.md
+  - website/i18n/zh-Hans            # decision D3
+  - "apps/desktop/'"                # upstream junk: tracked /var/folders mutex paths
+  - tools/wakewords                 # decision D2: hey_hermes models dropped
+
+protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
+  # emails first, so the domain rule below cannot shield half of an address
+  - '[\w.+\-]*(?:hermes|nous)[\w.+\-]*@[\w.\-]+\.\w+'
+  - '[\w.+\-]+@[\w.\-]*(?:hermes|nous)[\w.\-]*\.\w+'
+  # URLs and bare domains pointing at Nous / Hermes properties (decision 8)
+  - 'https?://[^\s"''<>()\[\]`]*(?:[Hh]ermes|[Nn]ous)[^\s"''<>()\[\]`]*'
+  - '[\w.-]*nousresearch\.com[^\s"''<>()\[\]`]*'
+  # GitHub org/repo slugs and Docker Hub images under the Nous org
+  - '[Nn]ous[Rr]esearch/[\w.\-]+'
+  # Nous model family identifiers: Hermes 2/3/4(.x) ..., "Nous Hermes"
+  - '\b[Hh]ermes[- ]?[2-4](?:\.\d+)?(?:[-_][A-Za-z0-9.]+)*'
+  # Named security incident and a contributor handle cited in code comments
+  - 'hermes-0day'
+  - '@5L-hermes01'
+  - '[Nn]ous[- ][Hh]ermes\b'
+  # Third-party npm scope (Nous design system package), not our branding
+  - '@nous-research/[\w.\-]+'
+  # Docusaurus org/project fields are link plumbing for editUrl
+  - "organizationName: '[^']*'"
+
+replace:                  # ordered; {plain} or {regex}
+  - plain: "Nous Research · Messenger of the Digital Gods"
+    with:  "Rook · In Your Corner"
+  - plain: "Messenger of the Digital Gods"
+    with:  "In Your Corner"
+  - plain: "NOUS HERMES"
+    with:  "REIGN"
+  - plain: "com.nousresearch.hermes"
+    with:  "com.rook.reign"
+  - regex: "Nous Research(?! Portal)"
+    with:  "Rook"
+  - plain: "NOUS RESEARCH"
+    with:  "ROOK"
+  - plain: "Hermes Agent"
+    with:  "Reign"
+  - plain: "Hermes agent"
+    with:  "Reign"
+  - plain: "HERMES AGENT"
+    with:  "REIGN"
+  - plain: "HERMES-AGENT"
+    with:  "REIGN"
+  - plain: "Hermes-Agent"
+    with:  "Reign"
+  - plain: "hermes-agent"
+    with:  "reign"
+  - plain: "⚕"
+    with:  "♜"
+  - plain: "hermes"
+    with:  "reign"
+  - plain: "Hermes"
+    with:  "Reign"
+  - plain: "HERMES"
+    with:  "REIGN"
+
+rename_paths:             # applied to each path component, in order
+  - plain: "hermes-agent"
+    with:  "reign"
+  - plain: "hermes"
+    with:  "reign"
+  - plain: "Hermes"
+    with:  "Reign"
+  - plain: "HERMES"
+    with:  "REIGN"
+
+# Residual-check allowlist: lines matching these after the run are expected.
+check_allow:
+  - '[Nn]ous[Rr]esearch/[\w.\-]+'          # org/repo slugs, ghcr/docker images
+  - '[\w.-]*nousresearch\.com[^\s"''<>)]*' # bare domains
+  - '\bnous_\w+|\w+_nous\w*'              # Nous Portal provider snake_case identifiers
+  - '\bNOUS_\w+'                          # NOUS_API_KEY, NOUS_MANAGED_PROVIDER ...
+  - '\bnous[A-Z]\w*'                      # camelCase: nousAuthSignIn, nousTheme ...
+  - 'noUsage\w*|noUser\w*'                # false positives: "noUsage", "noUserInfo" contain "nous"
+  - 'NOUS-\d+'                             # Nous Portal OAuth device-code fixtures
+  - 'hermes-(?:estree|parser)\b'           # third-party npm packages (Facebook Hermes JS)
+  - '[Nn]ous[Rr]esearch'
+  - 'nousresearch\.com'
+  - '[Hh]ermes[- ]?[2-4](?:\.\d+)?'
+  - 'hermes-0day'
+  - '5L-hermes01'
+  - '[Nn]ous[- ][Hh]ermes'
+  - '@nous-research/'
+  - '\bnous\b'                 # provider key for Nous Portal
+  - '\bNous\b'                 # Nous Portal / NousPortalAdapter etc.
+  - 'Nous[A-Z][A-Za-z]+'       # NousPortalAdapter, NousCloud, NousProfile ...
+  - '(?:hermes|nous)[\w.+\-]*@|@[\w.\-]*(?:hermes|nous)'   # emails
+  - 'https?://[^\s]*(?:hermes|nous)'

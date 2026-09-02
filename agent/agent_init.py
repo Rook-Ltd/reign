@@ -48,10 +48,10 @@ from agent.tool_guardrails import (
     ToolCallGuardrailController,
     ToolGuardrailDecision,
 )
-from hermes_cli.config import cfg_get
-from hermes_cli.route_identity import normalize_route_base_url
-from hermes_cli.timeouts import get_provider_request_timeout
-from hermes_constants import get_hermes_home
+from reign_cli.config import cfg_get
+from reign_cli.route_identity import normalize_route_base_url
+from reign_cli.timeouts import get_provider_request_timeout
+from reign_constants import get_reign_home
 from utils import base_url_host_matches, is_truthy_value
 
 # Use the same logger name as run_agent so tests patching ``run_agent.logger``
@@ -74,7 +74,7 @@ def _warn_memory_provider_unavailable(name: str, reason: str = "") -> None:
     log for itself. Without this warning a provider whose credentials/config are
     missing is silently dropped — the user has ``memory.provider`` set but gets
     no memory and no diagnostic. A common trigger is systemd/gateway services
-    not inheriting ``~/.hermes/.env``. See NousResearch/hermes-agent#2765.
+    not inheriting ``~/.reign/.env``. See NousResearch/hermes-agent#2765.
 
     ``reason`` is the provider's ``unavailable_reason()`` — a provider-specific,
     actionable hint (e.g. which package to install). Because an unavailable
@@ -87,8 +87,8 @@ def _warn_memory_provider_unavailable(name: str, reason: str = "") -> None:
     logger.warning(
         "Memory provider %r is selected but reports unavailable — external memory "
         "is disabled for this session (built-in memory still works). Check the "
-        "provider's credentials/config with 'hermes memory status'. Note: "
-        "systemd/gateway services do not inherit ~/.hermes/.env automatically; set "
+        "provider's credentials/config with 'reign memory status'. Note: "
+        "systemd/gateway services do not inherit ~/.reign/.env automatically; set "
         "any required variables in the service environment.%s",
         name,
         f" {reason}" if reason else "",
@@ -150,9 +150,9 @@ def _provider_default_routes(provider: str) -> set[str]:
     """Return known exact default routes for a canonical provider id."""
     routes: set[str] = set()
     try:
-        from hermes_cli.providers import HERMES_OVERLAYS, get_provider
+        from reign_cli.providers import REIGN_OVERLAYS, get_provider
 
-        overlay = HERMES_OVERLAYS.get(provider)
+        overlay = REIGN_OVERLAYS.get(provider)
         provider_def = get_provider(provider, allow_network=False)
         for value in (
             getattr(overlay, "base_url_override", ""),
@@ -177,9 +177,9 @@ def _provider_default_routes(provider: str) -> set[str]:
         pass
 
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY
-        from hermes_cli.models import normalize_provider as normalize_model_provider
-        from hermes_cli.providers import normalize_provider as normalize_registry_provider
+        from reign_cli.auth import PROVIDER_REGISTRY
+        from reign_cli.models import normalize_provider as normalize_model_provider
+        from reign_cli.providers import normalize_provider as normalize_registry_provider
 
         for provider_id, config in PROVIDER_REGISTRY.items():
             canonical_id = normalize_registry_provider(
@@ -226,7 +226,7 @@ def _context_route_mismatch(
     if not configured_provider:
         return False
     try:
-        from hermes_cli.models import normalize_provider as normalize_model_provider
+        from reign_cli.models import normalize_provider as normalize_model_provider
 
         configured_provider = normalize_model_provider(configured_provider)
         active_provider = normalize_model_provider(active_provider)
@@ -234,7 +234,7 @@ def _context_route_mismatch(
         configured_provider = configured_provider.lower()
         active_provider = active_provider.lower()
     try:
-        from hermes_cli.providers import normalize_provider as normalize_registry_provider
+        from reign_cli.providers import normalize_provider as normalize_registry_provider
 
         configured_provider = normalize_registry_provider(configured_provider)
         active_provider = normalize_registry_provider(active_provider)
@@ -303,7 +303,7 @@ def _build_codex_gpt5_autoraise_notice(
         f"ℹ Codex {model} caps context at {cap}, so auto-compaction was raised "
         f"to {to_pct}% (from {from_pct}%) to use more of the window before "
         f"summarizing.\n"
-        f"  Opt back out: hermes config set compression.codex_gpt55_autoraise false"
+        f"  Opt back out: reign config set compression.codex_gpt55_autoraise false"
     )
 
 
@@ -345,11 +345,11 @@ def _resolve_compression_threshold(
 def _codex_gpt55_autoraise_notice_marker():
     """Path to the per-profile marker recording that the autoraise notice ran.
 
-    Lives under ``$HERMES_HOME`` (which is profile-scoped) alongside the other
+    Lives under ``$REIGN_HOME`` (which is profile-scoped) alongside the other
     internal markers like ``.container-mode`` — so it is not a user-facing config
     key, and every profile tracks its own notice state independently.
     """
-    return get_hermes_home() / ".codex_gpt55_autoraise_notice"
+    return get_reign_home() / ".codex_gpt55_autoraise_notice"
 
 
 def _codex_gpt55_autoraise_notice_state(autoraise: Dict[str, Any]) -> str:
@@ -384,7 +384,7 @@ def _codex_gpt55_autoraise_notice_seen(autoraise: Dict[str, Any]) -> bool:
 def _record_codex_gpt55_autoraise_notice(autoraise: Dict[str, Any]) -> None:
     """Persist that the autoraise notice was shown for this profile/config state.
 
-    Best-effort: a read-only or missing ``$HERMES_HOME`` just means the notice
+    Best-effort: a read-only or missing ``$REIGN_HOME`` just means the notice
     may show again next init, which is preferable to breaking agent init.
     """
     try:
@@ -516,11 +516,11 @@ def _refuse_checkpoint_required_on_codex_app_server(
 
     The codex app-server owns its thread and compacts it without a truthful
     pre-compaction transcript boundary (in "native" auto-compaction mode —
-    the default — Hermes never even initiates the compaction), so no
+    the default — Reign never even initiates the compaction), so no
     pre-compress checkpoint can be guaranteed on this API mode. Refusing here
     keeps a turn from ever reaching a codex-owned compaction boundary; the
     compress_context() guard alone cannot cover native turns that bypass
-    Hermes compression entirely.
+    Reign compression entirely.
     """
     if checkpoint_required and api_mode == "codex_app_server":
         raise RuntimeError(
@@ -657,10 +657,10 @@ def init_agent(
         platform (str): The interface platform the user is on (e.g. "cli", "telegram", "discord", "whatsapp").
             Used to inject platform-specific formatting hints into the system prompt.
         skip_context_files (bool): If True, skip auto-injection of project context files
-            (SOUL.md, .hermes.md, AGENTS.md, CLAUDE.md, .cursorrules) from the cwd / HERMES_HOME
+            (SOUL.md, .reign.md, AGENTS.md, CLAUDE.md, .cursorrules) from the cwd / REIGN_HOME
             into the system prompt. Use this for batch processing and data generation to avoid
             polluting trajectories with user-specific persona or project instructions.
-        load_soul_identity (bool): If True, still use ~/.hermes/SOUL.md as the primary
+        load_soul_identity (bool): If True, still use ~/.reign/SOUL.md as the primary
             identity even when skip_context_files=True. Project context files from the cwd
             remain skipped.
     """
@@ -754,7 +754,7 @@ def init_agent(
         # Portal is dual-wire: anthropic/* → Messages, everything else →
         # chat_completions. Callers that already pass api_mode win above;
         # this covers direct AIAgent construction without a resolved runtime.
-        from hermes_cli.providers import nous_api_mode
+        from reign_cli.providers import nous_api_mode
 
         agent.api_mode = nous_api_mode(agent.model)
     else:
@@ -769,7 +769,7 @@ def init_agent(
         # forcing `codex_responses` on the provider name alone would break custom endpoints
         # named "meta" that do not host the Responses API.
         try:
-            from hermes_cli.providers import host_mandated_api_mode as _host_mandated_api_mode
+            from reign_cli.providers import host_mandated_api_mode as _host_mandated_api_mode
 
             _mandated = _host_mandated_api_mode(base_url or "")
         except Exception:
@@ -805,7 +805,7 @@ def init_agent(
         pass  # Non-fatal — transport may not exist for all modes yet
 
     try:
-        from hermes_cli.model_normalize import (
+        from reign_cli.model_normalize import (
             _AGGREGATOR_PROVIDERS,
             normalize_model_for_provider,
         )
@@ -997,7 +997,7 @@ def init_agent(
     # fallback re-derivation (#33555).
     agent._cache_ttl = "5m"
     try:
-        from hermes_cli.config import load_config_readonly as _load_pc_cfg
+        from reign_cli.config import load_config_readonly as _load_pc_cfg
 
         from agent.agent_runtime_helpers import cache_ttl_means_disabled
 
@@ -1061,7 +1061,7 @@ def init_agent(
     # Credits tracking (dev-only, L0 usage-aware-credits) — updated from
     # x-nous-credits-* response headers after each API call.  Session-start
     # remaining is latched the first time a header is ever seen so we can
-    # report cumulative micros spent.  Surfaced behind HERMES_DEV_CREDITS.
+    # report cumulative micros spent.  Surfaced behind REIGN_DEV_CREDITS.
     agent._credits_state = None
     agent._credits_session_start_micros = None
     # Threshold-notice latch (L4): active sticky-notice keys + the crossing gates.
@@ -1074,10 +1074,10 @@ def init_agent(
     agent._or_cache_hits: int = 0
 
     # Centralized logging — agent.log (INFO+) and errors.log (WARNING+)
-    # both live under ~/.hermes/logs/.  Idempotent, so gateway mode
+    # both live under ~/.reign/logs/.  Idempotent, so gateway mode
     # (which creates a new AIAgent per message) won't duplicate handlers.
-    from hermes_logging import setup_logging, setup_verbose_logging
-    setup_logging(hermes_home=_ra()._hermes_home)
+    from reign_logging import setup_logging, setup_verbose_logging
+    setup_logging(reign_home=_ra()._reign_home)
 
     if agent.verbose_logging:
         setup_verbose_logging()
@@ -1088,11 +1088,11 @@ def init_agent(
         # root logger's file handlers (agent.log, errors.log) from
         # ever seeing the records, because Python checks
         # logger.isEnabledFor() before handler propagation. We rely
-        # on the fact that hermes_logging.setup_logging() does not
+        # on the fact that reign_logging.setup_logging() does not
         # install a console StreamHandler in quiet mode — so INFO
         # records flow to the file handlers but never reach a
         # console. Any future noise reduction belongs at the
-        # handler level inside hermes_logging.py, not here.
+        # handler level inside reign_logging.py, not here.
         pass
     
     # Internal stream callback (set during streaming TTS).
@@ -1203,7 +1203,7 @@ def init_agent(
             # state cost is one file read + one timestamp compare per request.
             if agent.provider == "minimax-oauth" and isinstance(effective_key, str) and effective_key:
                 try:
-                    from hermes_cli.auth import build_minimax_oauth_token_provider
+                    from reign_cli.auth import build_minimax_oauth_token_provider
                     effective_key = build_minimax_oauth_token_provider()
                 except Exception as _mm_exc:  # noqa: BLE001 — never block startup on this
                     import logging as _logging
@@ -1270,7 +1270,7 @@ def init_agent(
         # Guardrail config — read from config.yaml at init time.
         agent._bedrock_guardrail_config = None
         try:
-            from hermes_cli.config import load_config_readonly as _load_br_cfg
+            from reign_cli.config import load_config_readonly as _load_br_cfg
             _gr = _load_br_cfg().get("bedrock", {}).get("guardrail", {})
             if _gr.get("guardrail_identifier") and _gr.get("guardrail_version"):
                 agent._bedrock_guardrail_config = {
@@ -1320,7 +1320,7 @@ def init_agent(
             # unrecognized bearer — including our keyless placeholder. Send an
             # empty Authorization header to override the SDK's "Bearer <key>".
             try:
-                from hermes_cli.models import (
+                from reign_cli.models import (
                     OPENCODE_ZEN_FREE_KEYLESS_PLACEHOLDER,
                     opencode_zen_free_headers,
                 )
@@ -1337,7 +1337,7 @@ def init_agent(
             elif base_url_host_matches(effective_base, "api.routermint.com"):
                 client_kwargs["default_headers"] = _ra()._routermint_headers()
             elif base_url_host_matches(effective_base, "githubcopilot.com"):
-                from hermes_cli.models import copilot_default_headers
+                from reign_cli.models import copilot_default_headers
 
                 client_kwargs["default_headers"] = copilot_default_headers()
             elif base_url_host_matches(effective_base, "api.kimi.com"):
@@ -1352,9 +1352,9 @@ def init_agent(
                     api_key, base_url=effective_base,
                 )
             elif base_url_host_matches(effective_base, "x.ai"):
-                from tools.xai_http import hermes_xai_default_headers
+                from tools.xai_http import reign_xai_default_headers
 
-                client_kwargs["default_headers"] = hermes_xai_default_headers()
+                client_kwargs["default_headers"] = reign_xai_default_headers()
             elif "default_headers" not in client_kwargs:
                 # Fall back to profile.default_headers for providers that
                 # declare custom headers (e.g. Vercel AI Gateway attribution,
@@ -1411,7 +1411,7 @@ def init_agent(
                 _fb_resolved = False
                 for _fb in _fb_entries:
                     try:
-                        from hermes_cli.fallback_config import resolve_entry_api_key
+                        from reign_cli.fallback_config import resolve_entry_api_key
                         _fb_explicit_key = resolve_entry_api_key(_fb)
                         _fb_client, _fb_model = resolve_provider_client(
                             _fb["provider"], model=_fb["model"], raw_codex=True,
@@ -1457,7 +1457,7 @@ def init_agent(
                     # ALIBABA_API_KEY).
                     _env_hint = f"{_explicit.upper()}_API_KEY"
                     try:
-                        from hermes_cli.auth import PROVIDER_REGISTRY
+                        from reign_cli.auth import PROVIDER_REGISTRY
                         _pcfg = PROVIDER_REGISTRY.get(_explicit)
                         if _pcfg and _pcfg.api_key_env_vars:
                             _env_hint = _pcfg.api_key_env_vars[0]
@@ -1466,13 +1466,13 @@ def init_agent(
                     raise RuntimeError(
                         f"Provider '{_explicit}' is set in config.yaml but no API key "
                         f"was found. Set the {_env_hint} environment "
-                        f"variable, or switch to a different provider with `hermes model`."
+                        f"variable, or switch to a different provider with `reign model`."
                     )
                 if not getattr(agent, "_fallback_activated", False):
                     # No provider configured — reject with a clear message.
                     raise RuntimeError(
-                        "No LLM provider configured. Run `hermes model` to "
-                        "select a provider, or run `hermes setup` for first-time "
+                        "No LLM provider configured. Run `reign model` to "
+                        "select a provider, or run `reign setup` for first-time "
                         "configuration."
                     )
         # Bedrock GPT-5.5/5.6 use Bedrock Mantle's OpenAI Responses endpoint.
@@ -1518,7 +1518,7 @@ def init_agent(
         agent._apply_user_default_headers()
 
         try:
-            from hermes_cli.config import (
+            from reign_cli.config import (
                 apply_custom_provider_extra_headers_to_client_kwargs,
                 apply_custom_provider_tls_to_client_kwargs,
                 get_compatible_custom_providers,
@@ -1604,11 +1604,11 @@ def init_agent(
             print(f"🔄 Fallback chain ({len(agent._fallback_chain)} providers): " +
                   " → ".join(f"{f['model']} ({f['provider']})" for f in agent._fallback_chain))
 
-    # A multiplexed gateway may enter a different HERMES_HOME after
+    # A multiplexed gateway may enter a different REIGN_HOME after
     # ``model_tools`` was first imported. Ensure that profile's keyed plugin
     # manager has discovered its registrations before taking the tool snapshot.
     try:
-        from hermes_cli.plugins import discover_plugins
+        from reign_cli.plugins import discover_plugins
 
         discover_plugins()
     except Exception:
@@ -1645,7 +1645,7 @@ def init_agent(
 
     # Kanban worker/orchestrator lifecycle guidance is session-static:
     # the dispatcher decides at spawn time whether this process is a kanban
-    # worker (kanban_show tool is present iff HERMES_KANBAN_TASK is set).
+    # worker (kanban_show tool is present iff REIGN_KANBAN_TASK is set).
     # Resolving the ~835-token block once here avoids re-running the
     # membership test + reference on every system-prompt rebuild
     # (init + each context compression).
@@ -1710,19 +1710,19 @@ def init_agent(
         except Exception:
             delegated_child = False
         if not delegated_child:
-            os.environ["HERMES_SESSION_ID"] = agent.session_id
+            os.environ["REIGN_SESSION_ID"] = agent.session_id
 
-    # Session logs go into ~/.hermes/sessions/ alongside gateway sessions
-    hermes_home = get_hermes_home()
-    agent.logs_dir = hermes_home / "sessions"
+    # Session logs go into ~/.reign/sessions/ alongside gateway sessions
+    reign_home = get_reign_home()
+    agent.logs_dir = reign_home / "sessions"
     agent.logs_dir.mkdir(parents=True, exist_ok=True)
-    # Per-session JSON snapshot writer (~/.hermes/sessions/session_{sid}.json)
+    # Per-session JSON snapshot writer (~/.reign/sessions/session_{sid}.json)
     # is opt-in via sessions.write_json_snapshots (default False).  state.db
     # is canonical — the snapshot is only useful for external tooling that
     # reads the JSON files directly.  See run_agent._save_session_log.
     agent._session_json_enabled = False
     try:
-        from hermes_cli.config import load_config_readonly as _load_sess_cfg
+        from reign_cli.config import load_config_readonly as _load_sess_cfg
         _sess_cfg = (_load_sess_cfg().get("sessions") or {})
         agent._session_json_enabled = bool(_sess_cfg.get("write_json_snapshots", False))
     except Exception:
@@ -1796,7 +1796,7 @@ def init_agent(
         "max_tokens": max_tokens,
     }
     # Persist a process-scoped --yolo launch into the session row so a later
-    # `hermes --resume <id>` can restore the bypass (CLI resume paths read
+    # `reign --resume <id>` can restore the bypass (CLI resume paths read
     # model_config.yolo_mode back via SessionDB.session_yolo_enabled).
     # Session-scoped /yolo toggles persist separately through
     # SessionDB.set_session_yolo at toggle time.
@@ -1813,7 +1813,7 @@ def init_agent(
     
     # Load config once for memory, skills, and compression sections
     try:
-        from hermes_cli.config import load_config_readonly as _load_agent_config
+        from reign_cli.config import load_config_readonly as _load_agent_config
         _agent_cfg = _load_agent_config()
     except Exception:
         _agent_cfg = {}
@@ -1832,7 +1832,7 @@ def init_agent(
         agent.show_commentary = True
 
     # LM Studio can either be explicitly preloaded through LM Studio's
-    # management API (the historical Hermes behavior) or left to LM Studio's
+    # management API (the historical Reign behavior) or left to LM Studio's
     # just-in-time / Auto-Evict chat-completions path.  Keep the default
     # explicit for backward compatibility; users with LM Studio Auto-Evict can
     # opt into JIT via ``model.lmstudio_load_mode: jit``.
@@ -1939,7 +1939,7 @@ def init_agent(
                     _init_kwargs = {
                         "session_id": agent.session_id,
                         "platform": platform or "cli",
-                        "hermes_home": str(get_hermes_home()),
+                        "reign_home": str(get_reign_home()),
                         "agent_context": "primary",
                     }
                     if _init_kwargs["platform"] == "cli":
@@ -1974,10 +1974,10 @@ def init_agent(
                         _init_kwargs["gateway_session_key"] = agent._gateway_session_key
                     # Profile identity for per-profile provider scoping
                     try:
-                        from hermes_cli.profiles import get_active_profile_name
+                        from reign_cli.profiles import get_active_profile_name
                         _profile = get_active_profile_name()
                         _init_kwargs["agent_identity"] = _profile
-                        _init_kwargs["agent_workspace"] = "hermes"
+                        _init_kwargs["agent_workspace"] = "reign"
                     except Exception:
                         pass
                     # NOTE: status_callback (for the deterministic retain
@@ -2084,7 +2084,7 @@ def init_agent(
     agent._session_title_hint = None
 
     # Per-platform prompt-hint overrides (config.yaml → platform_hints).
-    # Lets an enterprise admin append to or replace Hermes' built-in
+    # Lets an enterprise admin append to or replace Reign' built-in
     # platform hint for a single messaging platform (e.g. WhatsApp) without
     # affecting other platforms. Shape:
     #   platform_hints:
@@ -2337,10 +2337,10 @@ def init_agent(
     codex_app_server_auto_compaction = str(
         _compression_cfg.get("codex_app_server_auto", "native") or "native"
     ).lower()
-    if codex_app_server_auto_compaction not in {"native", "hermes", "off"}:
+    if codex_app_server_auto_compaction not in {"native", "reign", "off"}:
         _ra().logger.warning(
             "Invalid compression.codex_app_server_auto=%r; using 'native'. "
-            "Valid values are: native, hermes, off.",
+            "Valid values are: native, reign, off.",
             codex_app_server_auto_compaction,
         )
         codex_app_server_auto_compaction = "native"
@@ -2450,7 +2450,7 @@ def init_agent(
     # a named custom provider may keep its base URL only in this list rather
     # than repeating it under ``model``.
     try:
-        from hermes_cli.config import get_compatible_custom_providers
+        from reign_cli.config import get_compatible_custom_providers
         _custom_providers = get_compatible_custom_providers(_agent_cfg)
     except Exception:
         _custom_providers = _agent_cfg.get("custom_providers")
@@ -2467,14 +2467,14 @@ def init_agent(
     if _config_context_length is not None and isinstance(_model_cfg, dict):
         _default = _model_cfg.get("default")
         if isinstance(_default, dict):
-            from hermes_cli.config import split_model_config_default
+            from reign_cli.config import split_model_config_default
             _default, _ = split_model_config_default(_default)
         _configured_default_model = str(_default or "").strip()
         _configured_default_runtime_model = _configured_default_model
         _active_runtime_model = agent.model
         if _configured_default_model:
             try:
-                from hermes_cli.model_normalize import normalize_model_for_provider
+                from reign_cli.model_normalize import normalize_model_for_provider
 
                 _configured_default_runtime_model = normalize_model_for_provider(
                     _configured_default_model, agent.provider
@@ -2509,7 +2509,7 @@ def init_agent(
             and not _configured_provider_norm.startswith("custom:")
         ):
             try:
-                from hermes_cli.auth import resolve_provider as resolve_auth_provider
+                from reign_cli.auth import resolve_provider as resolve_auth_provider
 
                 _resolved_auth_provider = resolve_auth_provider(
                     _configured_provider_norm
@@ -2527,7 +2527,7 @@ def init_agent(
             _user_providers = _agent_cfg.get("providers")
             _disabled_custom_provider_ids: set[str] = set()
             if isinstance(_user_providers, dict):
-                from hermes_cli.config import is_provider_enabled
+                from reign_cli.config import is_provider_enabled
 
                 for _provider_key, _provider_entry in _user_providers.items():
                     if not isinstance(_provider_entry, dict):
@@ -2626,7 +2626,7 @@ def init_agent(
     # Check custom_providers per-model context_length
     if _config_context_length is None and _custom_providers:
         try:
-            from hermes_cli.config import get_custom_provider_context_length
+            from reign_cli.config import get_custom_provider_context_length
             _cp_ctx_resolved = get_custom_provider_context_length(
                 model=agent.model,
                 base_url=agent.base_url,
@@ -2717,7 +2717,7 @@ def init_agent(
         if _selected_engine is None:
             _candidate = None
             try:
-                from hermes_cli.plugins import get_plugin_context_engine
+                from reign_cli.plugins import get_plugin_context_engine
                 _candidate = get_plugin_context_engine()
             except Exception:
                 _candidate = None
@@ -2900,7 +2900,7 @@ def init_agent(
         raise ValueError(
             f"Model {agent.model} has a context window of {_ctx:,} tokens, "
             f"which is below the minimum {MINIMUM_CONTEXT_LENGTH:,} required "
-            f"by Hermes Agent.  Choose a model with at least "
+            f"by Reign.  Choose a model with at least "
             f"{MINIMUM_CONTEXT_LENGTH // 1000}K context.  If your server "
             f"reports a window smaller than the model's true window, set "
             f"model.context_length in config.yaml to the real value "
@@ -2916,12 +2916,12 @@ def init_agent(
     # non-CLI surface to still surface the warning.)
     if not agent.quiet_mode and (agent.platform or "cli") != "cli":
         try:
-            from hermes_cli.model_switch import _check_hermes_model_warning
+            from reign_cli.model_switch import _check_reign_model_warning
 
-            _hermes_warn = _check_hermes_model_warning(agent.model or "")
-            if _hermes_warn:
+            _reign_warn = _check_reign_model_warning(agent.model or "")
+            if _reign_warn:
                 _user_msg = (
-                    "⚠ Nous Research Hermes 3 & 4 models are NOT agentic — they "
+                    "⚠ Rook Hermes 3 & 4 models are NOT agentic — they "
                     "lack reliable tool-calling for agent workflows (delegation, "
                     "cron, proactive tools). Consider an agentic model instead "
                     "(Claude, GPT, Gemini, Qwen-Coder, etc.)."
@@ -2930,7 +2930,7 @@ def init_agent(
                     agent._emit_warning(_user_msg)
                 else:
                     print(f"\n{_user_msg}\n", file=sys.stderr)
-                _ra().logger.warning(_hermes_warn)
+                _ra().logger.warning(_reign_warn)
         except Exception:
             pass
 
@@ -2990,7 +2990,7 @@ def init_agent(
         try:
             agent.context_compressor.on_session_start(
                 agent.session_id,
-                hermes_home=str(get_hermes_home()),
+                reign_home=str(get_reign_home()),
                 platform=agent.platform or "cli",
                 model=agent.model,
                 context_length=getattr(agent.context_compressor, "context_length", 0),

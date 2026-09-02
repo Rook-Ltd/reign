@@ -48,11 +48,11 @@ _IS_WINDOWS = platform.system() == "Windows"
 # platforms provably never touch systemd code (#70716 cross-platform audit).
 _IS_LINUX = platform.system() == "Linux"
 from tools.environments.local import _find_shell, _resolve_safe_cwd, _sanitize_subprocess_env
-from hermes_cli._subprocess_compat import windows_hide_flags
+from reign_cli._subprocess_compat import windows_hide_flags
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from hermes_cli.config import get_hermes_home
+from reign_cli.config import get_reign_home
 
 from agent.redact import redact_sensitive_text
 
@@ -60,7 +60,7 @@ logger = logging.getLogger(__name__)
 
 
 # Checkpoint file for crash recovery (gateway only)
-CHECKPOINT_PATH = get_hermes_home() / "processes.json"
+CHECKPOINT_PATH = get_reign_home() / "processes.json"
 
 # Limits
 MAX_OUTPUT_CHARS = 200_000      # 200KB rolling output buffer
@@ -97,13 +97,13 @@ WATCH_GLOBAL_COOLDOWN_SECONDS = 30
 # ---------------------------------------------------------------------------
 # systemd cgroup isolation for gateway-spawned local executors (#70716)
 # ---------------------------------------------------------------------------
-# When Hermes runs as a systemd gateway with MemoryHigh/MemoryMax limits,
+# When Reign runs as a systemd gateway with MemoryHigh/MemoryMax limits,
 # local background terminal commands inherit the gateway's cgroup.  A
 # memory-heavy executor (Codex, tests, Node) can push the whole cgroup past
 # MemoryMax and trigger systemd-oomd to kill the ENTIRE gateway — taking down
 # the messaging control plane and silently losing the active turn.
 #
-# Wrapping the spawn in ``systemd-run --user --scope --unit=hermes-worker-<pid>``
+# Wrapping the spawn in ``systemd-run --user --scope --unit=reign-worker-<pid>``
 # places the worker in its own transient cgroup so an OOM in the worker kills
 # only the worker, not the gateway.  We probe *once* whether
 # ``systemd-run --user --scope`` is actually usable (the binary can exist on
@@ -227,7 +227,7 @@ def _systemd_run_user_scope_available() -> bool:
                 if binary:
                     # Probe: create a transient scope that immediately exits.
                     # A unique unit avoids collisions; timeout bounds D-Bus.
-                    probe_unit = f"hermes-probe-scope-{os.getpid()}-{uuid.uuid4().hex[:8]}"
+                    probe_unit = f"reign-probe-scope-{os.getpid()}-{uuid.uuid4().hex[:8]}"
                     result = subprocess.run(
                         [
                             binary, "--user", "--scope", "--quiet",
@@ -260,15 +260,15 @@ def _systemd_run_user_scope_available() -> bool:
 
 
 def _is_supervised_gateway_process() -> bool:
-    """Return whether this process is in a supervised Hermes gateway runtime.
+    """Return whether this process is in a supervised Reign gateway runtime.
 
-    Both supervisor markers and ``_HERMES_GATEWAY`` are inherited by every
+    Both supervisor markers and ``_REIGN_GATEWAY`` are inherited by every
     descendant, and importing ``gateway.run`` also sets the latter. Require
     this process to own the live gateway PID file as well. That keeps transient
     systemd scopes limited to the gateway itself instead of terminal children
     or unrelated interactive CLIs in the same supervised process tree.
     """
-    if os.environ.get("_HERMES_GATEWAY") != "1":
+    if os.environ.get("_REIGN_GATEWAY") != "1":
         return False
 
     try:
@@ -302,7 +302,7 @@ def _build_systemd_scope_argv(
         # Caller should have checked _systemd_run_user_scope_available();
         # guard anyway so we never pass None into Popen.
         return shell_argv
-    unit_name = f"hermes-worker-{unit_suffix}"
+    unit_name = f"reign-worker-{unit_suffix}"
     memory_max = _worker_memory_max_bytes()
     return [
         binary,
@@ -889,7 +889,7 @@ class ProcessRegistry:
         config is unreadable, so callers always get a sane number.
         """
         try:
-            from hermes_cli.config import read_raw_config, cfg_get, DEFAULT_CONFIG
+            from reign_cli.config import read_raw_config, cfg_get, DEFAULT_CONFIG
             cfg = read_raw_config()
             val = cfg_get(cfg, "terminal", "daemon_term_grace_seconds")
             if val is None:
@@ -1113,7 +1113,7 @@ class ProcessRegistry:
                         pty_argv,
                         unit_suffix=session.id,
                     )
-                    session.systemd_unit = f"hermes-worker-{session.id}.scope"
+                    session.systemd_unit = f"reign-worker-{session.id}.scope"
                     pty_scope_attempted = True
                 elif pty_in_supervised_gateway:
                     logger.debug(
@@ -1193,7 +1193,7 @@ class ProcessRegistry:
                 shell_argv,
                 unit_suffix=unit_suffix,
             )
-            session.systemd_unit = f"hermes-worker-{unit_suffix}.scope"
+            session.systemd_unit = f"reign-worker-{unit_suffix}.scope"
             # CRITICAL (#70716 regression): systemd-run --scope does NOT give
             # the worker a new session — the invoked process keeps the
             # parent's session and inherits its controlling terminal.  From an
@@ -1321,9 +1321,9 @@ class ProcessRegistry:
 
         # Run the command in the sandbox with output capture
         temp_dir = self._env_temp_dir(env)
-        log_path = f"{temp_dir}/hermes_bg_{session.id}.log"
-        pid_path = f"{temp_dir}/hermes_bg_{session.id}.pid"
-        exit_path = f"{temp_dir}/hermes_bg_{session.id}.exit"
+        log_path = f"{temp_dir}/reign_bg_{session.id}.log"
+        pid_path = f"{temp_dir}/reign_bg_{session.id}.pid"
+        exit_path = f"{temp_dir}/reign_bg_{session.id}.exit"
         quoted_command = shlex.quote(command)
         quoted_temp_dir = shlex.quote(temp_dir)
         quoted_log_path = shlex.quote(log_path)
@@ -1678,7 +1678,7 @@ class ProcessRegistry:
     def is_session_waiting(self, session_id: str) -> bool:
         """Whether a goal loop parked on this session should still be parked.
 
-        Used by the goal-loop wait barrier (``hermes_cli.goals``) to support
+        Used by the goal-loop wait barrier (``reign_cli.goals``) to support
         waiting on a process's OWN trigger, not just its exit. A session is
         "still waiting" when:
           - it is still running, AND
@@ -1720,13 +1720,13 @@ class ProcessRegistry:
     ) -> dict:
         """Bounded wait for tracked ``notify_on_complete`` background processes.
 
-        One-shot CLI runs (``hermes -q/-Q/-z``) exit as soon as their single
+        One-shot CLI runs (``reign -q/-Q/-z``) exit as soon as their single
         turn ends.  Any background process the turn spawned with
         ``notify_on_complete=True`` — a bounded task whose completion the
         caller explicitly cares about — still holds a stdout pipe owned by
         the dying parent, so it is killed by SIGPIPE on its next write a few
         seconds later.  Bot Mode handoff REPLIES are the visible casualty
-        (#90879): a recipient invoked as ``hermes -p <bot> chat -Q
+        (#90879): a recipient invoked as ``reign -p <bot> chat -Q
         --query-file ...`` dispatches its reply via ``message_agent`` /
         ``bot_relay`` exactly this way, then exits, and the reply process is
         destroyed ~3s later.  The sender waits forever for a reply that was
@@ -1834,7 +1834,7 @@ class ProcessRegistry:
         is unreadable so callers always get a sane bound.
         """
         try:
-            from hermes_cli.config import DEFAULT_CONFIG, cfg_get, read_raw_config
+            from reign_cli.config import DEFAULT_CONFIG, cfg_get, read_raw_config
             cfg = read_raw_config()
             val = cfg_get(cfg, "terminal", "oneshot_completion_wait_seconds")
             if val is None:
@@ -1869,7 +1869,7 @@ class ProcessRegistry:
         DEFAULT applies (suppress) — never crash the drain loop.
         """
         try:
-            from hermes_cli.config import DEFAULT_CONFIG, cfg_get, read_raw_config
+            from reign_cli.config import DEFAULT_CONFIG, cfg_get, read_raw_config
             cfg = read_raw_config()
             val = cfg_get(cfg, "delegation", "surface_child_process_notifications")
             if val is None:
@@ -2055,7 +2055,7 @@ class ProcessRegistry:
         The reader thread (`_reader_loop`) sets `session.exited = True` only
         in its `finally` block, which runs when `stdout.read()` returns EOF.
         If the direct `Popen` child has exited but a descendant process (e.g.
-        a daemon spawned by `hermes update` restarting the gateway) is still
+        a daemon spawned by `reign update` restarting the gateway) is still
         holding the stdout pipe open, the reader blocks forever and poll()
         keeps returning "running" indefinitely (issue #17327 — 74 polls over
         7 minutes on Feishu).
@@ -2521,7 +2521,7 @@ class ProcessRegistry:
         if sink is None:
             return {
                 "status": "error",
-                "error": "close_terminal is only available in the Hermes desktop app.",
+                "error": "close_terminal is only available in the Reign desktop app.",
             }
         # The session may already be finished (or pruned) — the tab can still
         # linger and be closed, so a missing session is not an error here.
@@ -2815,7 +2815,7 @@ class ProcessRegistry:
                             "session_id": s.id,
                             # Redact inline credentials before persisting to
                             # disk — the checkpoint file lives under
-                            # ~/.hermes/processes.json with the raw command
+                            # ~/.reign/processes.json with the raw command
                             # (issue #77484). Recovery only uses command for
                             # display/logging (the process is already running;
                             # adoption re-validates the PID, never re-runs the
@@ -3059,10 +3059,10 @@ def _delegation_model_not_found_notice(results) -> "list[str] | None":
         "(HTTP 400: not a valid model ID).",
         "Every task in this batch failed for this reason before doing any work.",
         "Check Settings → Advanced → Subagent Model (or: "
-        "hermes config get delegation.model).",
+        "reign config get delegation.model).",
     ]
     try:
-        from hermes_cli.fallback_config import get_fallback_chain
+        from reign_cli.fallback_config import get_fallback_chain
 
         if not get_fallback_chain(config):
             lines.append(
@@ -3329,7 +3329,7 @@ def format_process_notification(evt: dict) -> "str | None":
     if _exit in {-15, 143, "-15", "143"}:
         _signal = ", SIGTERM"
     if _reason == "killed":
-        _status = f"terminated by {_source or 'Hermes'}"
+        _status = f"terminated by {_source or 'Reign'}"
     elif _reason == "lost":
         _status = "marked lost because the process backend disappeared"
     elif _reason == "failed_start":

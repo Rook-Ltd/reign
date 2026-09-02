@@ -275,7 +275,7 @@ def enable_happy_eyeballs_on_client(client) -> None:
     Covers a ready-built ``httpx.Client`` (its default transport plus any
     mounts), for callers that construct clients inline instead of going
     through :func:`build_keepalive_http_client` — e.g. the Codex OAuth token
-    refresh / device-login / usage-probe clients in ``hermes_cli.auth``.
+    refresh / device-login / usage-probe clients in ``reign_cli.auth``.
 
     Proxy-backed transports (``httpcore.HTTPProxy`` / SOCKS pools) are left
     untouched: with a proxy in play the TCP connect goes to the proxy host,
@@ -339,7 +339,7 @@ class _OpenAIProxy:
 class _SafeWriter:
     """Transparent stdio wrapper that catches OSError/ValueError from broken pipes.
 
-    When hermes-agent runs as a systemd service, Docker container, or headless
+    When reign runs as a systemd service, Docker container, or headless
     daemon, the stdout/stderr pipe can become unavailable (idle timeout, buffer
     exhaustion, socket reset). Any print() call then raises
     ``OSError: [Errno 5] Input/output error``, which can crash agent setup or
@@ -441,7 +441,7 @@ def build_keepalive_http_client(
 
     ``verify`` is forwarded to httpx so auxiliary-client calls (compression,
     vision, web_extract, title generation, etc.) honor the same per-provider
-    ``ssl_ca_cert`` / ``ssl_verify`` and ``HERMES_CA_BUNDLE`` settings the main
+    ``ssl_ca_cert`` / ``ssl_verify`` and ``REIGN_CA_BUNDLE`` settings the main
     client uses. It is passed on the client AND on the plain no-proxy mounts
     (a mounted transport owns the SSL context for its scheme).
     """

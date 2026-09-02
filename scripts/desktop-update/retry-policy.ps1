@@ -1,4 +1,4 @@
-function Test-HermesUpdateShouldRetry {
+function Test-ReignUpdateShouldRetry {
     param(
         [int]$ExitCode,
         [string]$InstallRoot

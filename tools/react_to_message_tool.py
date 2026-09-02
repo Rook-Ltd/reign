@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Let the agent react to a message with an emoji in the Hermes desktop app.
+"""Let the agent react to a message with an emoji in the Reign desktop app.
 
 The conversational counterpart to the user's tapback: the same reaction store,
 the same one-per-author semantics, just written with ``author="agent"``.
@@ -24,7 +24,7 @@ from utils import env_var_enabled
 def _open_session_db():
     """Open the SessionDB for the profile owning this turn, or ``None``."""
     try:
-        from hermes_state import get_shared_session_db
+        from reign_state import get_shared_session_db
 
         return get_shared_session_db()
     except Exception:
@@ -90,8 +90,8 @@ def _react_to_message_with_db(
 def react_to_message_tool(emoji: str, message_row_id=None, messages_back=None) -> str:
     """Attach (or with an empty ``emoji`` retract) the agent's reaction."""
     emoji = (emoji or "").strip()
-    session_key = get_session_env("HERMES_SESSION_KEY", "") or get_session_env(
-        "HERMES_SESSION_ID", ""
+    session_key = get_session_env("REIGN_SESSION_KEY", "") or get_session_env(
+        "REIGN_SESSION_ID", ""
     )
 
     if not session_key:
@@ -111,7 +111,7 @@ def react_to_message_tool(emoji: str, message_row_id=None, messages_back=None) -
         )
     finally:
         try:
-            from hermes_state import release_or_close
+            from reign_state import release_or_close
             release_or_close(db)
         except Exception:
             pass

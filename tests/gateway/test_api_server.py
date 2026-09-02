@@ -32,7 +32,7 @@ from gateway.platforms.api_server import (
     ResponseStore,
     _IdempotencyCache,
     _derive_chat_session_id,
-    _hermes_version,
+    _reign_version,
     _redact_api_error_text,
     _request_agent_overrides,
     check_api_server_requirements,
@@ -212,7 +212,7 @@ class TestAdapterInit:
             staticmethod(lambda model="": {"enabled": True, "effort": "xhigh"}),
         )
         monkeypatch.setattr("gateway.run.GatewayRunner._load_fallback_model", staticmethod(lambda: None))
-        monkeypatch.setattr("hermes_cli.tools_config._get_platform_tools", lambda *_: set())
+        monkeypatch.setattr("reign_cli.tools_config._get_platform_tools", lambda *_: set())
 
         adapter = APIServerAdapter(PlatformConfig(enabled=True))
         monkeypatch.setattr(adapter, "_ensure_session_db", lambda: None)
@@ -263,7 +263,7 @@ class TestConcurrencyCap:
 
     def test_resolve_reads_config_value(self):
         cfg = {"gateway": {"api_server": {"max_concurrent_runs": 3}}}
-        with patch("hermes_cli.config.load_config", return_value=cfg):
+        with patch("reign_cli.config.load_config", return_value=cfg):
             assert APIServerAdapter._resolve_max_concurrent_runs() == 3
 
 
@@ -717,7 +717,7 @@ class TestHealthDetailedEndpoint:
                 assert resp.status == 200
                 data = await resp.json()
                 assert data["status"] == "ok"
-                assert data["platform"] == "hermes-agent"
+                assert data["platform"] == "reign"
                 assert data["gateway_state"] == "running"
                 assert data["platforms"] == {"telegram": {"state": "connected"}}
                 assert data["active_agents"] == 2
@@ -768,7 +768,7 @@ class TestHealthDetailedEndpoint:
 
 class TestModelsEndpoint:
     @pytest.mark.asyncio
-    async def test_models_returns_hermes_agent(self, adapter):
+    async def test_models_returns_reign_agent(self, adapter):
         app = _create_app(adapter)
         async with TestClient(TestServer(app)) as cli:
             resp = await cli.get("/v1/models")
@@ -776,8 +776,8 @@ class TestModelsEndpoint:
             data = await resp.json()
             assert data["object"] == "list"
             assert len(data["data"]) == 1
-            assert data["data"][0]["id"] == "hermes-agent"
-            assert data["data"][0]["owned_by"] == "hermes"
+            assert data["data"][0]["id"] == "reign"
+            assert data["data"][0]["owned_by"] == "reign"
 
     @pytest.mark.asyncio
     async def test_models_returns_profile_name(self):
@@ -794,15 +794,15 @@ class TestModelsEndpoint:
 
 
     def test_resolve_model_name_default_profile(self):
-        """Default profile falls back to 'hermes-agent'."""
-        with patch("hermes_cli.profiles.get_active_profile_name", return_value="default"):
-            assert APIServerAdapter._resolve_model_name("") == "hermes-agent"
+        """Default profile falls back to 'reign'."""
+        with patch("reign_cli.profiles.get_active_profile_name", return_value="default"):
+            assert APIServerAdapter._resolve_model_name("") == "reign"
 
 
     @pytest.mark.asyncio
     async def test_model_options_returns_shared_inventory(self, adapter, monkeypatch):
         """GET /api/model/options builds the shared picker payload off-loop."""
-        from hermes_cli import inventory
+        from reign_cli import inventory
 
         ctx = object()
         payload = {
@@ -861,9 +861,9 @@ class TestCapabilitiesEndpoint:
             resp = await cli.get("/v1/capabilities")
             assert resp.status == 200
             data = await resp.json()
-            assert data["object"] == "hermes.api_server.capabilities"
-            assert data["platform"] == "hermes-agent"
-            assert data["model"] == "hermes-agent"
+            assert data["object"] == "reign.api_server.capabilities"
+            assert data["platform"] == "reign"
+            assert data["model"] == "reign"
             assert data["auth"]["type"] == "bearer"
             assert data["auth"]["required"] is False
             assert data["runtime"]["mode"] == "server_agent"
@@ -879,7 +879,7 @@ class TestCapabilitiesEndpoint:
                 "retention_seconds": 86400,
             }
             assert data["features"]["model_options"] is True
-            assert data["features"]["session_continuity_header"] == "X-Hermes-Session-Id"
+            assert data["features"]["session_continuity_header"] == "X-Reign-Session-Id"
             assert data["endpoints"]["run_status"]["path"] == "/v1/runs/{run_id}"
             assert data["endpoints"]["model_options"] == {"method": "GET", "path": "/api/model/options"}
             assert data["endpoints"]["skills"] == {"method": "GET", "path": "/v1/skills"}
@@ -932,16 +932,16 @@ class TestToolsetsEndpoint:
         ]
         feature_snapshot = object()
         with patch(
-            "hermes_cli.tools_config._get_effective_configurable_toolsets",
+            "reign_cli.tools_config._get_effective_configurable_toolsets",
             return_value=fake_toolsets,
         ), patch(
-            "hermes_cli.tools_config._get_platform_tools",
+            "reign_cli.tools_config._get_platform_tools",
             return_value={"default"},
         ), patch(
-            "hermes_cli.tools_config.get_nous_subscription_features",
+            "reign_cli.tools_config.get_nous_subscription_features",
             return_value=feature_snapshot,
         ) as resolve_features, patch(
-            "hermes_cli.tools_config._toolset_has_keys",
+            "reign_cli.tools_config._toolset_has_keys",
             return_value=True,
         ) as has_keys, patch(
             "toolsets.resolve_toolset",
@@ -1158,7 +1158,7 @@ class TestChatCompletionsEndpoint:
                 # Tool progress must appear as a custom SSE event, not in
                 # delta.content — prevents model from learning to imitate
                 # markers instead of calling tools (#6972).
-                assert "event: hermes.tool.progress" in body
+                assert "event: reign.tool.progress" in body
                 assert '"tool": "terminal"' in body
                 # ``label`` is now derived by ``build_tool_preview`` from the
                 # tool args rather than passed by the caller, so we assert
@@ -1187,14 +1187,14 @@ class TestChatCompletionsEndpoint:
         """Regression for #16588.
 
         ``/v1/chat/completions`` streaming previously emitted only a
-        ``tool.started``-style ``hermes.tool.progress`` event; clients
+        ``tool.started``-style ``reign.tool.progress`` event; clients
         rendering tool lifecycle UI had no way to mark a tool as finished
         because no matching ``status: completed`` event was emitted, and
         no ``toolCallId`` was carried for correlation.
 
         The fix adds ``tool_start_callback`` / ``tool_complete_callback``
         to the chat completions agent invocation and writes both halves
-        of the lifecycle pair on the same ``event: hermes.tool.progress``
+        of the lifecycle pair on the same ``event: reign.tool.progress``
         SSE line, with stable ``toolCallId`` and ``status``.
         """
         import asyncio
@@ -1240,7 +1240,7 @@ class TestChatCompletionsEndpoint:
             pairs: list[tuple[str | None, str | None]] = []
             lines = body.splitlines()
             for i, line in enumerate(lines):
-                if line.strip() != "event: hermes.tool.progress":
+                if line.strip() != "event: reign.tool.progress":
                     continue
                 for follow in lines[i + 1: i + 4]:
                     if follow.startswith("data: "):
@@ -1352,7 +1352,7 @@ class TestResponsesEndpoint:
                 resp = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "What is the capital of France?",
                     },
                 )
@@ -1406,7 +1406,7 @@ class TestResponsesEndpoint:
                 resp = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "Now add 1 more",
                         "previous_response_id": "resp_prev",
                     },
@@ -1493,7 +1493,7 @@ class TestResponsesEndpoint:
                 resp = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "Read new file",
                         "previous_response_id": "resp_prev",
                     },
@@ -1514,7 +1514,7 @@ class TestResponsesEndpoint:
             resp = await cli.post(
                 "/v1/responses",
                 json={
-                    "model": "hermes-agent",
+                    "model": "reign",
                     "input": "follow up",
                     "previous_response_id": "resp_nonexistent",
                 },
@@ -1537,7 +1537,7 @@ class TestResponsesEndpoint:
                 resp = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "Hello",
                         "store": "false",
                     },
@@ -1560,7 +1560,7 @@ class TestResponsesEndpoint:
                 resp1 = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "Hello",
                         "instructions": "Be a pirate",
                     },
@@ -1575,7 +1575,7 @@ class TestResponsesEndpoint:
                 resp2 = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "Tell me more",
                         "previous_response_id": resp_id,
                     },
@@ -1603,7 +1603,7 @@ class TestResponsesEndpoint:
                 )
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "Hello"},
+                    json={"model": "reign", "input": "Hello"},
                 )
 
             assert resp.status == 200
@@ -1653,7 +1653,7 @@ class TestResponsesStreaming:
                 mock_write_sse.return_value = web.Response(status=200, text="ok")
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "hi", "stream": True},
+                    json={"model": "reign", "input": "hi", "stream": True},
                 )
                 assert resp.status == 200
 
@@ -1713,7 +1713,7 @@ class TestResponsesStreaming:
                 await adapter._write_sse_responses(
                     request=fake_request,
                     response_id=response_id,
-                    model="hermes-agent",
+                    model="reign",
                     created_at=int(time.time()),
                     stream_q=stream_q,
                     agent_task=agent_task,
@@ -1783,7 +1783,7 @@ class TestResponsesStreaming:
             await adapter._write_sse_responses(
                 request=fake_request,
                 response_id=response_id,
-                model="hermes-agent",
+                model="reign",
                 created_at=int(time.time()),
                 stream_q=stream_q,
                 agent_task=agent_task,
@@ -1868,7 +1868,7 @@ class TestMultipleSystemMessages:
                 resp = await cli.post(
                     "/v1/chat/completions",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "messages": [
                             {"role": "system", "content": "You are helpful."},
                             {"role": "system", "content": "Be concise."},
@@ -1941,7 +1941,7 @@ class TestGetResponse:
                 mock_run.return_value = (mock_result, {"input_tokens": 10, "output_tokens": 5, "total_tokens": 15})
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "Hi"},
+                    json={"model": "reign", "input": "Hi"},
                 )
 
             assert resp.status == 200
@@ -1974,7 +1974,7 @@ class TestDeleteResponse:
                 mock_run.return_value = (mock_result, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0})
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "Hi"},
+                    json={"model": "reign", "input": "Hi"},
                 )
 
             data = await resp.json()
@@ -2037,7 +2037,7 @@ class TestToolCallsInOutput:
                 mock_run.return_value = (mock_result, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0})
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "What is 6*7?"},
+                    json={"model": "reign", "input": "What is 6*7?"},
                 )
 
             assert resp.status == 200
@@ -2081,7 +2081,7 @@ class TestUsageCounting:
                 mock_run.return_value = (mock_result, usage)
                 resp = await cli.post(
                     "/v1/responses",
-                    json={"model": "hermes-agent", "input": "Hi"},
+                    json={"model": "reign", "input": "Hi"},
                 )
 
             assert resp.status == 200
@@ -2132,7 +2132,7 @@ class TestTruncation:
                 resp = await cli.post(
                     "/v1/responses",
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "input": "follow up",
                         "previous_response_id": "resp_summary_mid",
                         "truncation": "auto",
@@ -2177,16 +2177,16 @@ class TestChatCompletionsAgentIncomplete:
                 mock_run.return_value = (mock_result, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0})
                 resp = await cli.post(
                     "/v1/chat/completions",
-                    json={"model": "hermes-agent", "messages": [{"role": "user", "content": "hello"}]},
+                    json={"model": "reign", "messages": [{"role": "user", "content": "hello"}]},
                 )
 
             assert resp.status == 502
             data = await resp.json()
             body = json.dumps(data)
             assert raw_secret not in body
-            assert raw_secret not in resp.headers.get("X-Hermes-Error", "")
+            assert raw_secret not in resp.headers.get("X-Reign-Error", "")
             assert "OPENAI_API_KEY=" in body
-            assert data["error"]["hermes"]["failed"] is True
+            assert data["error"]["reign"]["failed"] is True
 
 
 # ---------------------------------------------------------------------------
@@ -2322,7 +2322,7 @@ class TestConversationParameter:
 
 
 # ---------------------------------------------------------------------------
-# X-Hermes-Session-Id header (session continuity)
+# X-Reign-Session-Id header (session continuity)
 # ---------------------------------------------------------------------------
 
 
@@ -2331,7 +2331,7 @@ class TestSessionIdHeader:
 
     @pytest.mark.asyncio
     async def test_traversal_session_id_header_rejected(self, auth_adapter):
-        """Security (#5958): a path-traversal X-Hermes-Session-Id must be
+        """Security (#5958): a path-traversal X-Reign-Session-Id must be
         rejected with 400 so it can't reach the filesystem artifact paths
         (session snapshot / request dump) and escape the sessions dir."""
         app = _create_app(auth_adapter)
@@ -2340,8 +2340,8 @@ class TestSessionIdHeader:
                 for bad in ("../../../../etc/pwned", "/abs/path", "..\\win"):
                     resp = await cli.post(
                         "/v1/chat/completions",
-                        headers={"X-Hermes-Session-Id": bad, "Authorization": "Bearer sk-secret"},
-                        json={"model": "hermes-agent", "messages": [{"role": "user", "content": "hi"}]},
+                        headers={"X-Reign-Session-Id": bad, "Authorization": "Bearer sk-secret"},
+                        json={"model": "reign", "messages": [{"role": "user", "content": "hi"}]},
                     )
                     assert resp.status == 400, f"{bad!r} should be rejected"
                 # The agent is never invoked for a rejected ID.
@@ -2349,7 +2349,7 @@ class TestSessionIdHeader:
 
     @pytest.mark.asyncio
     async def test_provided_session_id_loads_history_from_db(self, auth_adapter):
-        """When X-Hermes-Session-Id is provided, history comes from SessionDB not request body."""
+        """When X-Reign-Session-Id is provided, history comes from SessionDB not request body."""
         mock_result = {"final_response": "OK", "messages": [], "api_calls": 1}
         db_history = [
             {"role": "user", "content": "stored message 1"},
@@ -2365,10 +2365,10 @@ class TestSessionIdHeader:
 
                 resp = await cli.post(
                     "/v1/chat/completions",
-                    headers={"X-Hermes-Session-Id": "existing-session", "Authorization": "Bearer sk-secret"},
+                    headers={"X-Reign-Session-Id": "existing-session", "Authorization": "Bearer sk-secret"},
                     # Request body has different history — should be ignored
                     json={
-                        "model": "hermes-agent",
+                        "model": "reign",
                         "messages": [
                             {"role": "user", "content": "old msg from client"},
                             {"role": "assistant", "content": "old reply from client"},
@@ -2385,7 +2385,7 @@ class TestSessionIdHeader:
 
 
 # ---------------------------------------------------------------------------
-# X-Hermes-Session-Key header (long-term memory scoping)
+# X-Reign-Session-Key header (long-term memory scoping)
 # ---------------------------------------------------------------------------
 
 
@@ -2418,10 +2418,10 @@ class TestSessionKeyHeader:
                 resp = await cli.post(
                     "/v1/chat/completions",
                     headers={
-                        "X-Hermes-Session-Key": "agent:main:webui:dm:user-7",
+                        "X-Reign-Session-Key": "agent:main:webui:dm:user-7",
                         "Authorization": "Bearer sk-secret",
                     },
-                    json={"model": "hermes-agent", "messages": [{"role": "user", "content": "hi"}]},
+                    json={"model": "reign", "messages": [{"role": "user", "content": "hi"}]},
                 )
             assert resp.status == 200
             # _create_agent must be called with gateway_session_key threaded through
@@ -2429,7 +2429,7 @@ class TestSessionKeyHeader:
 
     @pytest.mark.asyncio
     async def test_responses_endpoint_accepts_session_key(self, auth_adapter):
-        """Responses API honors the same X-Hermes-Session-Key contract."""
+        """Responses API honors the same X-Reign-Session-Key contract."""
         mock_result = {"final_response": "ok", "messages": [], "api_calls": 1}
         app = _create_app(auth_adapter)
         async with TestClient(TestServer(app)) as cli:
@@ -2438,13 +2438,13 @@ class TestSessionKeyHeader:
                 resp = await cli.post(
                     "/v1/responses",
                     headers={
-                        "X-Hermes-Session-Key": "webui:chan-1",
+                        "X-Reign-Session-Key": "webui:chan-1",
                         "Authorization": "Bearer sk-secret",
                     },
-                    json={"model": "hermes-agent", "input": "hello", "store": False},
+                    json={"model": "reign", "input": "hello", "store": False},
                 )
             assert resp.status == 200
-            assert resp.headers.get("X-Hermes-Session-Key") == "webui:chan-1"
+            assert resp.headers.get("X-Reign-Session-Key") == "webui:chan-1"
             call_kwargs = mock_run.call_args.kwargs
             assert call_kwargs["gateway_session_key"] == "webui:chan-1"
 
@@ -2456,7 +2456,7 @@ class TestSessionKeyHeader:
             resp = await cli.get("/v1/capabilities")
             assert resp.status == 200
             data = await resp.json()
-            assert data["features"]["session_key_header"] == "X-Hermes-Session-Key"
+            assert data["features"]["session_key_header"] == "X-Reign-Session-Key"
 
 
 # ---------------------------------------------------------------------------
@@ -2491,7 +2491,7 @@ def _patch_create_agent_runtime(monkeypatch, captured: dict, fake_agent_cls):
         "gateway.run.GatewayRunner._load_fallback_model", staticmethod(lambda: None)
     )
     monkeypatch.setattr("gateway.run._current_max_iterations", lambda: 90)
-    monkeypatch.setattr("hermes_cli.tools_config._get_platform_tools", lambda *_: set())
+    monkeypatch.setattr("reign_cli.tools_config._get_platform_tools", lambda *_: set())
 
 
 class TestModelRoutesParsing:
@@ -2611,9 +2611,9 @@ class TestModelRoutesAgentCreation:
 
 class TestStoredSessionModelFilter:
     """A session row that persisted the advertised virtual model must read as
-    "no stored model" — replaying "hermes-agent" upstream 400s. Found live
-    (Aug 2026): the first cross-gateway `hermes peer dm` against a fresh
-    api_server failed every turn with "hermes-agent is not a valid model ID".
+    "no stored model" — replaying "reign" upstream 400s. Found live
+    (Aug 2026): the first cross-gateway `reign peer dm` against a fresh
+    api_server failed every turn with "reign is not a valid model ID".
     """
 
     def test_virtual_model_is_filtered(self):
@@ -2665,7 +2665,7 @@ class TestSessionDbOffEventLoop:
     @pytest.mark.asyncio
     async def test_create_session_without_model_does_not_persist_virtual_alias(self, auth_adapter):
         """A session created with no ``model`` field must not persist the
-        virtual model alias (self._model_name, e.g. "hermes-agent") as if it
+        virtual model alias (self._model_name, e.g. "reign") as if it
         were a real provider model id.
 
         Regression: _handle_create_session previously did
@@ -2674,7 +2674,7 @@ class TestSessionDbOffEventLoop:
         the session row. _handle_session_chat later reads it back as a raw
         session_model override (since it's not a model_routes alias) and
         sends it to the provider literally — Bedrock/OpenAI then reject
-        "hermes-agent" as an invalid model identifier on every turn.
+        "reign" as an invalid model identifier on every turn.
         """
         app = _create_app(auth_adapter)
         app.router.add_post("/api/sessions", auth_adapter._handle_create_session)
@@ -2692,7 +2692,7 @@ class TestSessionDbOffEventLoop:
 
     @pytest.mark.asyncio
     async def test_create_session_with_explicit_virtual_alias_does_not_persist_it(self, auth_adapter):
-        """Sending ``model: "hermes-agent"`` explicitly (the virtual alias
+        """Sending ``model: "reign"`` explicitly (the virtual alias
         itself, e.g. a client that just echoes /v1/models' advertised id)
         must be treated the same as omitting model entirely."""
         app = _create_app(auth_adapter)
@@ -2733,7 +2733,7 @@ class TestSessionDbOffEventLoop:
         Regression: _handle_create_session used to re-derive its own `model`
         straight from the raw request body, bypassing the provider-prefix
         split that _session_runtime_request_from_body performs — so
-        "openrouter::hermes-agent" never matched self._model_name and leaked
+        "openrouter::reign" never matched self._model_name and leaked
         through as a literal session override.
         """
         app = _create_app(auth_adapter)
@@ -2782,8 +2782,8 @@ class TestApiKeyStartupGuardFailsClosed:
         real_import = __import__
 
         def _blocked(name, *args, **kwargs):
-            if name == "hermes_cli.auth":
-                raise ImportError("simulated: hermes_cli.auth unavailable")
+            if name == "reign_cli.auth":
+                raise ImportError("simulated: reign_cli.auth unavailable")
             return real_import(name, *args, **kwargs)
 
         return patch("builtins.__import__", _blocked)
@@ -2929,7 +2929,7 @@ class TestCreateAgentModelRecovery:
     def test_create_agent_defaults_to_provider_catalog_model_when_empty(self, monkeypatch):
         """api_server.py had no equivalent of run.py's provider-catalog
         default when model resolves empty but a provider did resolve (e.g.
-        `hermes auth add openai-codex` without `hermes model`) —
+        `reign auth add openai-codex` without `reign model`) —
         AIAgent(model="") 400s every call."""
         captured = {}
 
@@ -2945,7 +2945,7 @@ class TestCreateAgentModelRecovery:
         )
         monkeypatch.setattr("gateway.run._resolve_gateway_model", lambda: "")
         monkeypatch.setattr(
-            "hermes_cli.models.get_default_model_for_provider",
+            "reign_cli.models.get_default_model_for_provider",
             lambda provider: "gpt-5.5-codex" if provider == "openai-codex" else None,
         )
 
@@ -2994,7 +2994,7 @@ class TestCreateAgentModelRecovery:
     # ── Recovery-net alias guards (PR for #79101) ──────────────────────
 
     def test_create_agent_does_not_cache_virtual_alias(self, monkeypatch):
-        """Write-side guard: the advertised virtual model (``hermes-agent``)
+        """Write-side guard: the advertised virtual model (``reign``)
         must never enter ``_last_resolved_model``, even when a prior turn
         (or the session-row bug) dispatched it."""
         captured = []

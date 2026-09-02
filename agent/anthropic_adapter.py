@@ -1,6 +1,6 @@
-"""Anthropic Messages API adapter for Hermes Agent.
+"""Anthropic Messages API adapter for Reign.
 
-Translates between Hermes's internal OpenAI-style message format and
+Translates between Reign's internal OpenAI-style message format and
 Anthropic's Messages API. Follows the same pattern as the codex_responses
 adapter — all provider-specific logic is isolated here.
 
@@ -22,7 +22,7 @@ import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
-from hermes_constants import get_hermes_home
+from reign_constants import get_reign_home
 from typing import Any, Dict, List, Optional, Tuple
 from utils import base_url_host_matches, base_url_hostname, normalize_proxy_env_vars
 from agent.secret_scope import get_secret as _get_secret
@@ -90,7 +90,7 @@ from agent.anthropic_credentials import (  # noqa: F401
     _OAUTH_TOKEN_USER_AGENT,
     CredentialPersistError,
     _generate_pkce,
-    _get_hermes_oauth_file,
+    _get_reign_oauth_file,
     _getenv,
     _is_oauth_token,
     _prefer_refreshable_claude_code_token,
@@ -100,25 +100,25 @@ from agent.anthropic_credentials import (  # noqa: F401
     _resolve_anthropic_pool_token,
     _resolve_claude_code_token_from_credentials,
     _write_claude_code_credentials,
-    _write_hermes_oauth_credentials,
+    _write_reign_oauth_credentials,
     claude_code_credentials_path,
     is_claude_code_token_valid,
     is_rotation_consumed_uncommitted,
     mark_rotation_consumed_uncommitted,
     read_claude_code_credentials,
-    read_hermes_oauth_credentials,
+    read_reign_oauth_credentials,
     refresh_anthropic_oauth_pure,
     resolve_anthropic_token,
-    run_hermes_oauth_login_pure,
+    run_reign_oauth_login_pure,
     run_oauth_setup_token,
 )
 
 try:
-    import hermes_cli as _hermes_cli
+    import reign_cli as _reign_cli
 
-    _HERMES_VERSION = str(_hermes_cli.__version__)
+    _REIGN_VERSION = str(_reign_cli.__version__)
 except Exception:
-    _HERMES_VERSION = "0.0.0"
+    _REIGN_VERSION = "0.0.0"
 
 
 
@@ -153,7 +153,7 @@ def _get_anthropic_sdk():
 logger = logging.getLogger(__name__)
 
 THINKING_BUDGET = {"xhigh": 32000, "high": 16000, "medium": 8000, "low": 4000}
-# Hermes effort → Anthropic adaptive-thinking effort (output_config.effort).
+# Reign effort → Anthropic adaptive-thinking effort (output_config.effort).
 # Anthropic exposes 5 levels on 4.7+: low, medium, high, xhigh, max.
 # Opus/Sonnet 4.6 only expose 4 levels: low, medium, high, max — no xhigh.
 # We preserve xhigh as xhigh on 4.7+ (the recommended default for coding/
@@ -517,7 +517,7 @@ def _detect_claude_code_version() -> str:
 _CLAUDE_CODE_SYSTEM_PREFIX = "You are Claude Code, Anthropic's official CLI for Claude."
 _MCP_TOOL_PREFIX = "mcp__"
 
-# Anthropic's OAuth billing classifier fingerprints certain Hermes tool
+# Anthropic's OAuth billing classifier fingerprints certain Reign tool
 # schemas/prose as a third-party app and reroutes the request to the metered
 # extra-usage lane, surfacing as HTTP 400 "You're out of extra usage" on a
 # valid subscription token (#65365). Deterministic live A/B repros (issue
@@ -659,7 +659,7 @@ def _build_anthropic_client_with_bearer_hook(
     kwargs = {
         "timeout": timeout_obj,
         "http_client": http_client,
-        # Delegate retry to hermes's outer loop (honors Retry-After); the SDK
+        # Delegate retry to reign's outer loop (honors Retry-After); the SDK
         # default max_retries=2 ignores it and double-retries. (#26293)
         "max_retries": 0,
         # The SDK requires *something* for api_key/auth_token. Our
@@ -750,7 +750,7 @@ def build_anthropic_client(
     _read_timeout = timeout if (isinstance(timeout, (int, float)) and timeout > 0) else 900.0
     kwargs = {
         "timeout": Timeout(timeout=float(_read_timeout), connect=10.0),
-        # Delegate all rate-limit / 5xx retry to hermes's outer conversation
+        # Delegate all rate-limit / 5xx retry to reign's outer conversation
         # loop, which honors Retry-After. The SDK default (max_retries=2) uses
         # its own 1-2s backoff that ignores Retry-After and double-retries
         # inside our loop — burning request slots against a bucket that won't
@@ -779,12 +779,12 @@ def build_anthropic_client(
         # team asked us to identify ourselves properly so they can attribute
         # traffic correctly. Send the same attribution header set we send to
         # OpenRouter, Vercel AI Gateway, and Fireworks:
-        # HTTP-Referer + X-Title + HermesAgent User-Agent.
+        # HTTP-Referer + X-Title + ReignAgent User-Agent.
         kwargs["api_key"] = api_key
         kwargs["default_headers"] = {
             "HTTP-Referer": "https://hermes-agent.nousresearch.com",
-            "X-Title": "Hermes Agent",
-            "User-Agent": f"HermesAgent/{_HERMES_VERSION}",
+            "X-Title": "Reign",
+            "User-Agent": f"ReignAgent/{_REIGN_VERSION}",
             **( {"anthropic-beta": ",".join(common_betas)} if common_betas else {} )
         }
     elif _requires_bearer_auth(normalized_base_url):
@@ -830,14 +830,14 @@ def build_anthropic_client(
         # the same set on top of whatever auth branch ran above.
         headers = dict(kwargs.get("default_headers") or {})
         headers.setdefault("HTTP-Referer", "https://hermes-agent.nousresearch.com")
-        headers.setdefault("X-Title", "Hermes Agent")
-        headers.setdefault("User-Agent", f"HermesAgent/{_HERMES_VERSION}")
+        headers.setdefault("X-Title", "Reign")
+        headers.setdefault("User-Agent", f"ReignAgent/{_REIGN_VERSION}")
         kwargs["default_headers"] = headers
 
     client = _anthropic_sdk.Anthropic(**kwargs)
     # Bearer-only construction leaves ``api_key`` unset, so the SDK fills it
-    # from ``ANTHROPIC_API_KEY`` (Hermes loads that into the process env from
-    # ``~/.hermes/.env``). The result is dual auth —
+    # from ``ANTHROPIC_API_KEY`` (Reign loads that into the process env from
+    # ``~/.reign/.env``). The result is dual auth —
     # ``X-Api-Key: sk-ant-…`` *and* ``Authorization: Bearer <portal-jwt>`` —
     # on every Portal / MiniMax / OAuth Messages request. Clear the env-filled
     # key whenever we intentionally authenticated via auth_token alone.
@@ -878,7 +878,7 @@ def build_anthropic_bedrock_client(region: str):
     return _anthropic_sdk.AnthropicBedrock(
         aws_region=region,
         timeout=Timeout(timeout=900.0, connect=10.0),
-        # Delegate retry to hermes's outer loop (honors Retry-After); the SDK
+        # Delegate retry to reign's outer loop (honors Retry-After); the SDK
         # default max_retries=2 ignores it and double-retries. (#26293)
         max_retries=0,
         default_headers={"anthropic-beta": ",".join([*_COMMON_BETAS, _CONTEXT_1M_BETA])},
@@ -982,10 +982,10 @@ def build_anthropic_kwargs(
         for block in system:
             if isinstance(block, dict) and block.get("type") == "text":
                 text = block.get("text", "")
-                text = text.replace("Hermes Agent", "Claude Code")
-                text = text.replace("Hermes agent", "Claude Code")
-                text = text.replace("hermes-agent", "claude-code")
-                text = text.replace("Nous Research", "Anthropic")
+                text = text.replace("Reign", "Claude Code")
+                text = text.replace("Reign", "Claude Code")
+                text = text.replace("reign", "claude-code")
+                text = text.replace("Rook", "Anthropic")
                 text = _apply_oauth_prose_aliases(text)
                 block["text"] = text
 
@@ -998,7 +998,7 @@ def build_anthropic_kwargs(
         #    from plan-billing to the extra-usage lane; ``mcp__foo`` is accepted).
         #
         #    Two cases, both must land on the double-underscore ``mcp__`` form:
-        #      a) bare Hermes-native tools (``read_file``)  -> ``mcp__read_file``
+        #      a) bare Reign-native tools (``read_file``)  -> ``mcp__read_file``
         #      b) native MCP server tools registered under their full
         #         single-underscore ``mcp_<server>_<tool>`` name
         #         (``mcp_linear_get_issue``) -> ``mcp__linear_get_issue``
@@ -1105,7 +1105,7 @@ def build_anthropic_kwargs(
     # in the ChatCompletionsTransport — see #13503.)
     #
     # On 4.7+ the `thinking.display` field defaults to "omitted", which
-    # silently hides reasoning text that Hermes surfaces in its CLI. We
+    # silently hides reasoning text that Reign surfaces in its CLI. We
     # request "summarized" so the reasoning blocks stay populated — matching
     # 4.6 behavior and preserving the activity-feed UX during long tool runs.
     if reasoning_config and isinstance(reasoning_config, dict):

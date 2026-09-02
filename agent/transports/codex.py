@@ -55,27 +55,27 @@ def _bounded_prompt_cache_key(value: Any) -> Optional[str]:
     return f"pck_{digest}"
 
 
-# Wire-name used when Hermes keeps client-side web_search on xAI Responses.
+# Wire-name used when Reign keeps client-side web_search on xAI Responses.
 # A function literally named ``web_search`` collides with Grok's native
 # server-side tool (incomplete hang or HTTP 400 duplicate names); this alias
-# avoids that while still dispatching through Hermes's configured provider
+# avoids that while still dispatching through Reign's configured provider
 # (Firecrawl / Tavily / …). Mapped back to ``web_search`` in normalize_response.
-_XAI_CLIENT_WEB_SEARCH_ALIAS = "hermes_web_search"
+_XAI_CLIENT_WEB_SEARCH_ALIAS = "reign_web_search"
 
 # OpenCode's /v1/responses endpoints (Zen and Go, including custom providers
 # pointing at opencode.ai) reserve certain function names server-side and
 # reject client tools that use them with HTTP 400 ("custom function name
 # 'X' is reserved"). Reported for grok-4.5 on Go with `search_files` and
 # `web_search` (#85589). Same treatment as the xAI web_search collision:
-# rename on the wire (hermes_<name>), map back in normalize_response so
-# Hermes dispatch is unaffected.
+# rename on the wire (reign_<name>), map back in normalize_response so
+# Reign dispatch is unaffected.
 _OPENCODE_RESERVED_TOOL_NAMES = ("web_search", "search_files")
 
 # xAI reserves ``tool_search`` server-side for Grok's own native Tool Search
 # and rejects *any* client function declared with that name:
 #   HTTP 400 {"code":"invalid-argument","error":"The function name
 #   tool_search is reserved for the tool_search tool"}
-# Hermes's progressive-disclosure bridge registers exactly that literal
+# Reign's progressive-disclosure bridge registers exactly that literal
 # (``tools.tool_search.TOOL_SEARCH_NAME``), and assembly is not provider
 # gated, so with ``tools.tool_search.enabled: auto`` a grok turn dies the
 # moment the catalog crosses the threshold — mid-session, and only for
@@ -84,7 +84,7 @@ _OPENCODE_RESERVED_TOOL_NAMES = ("web_search", "search_files")
 # Refs #95003.
 _XAI_RESERVED_TOOL_NAMES = ("tool_search",)
 
-_RESERVED_TOOL_ALIAS_PREFIX = "hermes_"
+_RESERVED_TOOL_ALIAS_PREFIX = "reign_"
 _RESERVED_ALIAS_TO_NAME = {
     f"{_RESERVED_TOOL_ALIAS_PREFIX}{name}": name
     for name in (*_OPENCODE_RESERVED_TOOL_NAMES, *_XAI_RESERVED_TOOL_NAMES)
@@ -94,11 +94,11 @@ _RESERVED_ALIAS_TO_NAME = {
 # instance that never built a request (normalize-only call sites / tests).
 # Production requests carry request-local provenance instead — see
 # ``_last_wire_aliases`` — so a real user/plugin/MCP tool that happens to be
-# named ``hermes_tool_search`` is never silently rewritten to ``tool_search``
+# named ``reign_tool_search`` is never silently rewritten to ``tool_search``
 # unless THIS request actually emitted that alias (#95003 review contract).
 _LEGACY_ALIAS_FALLBACK = {
     **_RESERVED_ALIAS_TO_NAME,
-    "hermes_web_search": "web_search",
+    "reign_web_search": "web_search",
 }
 
 
@@ -111,7 +111,7 @@ def _is_opencode_responses_backend(params: Dict[str, Any]) -> bool:
     the OpenCode gateway).
     """
     try:
-        from hermes_cli.models import opencode_provider_family
+        from reign_cli.models import opencode_provider_family
 
         if opencode_provider_family(params.get("provider")) is not None:
             return True
@@ -136,7 +136,7 @@ def _alias_reserved_tools(
     wire alias emitted by THIS request back to the original tool name.
     The caller stashes the map for ``normalize_response`` so the reverse
     rewrite only ever applies to aliases this request actually sent —
-    a legitimate user/plugin/MCP tool already named ``hermes_<x>`` is
+    a legitimate user/plugin/MCP tool already named ``reign_<x>`` is
     neither shadowed (the alias picks a ``_2``/``_3`` suffix instead of
     duplicating a wire name) nor mis-dispatched on the response path.
     """
@@ -646,7 +646,7 @@ class ResponsesApiTransport(ProviderTransport):
 
         response_tools = _responses_tools(tools)
 
-        # xAI server-side web search vs Hermes web providers.
+        # xAI server-side web search vs Reign web providers.
         #
         # grok models on xAI's /v1/responses surface have a *native*,
         # server-executed web search.  A client-side function literally named
@@ -662,9 +662,9 @@ class ResponsesApiTransport(ProviderTransport):
         #    xAI's built-in instead. 1:1 swap only when client ``web_search``
         #    was already present — never an additive grant.
         # 2. **Client** (Firecrawl / Tavily / Exa / … configured or resolved):
-        #    keep Hermes dispatch so ``web.backend`` / ``web.search_backend``
+        #    keep Reign dispatch so ``web.backend`` / ``web.search_backend``
         #    is honored, but rename the wire tool to
-        #    ``hermes_web_search`` so Grok cannot hijack the name. The alias
+        #    ``reign_web_search`` so Grok cannot hijack the name. The alias
         #    is mapped back to ``web_search`` in ``normalize_response``.
         # Request-local alias provenance: every wire alias THIS request
         # emits is recorded here and stashed on the transport, so the
@@ -727,7 +727,7 @@ class ResponsesApiTransport(ProviderTransport):
             strip_codex_context_variant_suffix as _strip_ctx_variant,
         )
         kwargs = {
-            # ``-900k`` large-context picker variants are Hermes-side aliases
+            # ``-900k`` large-context picker variants are Reign-side aliases
             # (gpt-5.6-sol-900k etc.) — the Codex/OpenAI backend only knows
             # the base slug, so strip the suffix before it hits the wire.
             "model": _strip_ctx_variant(model),
@@ -948,11 +948,11 @@ class ResponsesApiTransport(ProviderTransport):
                 if hasattr(tc, "response_item_id") and tc.response_item_id:
                     provider_data["response_item_id"] = tc.response_item_id
                 name = tc.function.name if hasattr(tc, "function") else getattr(tc, "name", "")
-                # Undo THIS request's wire aliases before Hermes dispatch.
+                # Undo THIS request's wire aliases before Reign dispatch.
                 # Request-local provenance: only aliases the paired
                 # build_kwargs call actually emitted are rewritten, so a
                 # legitimate tool that happens to be named
-                # ``hermes_tool_search`` etc. is dispatched as itself when
+                # ``reign_tool_search`` etc. is dispatched as itself when
                 # no alias was sent. The static legacy map is used only for
                 # normalize-only call sites that never built a request on
                 # this transport instance.

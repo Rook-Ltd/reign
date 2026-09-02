@@ -10,7 +10,7 @@ Sources, in the order ``resolve_anthropic_token()`` consults them:
 
 1. ``ANTHROPIC_TOKEN`` / ``CLAUDE_CODE_OAUTH_TOKEN`` (explicit OAuth env)
 2. ``ANTHROPIC_API_KEY`` (explicit API key)
-3. ``~/.hermes/.anthropic_oauth.json`` (Hermes PKCE login)
+3. ``~/.reign/.anthropic_oauth.json`` (Reign PKCE login)
 4. ``~/.claude/.credentials.json`` / macOS Keychain (Claude Code)
 5. the credential pool in ``auth.json``
 
@@ -36,7 +36,7 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from hermes_constants import get_hermes_home
+from reign_constants import get_reign_home
 from agent.secret_scope import get_secret as _get_secret
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def _getenv(name: str, default: str = "") -> str:
 
     Routes through the secret scope (Workstream A): identical to os.getenv
     when multiplexing is off, scope-aware (and fail-closed on an unscoped
-    read) when on. Mirrors the same wrapper in hermes_cli/runtime_provider.py.
+    read) when on. Mirrors the same wrapper in reign_cli/runtime_provider.py.
     """
     val = _get_secret(name, default)
     return val if val is not None else default
@@ -89,7 +89,7 @@ class CredentialPersistError(RuntimeError):
     consumes the old refresh token server-side and returns a replacement. The
     replacement exists only in memory until it reaches its authoritative
     on-disk store (``~/.claude/.credentials.json`` for ``claude_code``,
-    ``~/.hermes/.anthropic_oauth.json`` for ``hermes_pkce``).
+    ``~/.reign/.anthropic_oauth.json`` for ``reign_pkce``).
 
     If that write fails and the caller reports success anyway, the on-disk
     (already consumed) pair survives and is re-seeded on the next
@@ -119,8 +119,8 @@ class CredentialPersistError(RuntimeError):
 # The registry has TWO scopes, because the credential it protects does:
 #   * process-local (this OrderedDict) — fast path, always recorded;
 #   * durable sidecar file next to the shared credential source — the
-#     authority boundary of ``claude_code``/``hermes_pkce`` is the shared
-#     singleton file, which other Hermes processes/profiles read with fresh
+#     authority boundary of ``claude_code``/``reign_pkce`` is the shared
+#     singleton file, which other Reign processes/profiles read with fresh
 #     interpreters.  A process-local verdict only stops the process that
 #     lost the commit from lying to itself; the sidecar stops every OTHER
 #     process from leasing the stale pair or re-POSTing the spent refresh
@@ -135,7 +135,7 @@ _SPENT_ROTATION_SIDECAR_VERSION = 1
 
 def _spent_rotation_sidecar_path(source_path: Path) -> Path:
     """Sidecar registry path for a shared credential source file."""
-    return source_path.with_name(source_path.name + ".hermes-spent-rotations.json")
+    return source_path.with_name(source_path.name + ".reign-spent-rotations.json")
 
 
 def spent_rotation_source_path(source: Any) -> Optional[Path]:
@@ -147,8 +147,8 @@ def spent_rotation_source_path(source: Any) -> Optional[Path]:
     """
     if source == "claude_code":
         return claude_code_credentials_path()
-    if source == "hermes_pkce":
-        return _get_hermes_oauth_file()
+    if source == "reign_pkce":
+        return _get_reign_oauth_file()
     return None
 
 
@@ -186,7 +186,7 @@ def _append_spent_rotation_sidecar(source_path: Path, fingerprints: list) -> Non
                 "comment": (
                     "Non-secret one-way fingerprints of Anthropic OAuth "
                     "credentials whose rotation was consumed server-side but "
-                    "never durably committed. Written by Hermes so sibling "
+                    "never durably committed. Written by Reign so sibling "
                     "processes sharing this credential source fail closed "
                     "instead of replaying a spent single-use refresh token."
                 ),
@@ -323,7 +323,7 @@ def _read_claude_code_credentials_from_keychain() -> Optional[Dict[str, Any]]:
 def claude_code_credentials_path() -> Path:
     """Location Claude Code CLI writes its shared OAuth credentials file.
 
-    This file is not profile-owned: every Hermes profile's credential pool
+    This file is not profile-owned: every Reign profile's credential pool
     reads and writes the *same* path, so cross-profile refresh races on a
     ``claude_code`` pool entry must be serialized against this exact path
     (see ``CredentialPool._claude_code_credentials_lock`` in
@@ -485,7 +485,7 @@ def _refresh_oauth_token(creds: Dict[str, Any]) -> Optional[str]:
     Claude Code's OAuth refresh tokens are single-use: a successful refresh
     rotates the pair and invalidates the old refresh token. Claude Code itself
     also refreshes on its own schedule (IDE/CLI activity), so by the time
-    Hermes notices an expired token, Claude Code may have already rotated it.
+    Reign notices an expired token, Claude Code may have already rotated it.
     POSTing our now-stale refresh token in that window races Claude Code and
     fails with ``invalid_grant``.
 
@@ -500,10 +500,10 @@ def _refresh_oauth_token(creds: Dict[str, Any]) -> Optional[str]:
     # Without this direct resolver path, two profiles can still spend one
     # single-use refresh token even though CredentialPool is serialized.
     try:
-        from hermes_cli.auth import AUTH_LOCK_TIMEOUT_SECONDS, _auth_store_lock, env_float
+        from reign_cli.auth import AUTH_LOCK_TIMEOUT_SECONDS, _auth_store_lock, env_float
 
         refresh_timeout_seconds = env_float(
-            "HERMES_ANTHROPIC_REFRESH_TIMEOUT_SECONDS", 20
+            "REIGN_ANTHROPIC_REFRESH_TIMEOUT_SECONDS", 20
         )
         lock_timeout_seconds = max(
             float(AUTH_LOCK_TIMEOUT_SECONDS),
@@ -707,7 +707,7 @@ def _resolve_claude_code_token_from_credentials(creds: Optional[Dict[str, Any]] 
 def _prefer_refreshable_claude_code_token(env_token: str, creds: Optional[Dict[str, Any]]) -> Optional[str]:
     """Prefer Claude Code creds when a persisted env OAuth token would shadow refresh.
 
-    Hermes historically persisted setup tokens into ANTHROPIC_TOKEN. That makes
+    Reign historically persisted setup tokens into ANTHROPIC_TOKEN. That makes
     later refresh impossible because the static env token wins before we ever
     inspect Claude Code's refreshable credential file. If we have a refreshable
     Claude Code credential record, prefer it over the static env OAuth token.
@@ -731,7 +731,7 @@ def _resolve_anthropic_pool_token() -> Optional[str]:
 
     Read-only: enumerates with ``clear_expired=False, refresh=False`` so a bare
     token *resolve* (which runs from diagnostic/read-only call sites such as
-    ``account_usage`` and ``hermes models``) never mutates ``~/.hermes/auth.json``
+    ``account_usage`` and ``reign models``) never mutates ``~/.reign/auth.json``
     or makes a network refresh call. Refresh-on-expiry is owned by the API call
     path's pool recovery, not the resolver.
     """
@@ -790,12 +790,12 @@ def resolve_anthropic_token() -> Optional[str]:
     """Resolve an Anthropic token from all available sources.
 
     Priority:
-      1. ANTHROPIC_TOKEN env var (OAuth/setup token saved by Hermes)
+      1. ANTHROPIC_TOKEN env var (OAuth/setup token saved by Reign)
       2. CLAUDE_CODE_OAUTH_TOKEN env var
       3. ANTHROPIC_API_KEY env var (explicit regular API key)
       4. Claude Code credentials (~/.claude.json or ~/.claude/.credentials.json)
          — with automatic refresh if expired and a refresh token is available
-      5. Anthropic credential_pool OAuth entry (~/.hermes/auth.json)
+      5. Anthropic credential_pool OAuth entry (~/.reign/auth.json)
 
     Returns the token string or None.
     """
@@ -809,7 +809,7 @@ def resolve_anthropic_token() -> Optional[str]:
             creds_loaded = True
         return creds
 
-    # 1. Hermes-managed OAuth/setup token env var
+    # 1. Reign-managed OAuth/setup token env var
     token = _getenv("ANTHROPIC_TOKEN").strip()
     if token:
         preferred = _prefer_refreshable_claude_code_token(token, _read_creds())
@@ -836,7 +836,7 @@ def resolve_anthropic_token() -> Optional[str]:
     if resolved_claude_token:
         return resolved_claude_token
 
-    # 5. Hermes credential_pool OAuth entry.
+    # 5. Reign credential_pool OAuth entry.
     resolved_pool_token = _resolve_anthropic_pool_token()
     if resolved_pool_token:
         return resolved_pool_token
@@ -887,9 +887,9 @@ def run_oauth_setup_token() -> Optional[str]:
     return None
 
 
-# ── Hermes-native PKCE OAuth flow ────────────────────────────────────────
+# ── Reign-native PKCE OAuth flow ────────────────────────────────────────
 # Mirrors the flow used by Claude Code, pi-ai, and OpenCode.
-# Stores credentials in ~/.hermes/.anthropic_oauth.json (our own file).
+# Stores credentials in ~/.reign/.anthropic_oauth.json (our own file).
 
 _OAUTH_CLIENT_ID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
 # Anthropic migrated the OAuth token endpoint to platform.claude.com;
@@ -913,8 +913,8 @@ _OAUTH_TOKEN_URL = _OAUTH_TOKEN_URLS[0]
 _OAUTH_TOKEN_USER_AGENT = "axios/1.7.9"
 _OAUTH_REDIRECT_URI = "https://console.anthropic.com/oauth/code/callback"
 _OAUTH_SCOPES = "org:create_api_key user:profile user:inference"
-def _get_hermes_oauth_file() -> Path:
-    return get_hermes_home() / ".anthropic_oauth.json"
+def _get_reign_oauth_file() -> Path:
+    return get_reign_home() / ".anthropic_oauth.json"
 
 
 def _generate_pkce() -> tuple:
@@ -930,8 +930,8 @@ def _generate_pkce() -> tuple:
     return verifier, challenge
 
 
-def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
-    """Run Hermes-native OAuth PKCE flow and return credential state."""
+def run_reign_oauth_login_pure() -> Optional[Dict[str, Any]]:
+    """Run Reign-native OAuth PKCE flow and return credential state."""
     import secrets
     import time
     import webbrowser
@@ -954,7 +954,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     auth_url = f"https://claude.ai/oauth/authorize?{urlencode(params)}"
 
     print()
-    print("Authorize Hermes with your Claude Pro/Max subscription.")
+    print("Authorize Reign with your Claude Pro/Max subscription.")
     print()
     print("╭─ Claude Pro/Max Authorization ────────────────────╮")
     print("│                                                   │")
@@ -965,7 +965,7 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     print()
 
     try:
-        from hermes_cli.auth import _can_open_graphical_browser as _can_open_gui
+        from reign_cli.auth import _can_open_graphical_browser as _can_open_gui
     except Exception:
         _can_open_gui = lambda: True  # noqa: E731 — degrade to prior behavior
 
@@ -1060,27 +1060,27 @@ def run_hermes_oauth_login_pure() -> Optional[Dict[str, Any]]:
     }
 
 
-def read_hermes_oauth_credentials() -> Optional[Dict[str, Any]]:
-    """Read Hermes-managed OAuth credentials from ~/.hermes/.anthropic_oauth.json."""
-    oauth_file = _get_hermes_oauth_file()
+def read_reign_oauth_credentials() -> Optional[Dict[str, Any]]:
+    """Read Reign-managed OAuth credentials from ~/.reign/.anthropic_oauth.json."""
+    oauth_file = _get_reign_oauth_file()
     if oauth_file.exists():
         try:
             data = json.loads(oauth_file.read_text(encoding="utf-8"))
             if data.get("accessToken"):
                 return data
         except (json.JSONDecodeError, OSError, IOError) as e:
-            logger.debug("Failed to read Hermes OAuth credentials: %s", e)
+            logger.debug("Failed to read Reign OAuth credentials: %s", e)
     return None
 
 
-def _write_hermes_oauth_credentials(
+def _write_reign_oauth_credentials(
     access_token: str,
     refresh_token: Optional[str],
     expires_at_ms: Optional[int],
 ) -> None:
-    """Write refreshed hermes_pkce tokens back to ~/.hermes/.anthropic_oauth.json.
+    """Write refreshed reign_pkce tokens back to ~/.reign/.anthropic_oauth.json.
 
-    Without this, a successful pool-level refresh of a ``hermes_pkce``-sourced
+    Without this, a successful pool-level refresh of a ``reign_pkce``-sourced
     entry is invisible to this singleton file. The next ``load_pool()`` call
     runs ``_seed_from_singletons()``, which reads the stale file and
     overwrites the freshly-rotated pool entry with the pre-refresh (and, for
@@ -1090,7 +1090,7 @@ def _write_hermes_oauth_credentials(
     file, for the same reason ``_write_claude_code_credentials`` does: this is
     the commit step of the refresh transaction.
     """
-    oauth_file = _get_hermes_oauth_file()
+    oauth_file = _get_reign_oauth_file()
     try:
         oauth_data = {
             "accessToken": access_token,
@@ -1118,7 +1118,7 @@ def _write_hermes_oauth_credentials(
             raise
     except (OSError, IOError, ValueError) as e:
         logger.error(
-            "Failed to write refreshed Hermes OAuth credentials to %s: %s", oauth_file, e
+            "Failed to write refreshed Reign OAuth credentials to %s: %s", oauth_file, e
         )
         raise CredentialPersistError(oauth_file, e) from e
 

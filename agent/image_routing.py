@@ -216,7 +216,7 @@ def _supports_vision_override(
 
     # 2. Per-provider, per-model. Named custom providers (e.g. "my-vllm")
     # get rewritten to provider="custom" at runtime
-    # (hermes_cli/runtime_provider.py:_resolve_named_custom_runtime), so the
+    # (reign_cli/runtime_provider.py:_resolve_named_custom_runtime), so the
     # config still holds the user-declared name under model.provider. Try
     # both as candidate provider keys. Either identity may use the
     # "custom:<name>" form while providers: is keyed by bare <name>.
@@ -528,7 +528,7 @@ def _lookup_supports_vision(
     # images detour to a cloud auxiliary — wrong twice for a local-first
     # user (broken feature, and a screenshot leaving the machine).
     try:
-        from hermes_cli.local_runtime.capabilities import (
+        from reign_cli.local_runtime.capabilities import (
             is_managed_provider,
             managed_model_supports_vision,
         )
@@ -843,7 +843,7 @@ def _file_to_data_url(path: Path) -> Optional[str]:
     # formats transcode to PNG here instead of vanishing server-side.
     try:
         from agent.auxiliary_client import _runtime_main_value
-        from hermes_cli.local_runtime.capabilities import (
+        from reign_cli.local_runtime.capabilities import (
             ACCEPTED_IMAGE_MIMES,
             is_managed_provider,
         )

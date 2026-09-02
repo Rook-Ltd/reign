@@ -28,7 +28,7 @@ _SESSION_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 # resolved browser is EXCLUSIVE to this named session (per-name provider
 # browser, or a named Browser Use cloud browser). Popped before the
 # subprocess launches — never exported to the CLI.
-_PRIVATE_BROWSER_SENTINEL = "_HERMES_BU_PRIVATE_BROWSER"
+_PRIVATE_BROWSER_SENTINEL = "_REIGN_BU_PRIVATE_BROWSER"
 
 # Preamble prepended to the model's code for named sessions on SHARED
 # browsers (local Chrome / CDP override). The harness daemon attaches to the
@@ -38,8 +38,8 @@ _PRIVATE_BROWSER_SENTINEL = "_HERMES_BU_PRIVATE_BROWSER"
 # once per daemon (marker file keyed by BU_NAME under the harness runtime
 # state), costs one IPC round-trip on later calls.
 _OWN_TAB_PREAMBLE = """\
-# hermes: pin this named session to its own tab (once per daemon process)
-def _hermes_ensure_own_tab():
+# reign: pin this named session to its own tab (once per daemon process)
+def _reign_ensure_own_tab():
     import os as _os, tempfile as _tf
     _name = _os.environ.get("BU_NAME", "default")
     try:
@@ -52,7 +52,7 @@ def _hermes_ensure_own_tab():
         _dpid = "0"
     _uid = _os.getuid() if hasattr(_os, "getuid") else 0
     _marker = _os.path.join(
-        _tf.gettempdir(), "hermes-bu-owntab-%s-%s-%s" % (_uid, _name, _dpid)
+        _tf.gettempdir(), "reign-bu-owntab-%s-%s-%s" % (_uid, _name, _dpid)
     )
     if _os.path.exists(_marker):
         return
@@ -68,8 +68,8 @@ def _hermes_ensure_own_tab():
         open(_marker, "w").close()
     except OSError:
         pass
-_hermes_ensure_own_tab()
-del _hermes_ensure_own_tab
+_reign_ensure_own_tab()
+del _reign_ensure_own_tab
 """
 
 _DEFAULT_TIMEOUT_S = 300
@@ -109,13 +109,13 @@ def _base_subprocess_env() -> dict:
 
     env = _build_browser_env()
     # The browser-use CLI runs under its own Python (uv tool / uvx), which
-    # may differ from Hermes's venv Python. PYTHONPATH/PYTHONHOME inherited
-    # from the agent process point at Hermes's venv site-packages, and a
+    # may differ from Reign's venv Python. PYTHONPATH/PYTHONHOME inherited
+    # from the agent process point at Reign's venv site-packages, and a
     # child interpreter honors them ahead of its own site-packages — so the
     # CLI imports compiled C-extensions (e.g. pydantic_core) built for the
     # wrong interpreter and crashes on ABI mismatch (#83427, #84841, #86006,
     # #86104). Strip both — the CLI manages its own environment and never
-    # needs Hermes's import path.
+    # needs Reign's import path.
     env.pop("PYTHONPATH", None)
     env.pop("PYTHONHOME", None)
     # Same class of hazard, PATH flavor: profile-spawned workers (kanban
@@ -166,7 +166,7 @@ def _floor_subprocess_path(path: str) -> str:
 def _read_browser_cfg() -> dict:
     """Return the ``browser:`` config section, or {} on any failure."""
     try:
-        from hermes_cli.config import cfg_get, read_raw_config
+        from reign_cli.config import cfg_get, read_raw_config
 
         cfg = cfg_get(read_raw_config(), "browser", default={})
         return cfg if isinstance(cfg, dict) else {}
@@ -267,9 +267,9 @@ def default_downgrade_notice() -> Optional[str]:
         if _find_cli() is not None:
             return None
 
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        stamp = Path(get_hermes_home()) / "cache" / _NOTICE_STAMP_NAME
+        stamp = Path(get_reign_home()) / "cache" / _NOTICE_STAMP_NAME
         try:
             if 0 <= time.time() - stamp.stat().st_mtime < _NOTICE_INTERVAL_S:
                 return None
@@ -282,7 +282,7 @@ def default_downgrade_notice() -> Optional[str]:
             pass
         return (
             "Browser Use CLI not found — using the built-in browser tools. "
-            "Run `hermes tools` (Browser Automation → Browser Use) to install it, "
+            "Run `reign tools` (Browser Automation → Browser Use) to install it, "
             "or `browser.backend: off` in config.yaml to silence this."
         )
     except Exception as e:  # pragma: no cover — a notice must never break startup
@@ -291,12 +291,12 @@ def default_downgrade_notice() -> Optional[str]:
 
 
 def _managed_bin_dir() -> Optional[str]:
-    """Hermes' own bin dir ($HERMES_HOME/bin) — where install.sh puts uv/uvx
+    """Reign' own bin dir ($REIGN_HOME/bin) — where install.sh puts uv/uvx
     and where install_cli() links the browser-use binary."""
     try:
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        return str(Path(get_hermes_home()) / "bin")
+        return str(Path(get_reign_home()) / "bin")
     except Exception as e:  # pragma: no cover — defensive
         logger.debug("Could not resolve managed bin dir: %s", e)
         return None
@@ -322,10 +322,10 @@ def _user_local_bin_dir() -> Optional[str]:
 def _find_cli() -> Optional[List[str]]:
     """Locate the browser-use CLI, or None when it can't be run.
 
-    MANAGED-FIRST resolution: Hermes' own ``$HERMES_HOME/bin`` copy — the
+    MANAGED-FIRST resolution: Reign' own ``$REIGN_HOME/bin`` copy — the
     one every browser backend selection installs and updates via
     ``install_cli()`` — always wins, so all sessions drive one canonical,
-    Hermes-controlled binary. PATH and the user-level tool dir
+    Reign-controlled binary. PATH and the user-level tool dir
     (~/.local/bin / %APPDATA%\\uv\\bin, where a manual ``uv tool install``
     links binaries) are fallbacks for setups that never ran our install,
     and cover Desktop/TUI workers that spawn with a minimal PATH. The uvx
@@ -348,18 +348,18 @@ def _find_cli() -> Optional[List[str]]:
 def install_cli(timeout_s: int = 600) -> Tuple[bool, str]:
     """Install the browser-use CLI persistently via ``uv tool install``.
 
-    Resolution order for uv: Hermes' managed uv (bootstrapped on demand via
-    ``hermes_cli.managed_uv.ensure_uv``) → uv on PATH. The binary is linked
-    into ``$HERMES_HOME/bin`` (``UV_TOOL_BIN_DIR``) so ``_find_cli()``
+    Resolution order for uv: Reign' managed uv (bootstrapped on demand via
+    ``reign_cli.managed_uv.ensure_uv``) → uv on PATH. The binary is linked
+    into ``$REIGN_HOME/bin`` (``UV_TOOL_BIN_DIR``) so ``_find_cli()``
     resolves it for every profile without touching the user's PATH.
 
     Returns ``(ok, message)`` — never raises.
     """
     # MANAGED-FIRST: only the managed copy short-circuits the install. A
     # browser-use found on PATH is a user-level side install — it must NOT
-    # prevent provisioning the canonical Hermes-managed copy, or resolution
+    # prevent provisioning the canonical Reign-managed copy, or resolution
     # stays pinned to a binary we don't control (version drift, no updates
-    # through hermes tools).
+    # through reign tools).
     bin_dir = _managed_bin_dir()
     if bin_dir:
         managed = shutil.which("browser-use", path=bin_dir)
@@ -368,7 +368,7 @@ def install_cli(timeout_s: int = 600) -> Tuple[bool, str]:
 
     uv_bin: Optional[str] = None
     try:
-        from hermes_cli.managed_uv import ensure_uv
+        from reign_cli.managed_uv import ensure_uv
 
         uv_bin = str(ensure_uv() or "") or None
     except Exception as e:
@@ -428,10 +428,10 @@ def _workspace_dir(task_id: Optional[str]) -> Optional[str]:
     try:
         from pathlib import Path
 
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
         safe = _TASK_ID_SAFE_RE.sub("_", str(task_id or "default"))[:80] or "default"
-        path = Path(get_hermes_home()) / "cache" / "browser-use" / "workspace" / safe
+        path = Path(get_reign_home()) / "cache" / "browser-use" / "workspace" / safe
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
     except Exception as e:
@@ -508,7 +508,7 @@ def _backend_cache_key(task_id: Optional[str], session_name: str = "") -> str:
 def _resolve_lightpanda_cdp(
     env: dict, task_id: Optional[str], session_name: str = ""
 ) -> Optional[str]:
-    """Point the harness at a Hermes-spawned ``lightpanda serve``.
+    """Point the harness at a Reign-spawned ``lightpanda serve``.
 
     Only when ``browser.engine`` is ``lightpanda`` and nothing with higher
     precedence (BU_CDP_* env, a CDP override, a cloud provider) claimed the
@@ -533,7 +533,7 @@ def _resolve_lightpanda_cdp(
     except Exception as e:
         return (
             f"Lightpanda could not be started: {e} Set browser.engine to auto "
-            "to use local Chrome, or switch backends via `hermes tools` → "
+            "to use local Chrome, or switch backends via `reign tools` → "
             "Browser Automation."
         )
     cdp = str((session_info or {}).get("cdp_url") or "")
@@ -563,7 +563,7 @@ def _resolve_backend_cdp(
        ``_get_session_info()`` so browser_exec shares the SAME provider
        session machinery — per-task session cache, expiry replacement,
        inactivity reaper, and atexit cleanup — instead of duplicating it.
-    4. ``browser.engine: lightpanda``: a Hermes-spawned ``lightpanda serve``
+    4. ``browser.engine: lightpanda``: a Reign-spawned ``lightpanda serve``
        per session key, through the same ``_get_session_info()`` machinery
        (see :func:`_resolve_lightpanda_cdp`).
     5. Nothing configured: return None; the harness attaches to local
@@ -631,7 +631,7 @@ def _resolve_backend_cdp(
         return (
             f"Cloud browser provider {type(provider).__name__} failed to "
             f"provide a session: {e}. Fix the provider configuration or "
-            "switch backends via `hermes tools` → Browser Automation."
+            "switch backends via `reign tools` → Browser Automation."
         )
     cdp = str((session_info or {}).get("cdp_url") or "")
     if not cdp:
@@ -664,8 +664,8 @@ def _resolve_real_profile_cdp(env: dict, force_local: bool) -> Optional[str]:
     """Point the harness at the user's real-profile copy-browser when consented.
 
     With ``browser.use_real_profile`` on, local browsing must mean the user's
-    default Chromium with their logins — a browser Hermes launches on a
-    SNAPSHOT of their real profile (see hermes_cli.browser_connect). Two ways
+    default Chromium with their logins — a browser Reign launches on a
+    SNAPSHOT of their real profile (see reign_cli.browser_connect). Two ways
     in:
 
     - the effective backend is already local (no cloud provider, no CDP
@@ -815,7 +815,7 @@ def browser_exec(
     popen_extra: dict = {}
     if os.name == "nt":
         try:
-            from hermes_cli._subprocess_compat import windows_hide_flags
+            from reign_cli._subprocess_compat import windows_hide_flags
 
             popen_extra["creationflags"] = windows_hide_flags()
             _si = subprocess.STARTUPINFO()
@@ -1004,7 +1004,7 @@ def _dynamic_schema_overrides() -> dict:
         props["local"] = {
             "type": "boolean",
             "description": (
-                "Drive the user's own local browser (a Hermes-managed copy of "
+                "Drive the user's own local browser (a Reign-managed copy of "
                 "their real default-Chromium profile, logins/cookies included) "
                 "instead of the configured cloud browser backend. Use when the "
                 "user asks to act as themselves — their accounts, their "

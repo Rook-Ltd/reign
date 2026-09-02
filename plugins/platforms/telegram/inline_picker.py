@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Telegram inline command picker — searchable access to EVERY command/skill.
 
-Telegram's BotCommand menu is capped (100 per scope, ~4KB payload; Hermes
+Telegram's BotCommand menu is capped (100 per scope, ~4KB payload; Reign
 defaults to 60 slots), so most skill commands can never appear in the ``/``
 menu. Inline mode has no such cap: typing ``@yourbot <query>`` in any chat
 asks the bot for results live, per keystroke, paginated 50 at a time — the
@@ -56,7 +56,7 @@ def collect_inline_catalog() -> List[Dict[str, str]]:
     seen: set[str] = set()
 
     try:
-        from hermes_cli.commands import (
+        from reign_cli.commands import (
             _collect_gateway_skill_entries,
             _sanitize_telegram_name,
             telegram_bot_commands,

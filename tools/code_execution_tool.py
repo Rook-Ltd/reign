@@ -2,19 +2,19 @@
 """
 Code Execution Tool -- Programmatic Tool Calling (PTC)
 
-Lets the LLM write a Python script that calls Hermes tools via RPC,
+Lets the LLM write a Python script that calls Reign tools via RPC,
 collapsing multi-step tool chains into a single inference turn.
 
 Architecture (two transports):
 
   **Local backend (UDS):**
-  1. Parent generates a `hermes_tools.py` stub module with UDS RPC functions
+  1. Parent generates a `reign_tools.py` stub module with UDS RPC functions
   2. Parent opens a Unix domain socket and starts an RPC listener thread
   3. Parent spawns a child process that runs the LLM's script
   4. Tool calls travel over the UDS back to the parent for dispatch
 
   **Remote backends (file-based RPC):**
-  1. Parent generates `hermes_tools.py` with file-based RPC stubs
+  1. Parent generates `reign_tools.py` with file-based RPC stubs
   2. Parent ships both files to the remote environment
   3. Script runs inside the terminal backend (Docker/SSH/Modal/Daytona/etc.)
   4. Tool calls are written as request files; a polling thread on the parent
@@ -53,7 +53,7 @@ from agent.thread_scoped_output import thread_scoped_silence
 # Availability gate.  On Windows we fall back to loopback TCP for the
 # sandbox RPC transport (AF_UNIX is unreliable on Windows Python) — see
 # ``_use_tcp_rpc`` in ``_execute_local`` below.  That makes execute_code
-# available on every platform Hermes itself runs on.
+# available on every platform Reign itself runs on.
 logger = logging.getLogger(__name__)
 
 SANDBOX_AVAILABLE = True
@@ -166,14 +166,14 @@ def _spill_full_stdout(stdout_text: str) -> Optional[str]:
     """
     try:
         import hashlib
-        from hermes_constants import get_hermes_dir
+        from reign_constants import get_reign_dir
 
         if len(stdout_text) > MAX_SPILLED_STDOUT_BYTES:
             stdout_text = (
                 stdout_text[:MAX_SPILLED_STDOUT_BYTES]
                 + f"\n\n[... spill capped at {MAX_SPILLED_STDOUT_BYTES:,} bytes ...]"
             )
-        cache_dir = get_hermes_dir("cache/exec", "exec_spill")
+        cache_dir = get_reign_dir("cache/exec", "exec_spill")
         cache_dir.mkdir(parents=True, exist_ok=True)
         digest = hashlib.sha256(
             stdout_text.encode("utf-8", errors="replace")
@@ -189,17 +189,17 @@ def _spill_full_stdout(stdout_text: str) -> Optional[str]:
 
 # Environment variable scrubbing rules (shared between the local + remote
 # backends).  Secret-substring block is applied first; anything left must
-# match a safe prefix, the operational HERMES_ allowlist, or (on Windows) an
+# match a safe prefix, the operational REIGN_ allowlist, or (on Windows) an
 # OS-essential name.  Delegate-task child context is also an exact-name
-# operational marker: without it, a sandbox script that spawns/imports Hermes
+# operational marker: without it, a sandbox script that spawns/imports Reign
 # code can lose the DB-layer Kanban mutation guard while still inheriting
-# HERMES_HOME.
+# REIGN_HOME.
 #
-# NB: the broad "HERMES_" prefix was deliberately removed (#27303) — it leaked
-# HERMES_*-named config that lacks a secret substring (e.g. HERMES_BASE_URL,
-# HERMES_KANBAN_DB, HERMES_*_WEBHOOK).  The child only needs the few
-# location/profile vars in _HERMES_CHILD_ALLOWED below; HERMES_RPC_SOCKET /
-# HERMES_RPC_DIR / TZ / HOME are injected explicitly after scrubbing.
+# NB: the broad "REIGN_" prefix was deliberately removed (#27303) — it leaked
+# REIGN_*-named config that lacks a secret substring (e.g. REIGN_BASE_URL,
+# REIGN_KANBAN_DB, REIGN_*_WEBHOOK).  The child only needs the few
+# location/profile vars in _REIGN_CHILD_ALLOWED below; REIGN_RPC_SOCKET /
+# REIGN_RPC_DIR / TZ / HOME are injected explicitly after scrubbing.
 _SAFE_ENV_PREFIXES = ("PATH", "HOME", "USER", "LANG", "LC_", "TERM",
                       "TMPDIR", "TMP", "TEMP", "SHELL", "LOGNAME",
                       "XDG_", "PYTHONPATH", "VIRTUAL_ENV", "CONDA")
@@ -215,16 +215,16 @@ _SECRET_SUBSTRINGS = ("KEY", "TOKEN", "SECRET", "PASSWORD", "CREDENTIAL",
                       # PASSWORD/PASSWD already cover the credential cases.
                       "CREDS", "BEARER", "APIKEY")
 
-# Operational HERMES_* vars the child legitimately needs by exact name — these
-# are non-secret runtime-location flags (the same set hermes_cli treats as the
+# Operational REIGN_* vars the child legitimately needs by exact name — these
+# are non-secret runtime-location flags (the same set reign_cli treats as the
 # runtime location) that repo-root modules a sandbox script imports may read at
 # import time.  None match _SECRET_SUBSTRINGS.
-_HERMES_CHILD_ALLOWED = frozenset({
-    "HERMES_HOME",
-    "HERMES_PROFILE",
-    "HERMES_CONFIG",
-    "HERMES_ENV",
-    "HERMES_DELEGATED_CHILD_CONTEXT",
+_REIGN_CHILD_ALLOWED = frozenset({
+    "REIGN_HOME",
+    "REIGN_PROFILE",
+    "REIGN_CONFIG",
+    "REIGN_ENV",
+    "REIGN_DELEGATED_CHILD_CONTEXT",
 })
 
 # Windows-only: a handful of variables are required by the OS/CRT itself.
@@ -268,7 +268,7 @@ def _scrub_child_env(source_env, is_passthrough=None, is_windows=None):
          unscoped multiplex read fails closed.
       2. Secret-substring names (KEY/TOKEN/DSN/WEBHOOK/etc.) are blocked.
       3. Names matching a safe prefix pass.
-      4. Operational HERMES_* vars (_HERMES_CHILD_ALLOWED) pass by exact name.
+      4. Operational REIGN_* vars (_REIGN_CHILD_ALLOWED) pass by exact name.
       5. On Windows, a small OS-essential allowlist passes by exact name
          — without these the child can't even create a socket or spawn a
          subprocess.
@@ -296,14 +296,14 @@ def _scrub_child_env(source_env, is_passthrough=None, is_windows=None):
         is_windows = _IS_WINDOWS
 
     scrubbed = {}
-    # Non-secret HERMES_* vars dropped by the tightened allowlist (#27303). The
-    # broad "HERMES_" prefix used to pass these through; now only the
+    # Non-secret REIGN_* vars dropped by the tightened allowlist (#27303). The
+    # broad "REIGN_" prefix used to pass these through; now only the
     # operational set does. The drop is intentional (those vars can carry
-    # config like HERMES_KANBAN_DB / HERMES_BASE_URL), but a sandbox script
+    # config like REIGN_KANBAN_DB / REIGN_BASE_URL), but a sandbox script
     # that imports a repo module reading one at import time would otherwise see
     # it silently unset. Surface the drop once so the behavior change is
     # diagnosable and points at the env_passthrough opt-in escape hatch.
-    _dropped_hermes = []
+    _dropped_reign = []
     for k, v in source_env.items():
         if is_passthrough(k):
             resolved = resolve_passthrough_value(k, v)
@@ -315,24 +315,24 @@ def _scrub_child_env(source_env, is_passthrough=None, is_windows=None):
         if any(k.startswith(p) for p in _SAFE_ENV_PREFIXES):
             scrubbed[k] = v
             continue
-        if k in _HERMES_CHILD_ALLOWED:
+        if k in _REIGN_CHILD_ALLOWED:
             scrubbed[k] = v
             continue
         if is_windows and k.upper() in _WINDOWS_ESSENTIAL_ENV_VARS:
             scrubbed[k] = v
             continue
-        if k.startswith("HERMES_"):
+        if k.startswith("REIGN_"):
             # Non-secret (secrets were already dropped above) and not in any
-            # allowlist — a deliberately-dropped HERMES_* var.
-            _dropped_hermes.append(k)
-    if _dropped_hermes:
+            # allowlist — a deliberately-dropped REIGN_* var.
+            _dropped_reign.append(k)
+    if _dropped_reign:
         logger.debug(
-            "execute_code: dropped %d non-allowlisted HERMES_* var(s) from the "
+            "execute_code: dropped %d non-allowlisted REIGN_* var(s) from the "
             "sandbox child env (%s). This is intentional hardening (#27303); if "
             "a sandbox script legitimately needs one, declare it via "
             "env_passthrough in the skill/config so it passes by explicit opt-in.",
-            len(_dropped_hermes),
-            ", ".join(sorted(_dropped_hermes)),
+            len(_dropped_reign),
+            ", ".join(sorted(_dropped_reign)),
         )
 
     # delegate_task children are marked with a ContextVar, not os.environ, while
@@ -376,7 +376,7 @@ def check_sandbox_requirements() -> bool:
 
 
 # ---------------------------------------------------------------------------
-# hermes_tools.py code generator
+# reign_tools.py code generator
 # ---------------------------------------------------------------------------
 
 # Per-tool stub templates: (function_name, signature, docstring, args_dict_expr)
@@ -431,7 +431,7 @@ def _sandbox_failure_hint(stderr_text: str, enabled_tools=None) -> Optional[str]
     """Map well-known sandbox script failures to one actionable recovery hint.
 
     Production mining (state.db): the top execute_code failure classes are
-    hermes_tools import misuse (importing tools that aren't in the sandbox,
+    reign_tools import misuse (importing tools that aren't in the sandbox,
     23x in one window), calling the built-in helpers via import, treating
     tool results as strings instead of dicts, and importing third-party
     packages that don't exist in the sandbox interpreter. Bounded scan,
@@ -442,7 +442,7 @@ def _sandbox_failure_hint(stderr_text: str, enabled_tools=None) -> Optional[str]
     window = stderr_text[:4000]
     try:
         m = re.search(
-            r"cannot import name '(\w+)' from 'hermes_tools'", window
+            r"cannot import name '(\w+)' from 'reign_tools'", window
         )
         if m:
             missing = m.group(1)
@@ -482,10 +482,10 @@ def _sandbox_failure_hint(stderr_text: str, enabled_tools=None) -> Optional[str]
     return None
 
 
-def generate_hermes_tools_module(enabled_tools: List[str],
+def generate_reign_tools_module(enabled_tools: List[str],
                                  transport: str = "uds") -> str:
     """
-    Build the source code for the hermes_tools.py stub module.
+    Build the source code for the reign_tools.py stub module.
 
     Only tools in both SANDBOX_ALLOWED_TOOLS and enabled_tools get stubs.
 
@@ -563,7 +563,7 @@ def retry(fn, max_attempts=3, delay=2):
 # ---- UDS transport (local backend) ---------------------------------------
 
 _UDS_TRANSPORT_HEADER = '''\
-"""Auto-generated Hermes tools RPC stubs."""
+"""Auto-generated Reign tools RPC stubs."""
 import json, os, socket, shlex, threading, time
 
 _sock = None
@@ -577,7 +577,7 @@ _call_lock = threading.Lock()
 def _connect():
     """Connect to the parent's RPC server via the transport it picked.
 
-    HERMES_RPC_SOCKET can be either:
+    REIGN_RPC_SOCKET can be either:
       - a filesystem path (POSIX Unix domain socket — the default on
         Linux and macOS)
       - a string of the form ``tcp://127.0.0.1:<port>`` (Windows, where
@@ -585,7 +585,7 @@ def _connect():
     """
     global _sock
     if _sock is None:
-        endpoint = os.environ["HERMES_RPC_SOCKET"]
+        endpoint = os.environ["REIGN_RPC_SOCKET"]
         if endpoint.startswith("tcp://"):
             # tcp://host:port  (host is always 127.0.0.1 in practice — we
             # only bind loopback server-side)
@@ -604,12 +604,12 @@ def _call(tool_name, args):
     request = json.dumps({
         "tool": tool_name,
         "args": args,
-        "token": os.environ.get("HERMES_RPC_TOKEN", ""),
+        "token": os.environ.get("REIGN_RPC_TOKEN", ""),
     }) + "\\n"
     # Session kernels outlive the RPC server's 300s idle window, so their
     # connection can be legitimately gone by the next cell. The server
-    # re-accepts (HERMES_RPC_PERSISTENT=1); retry once on a fresh socket.
-    _attempts = 2 if os.environ.get("HERMES_RPC_PERSISTENT") == "1" else 1
+    # re-accepts (REIGN_RPC_PERSISTENT=1); retry once on a fresh socket.
+    _attempts = 2 if os.environ.get("REIGN_RPC_PERSISTENT") == "1" else 1
     with _call_lock:
         for _attempt in range(_attempts):
             try:
@@ -648,10 +648,10 @@ def _call(tool_name, args):
 # ---- File-based transport (remote backends) -------------------------------
 
 _FILE_TRANSPORT_HEADER = '''\
-"""Auto-generated Hermes tools RPC stubs (file-based transport)."""
+"""Auto-generated Reign tools RPC stubs (file-based transport)."""
 import json, os, shlex, tempfile, threading, time
 
-_RPC_DIR = os.environ.get("HERMES_RPC_DIR") or os.path.join(tempfile.gettempdir(), "hermes_rpc")
+_RPC_DIR = os.environ.get("REIGN_RPC_DIR") or os.path.join(tempfile.gettempdir(), "reign_rpc")
 _seq = 0
 # `_seq += 1` is not atomic (read-modify-write), so concurrent _call()
 # invocations from multiple threads could allocate the same sequence number
@@ -679,7 +679,7 @@ def _call(tool_name, args):
             "tool": tool_name,
             "args": args,
             "seq": seq,
-            "token": os.environ.get("HERMES_RPC_TOKEN", ""),
+            "token": os.environ.get("REIGN_RPC_TOKEN", ""),
         }, f)
     os.rename(tmp, req_file)
 
@@ -1237,7 +1237,7 @@ def _execute_remote(
 
     sandbox_id = uuid.uuid4().hex[:12]
     temp_dir = _env_temp_dir(env)
-    sandbox_dir = f"{temp_dir}/hermes_exec_{sandbox_id}"
+    sandbox_dir = f"{temp_dir}/reign_exec_{sandbox_id}"
     quoted_sandbox_dir = shlex.quote(sandbox_dir)
     quoted_rpc_dir = shlex.quote(f"{sandbox_dir}/rpc")
 
@@ -1265,7 +1265,7 @@ def _execute_remote(
                 "duration_seconds": 0,
             })
 
-        # --- Session-kernel path (hermes-agent#96873) -------------------
+        # --- Session-kernel path (reign#96873) -------------------
         # Same always-on model as local: one persistent kernel per owner,
         # rebuilt on the run-to-completion transport (detached runner +
         # file cell protocol). Spawn failure falls OPEN to the per-call
@@ -1308,10 +1308,10 @@ def _execute_remote(
         rpc_token = secrets.token_urlsafe(32)
 
         # Generate and ship files
-        tools_src = generate_hermes_tools_module(
+        tools_src = generate_reign_tools_module(
             list(sandbox_tools), transport="file",
         )
-        _ship_file_to_remote(env, f"{sandbox_dir}/hermes_tools.py", tools_src)
+        _ship_file_to_remote(env, f"{sandbox_dir}/reign_tools.py", tools_src)
         _ship_file_to_remote(env, f"{sandbox_dir}/script.py", code)
 
         # Wrapped so the thread inherits the turn's approval context + callbacks
@@ -1330,11 +1330,11 @@ def _execute_remote(
 
         # Build environment variable prefix for the script
         env_prefix = (
-            f"HERMES_RPC_DIR={shlex.quote(f'{sandbox_dir}/rpc')} "
-            f"HERMES_RPC_TOKEN={shlex.quote(rpc_token)} "
+            f"REIGN_RPC_DIR={shlex.quote(f'{sandbox_dir}/rpc')} "
+            f"REIGN_RPC_TOKEN={shlex.quote(rpc_token)} "
             f"PYTHONDONTWRITEBYTECODE=1"
         )
-        tz = os.getenv("HERMES_TIMEZONE", "").strip()
+        tz = os.getenv("REIGN_TIMEZONE", "").strip()
         if tz:
             env_prefix += f" TZ={shlex.quote(tz)}"
 
@@ -1445,10 +1445,10 @@ def _build_child_env(*, rpc_endpoint: str, rpc_token: str, tmpdir: str,
     secret scrubbing, UTF-8 forcing, TZ handling, subprocess HOME, and the
     PYTHONPATH hygiene for external interpreters.
     """
-    from hermes_constants import apply_subprocess_home_env
+    from reign_constants import apply_subprocess_home_env
     child_env = _scrub_child_env(os.environ)
-    child_env["HERMES_RPC_SOCKET"] = rpc_endpoint
-    child_env["HERMES_RPC_TOKEN"] = rpc_token
+    child_env["REIGN_RPC_SOCKET"] = rpc_endpoint
+    child_env["REIGN_RPC_TOKEN"] = rpc_token
     child_env["PYTHONDONTWRITEBYTECODE"] = "1"
     # Force UTF-8 for the child's stdio and default file encoding.
     #
@@ -1471,43 +1471,43 @@ def _build_child_env(*, rpc_endpoint: str, rpc_token: str, tmpdir: str,
     child_env["PYTHONUTF8"] = "1"
     # Inject user's configured timezone so datetime.now() in sandboxed
     # code reflects the correct wall-clock time.  Only TZ is set —
-    # HERMES_TIMEZONE is an internal Hermes setting and must not leak
+    # REIGN_TIMEZONE is an internal Reign setting and must not leak
     # into child processes.
-    _tz_name = os.getenv("HERMES_TIMEZONE", "").strip()
+    _tz_name = os.getenv("REIGN_TIMEZONE", "").strip()
     if _tz_name:
         child_env["TZ"] = _tz_name
-    child_env.pop("HERMES_TIMEZONE", None)
+    child_env.pop("REIGN_TIMEZONE", None)
 
     apply_subprocess_home_env(child_env)
-    # ``hermes_tools.py`` always lives in the staging directory, so that
+    # ``reign_tools.py`` always lives in the staging directory, so that
     # directory must be importable even when project mode changes CWD.
-    # Hermes's own package root is useful too, but only when the child
+    # Reign's own package root is useful too, but only when the child
     # uses the same Python environment. Project mode can select an
-    # external venv; exposing Hermes's site-packages to that interpreter
+    # external venv; exposing Reign's site-packages to that interpreter
     # can mix incompatible compiled extensions (for example, Python 3.12
     # NumPy with a Python 3.9 project interpreter).
     #
-    # Before re-injecting PYTHONPATH, strip Hermes-owned entries that
+    # Before re-injecting PYTHONPATH, strip Reign-owned entries that
     # leaked through _scrub_child_env (PYTHONPATH is in _SAFE_ENV_PREFIXES
-    # so it passes the scrub).  They are redundant for same-Hermes-
+    # so it passes the scrub).  They are redundant for same-Reign-
     # environment children and may be incompatible with external
     # interpreters (project mode can select a different venv), so they
     # must not shadow or poison the child's sys.path (#74817).
-    from tools.environments.local import _strip_hermes_owned_pythonpath
-    _strip_hermes_owned_pythonpath(child_env)
-    _hermes_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    from tools.environments.local import _strip_reign_owned_pythonpath
+    _strip_reign_owned_pythonpath(child_env)
+    _reign_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     _existing_pp = child_env.get("PYTHONPATH", "")
     _pp_parts = [tmpdir]
-    if _uses_hermes_python_environment(child_python):
-        _pp_parts.append(_hermes_root)
+    if _uses_reign_python_environment(child_python):
+        _pp_parts.append(_reign_root)
     elif child_python not in _external_env_logged:
         # Import behavior changes silently otherwise — surface it (once
-        # per interpreter path) so "import hermes_constants suddenly
+        # per interpreter path) so "import reign_constants suddenly
         # fails" reports are diagnosable without log spam.
         _external_env_logged.add(child_python)
         logger.info(
-            "execute_code: child interpreter %s is outside the Hermes "
-            "environment; hermes root omitted from PYTHONPATH",
+            "execute_code: child interpreter %s is outside the Reign "
+            "environment; reign root omitted from PYTHONPATH",
             child_python,
         )
     if _existing_pp:
@@ -1525,7 +1525,7 @@ def execute_code(
     """
     Run Python in the session's persistent kernel (local) or a per-call
     child process (remote backends), with RPC access to a subset of
-    Hermes tools.
+    Reign tools.
 
     "Sandbox" in names below refers to the security envelope (env
     scrubbing, tool whitelist + call budget, output redaction) — not an
@@ -1562,7 +1562,7 @@ def execute_code(
 
     # Hard-block gateway-lifecycle commands, mirroring the terminal_tool
     # guard (#68289): without this, execute_code is a straight bypass — the
-    # terminal() path refuses `launchctl bootout ai.hermes.gateway`, but the
+    # terminal() path refuses `launchctl bootout ai.reign.gateway`, but the
     # identical command inside `os.system(...)` / `subprocess.run([...])`
     # here sailed through and SIGTERM'd the gateway mid-task. Gated on
     # PID-file ownership, not the inherited env marker (#92560).
@@ -1651,8 +1651,8 @@ def execute_code(
             is_interrupted=_is_interrupted,
         )
 
-    # --- Set up temp directory with hermes_tools.py and script.py ---
-    tmpdir = tempfile.mkdtemp(prefix="hermes_sandbox_")
+    # --- Set up temp directory with reign_tools.py and script.py ---
+    tmpdir = tempfile.mkdtemp(prefix="reign_sandbox_")
     # Use /tmp on macOS to avoid the long /var/folders/... path that pushes
     # Unix domain socket paths past the 104-byte macOS AF_UNIX limit.
     # On Linux, tempfile.gettempdir() already returns /tmp.
@@ -1663,14 +1663,14 @@ def execute_code(
     # on the same temp drive as the script).  Fall back to loopback TCP —
     # same ephemeral port, same 1-connection listen queue, same serialized
     # request/response framing.  The generated client reads the transport
-    # selector from HERMES_RPC_SOCKET (path vs. ``tcp://host:port``).
+    # selector from REIGN_RPC_SOCKET (path vs. ``tcp://host:port``).
     _sock_tmpdir = "/tmp" if sys.platform == "darwin" else tempfile.gettempdir()
     _use_tcp_rpc = _IS_WINDOWS
     if _use_tcp_rpc:
         sock_path = None  # not used on Windows; TCP endpoint stored below
         rpc_endpoint = None  # set after bind()
     else:
-        sock_path = os.path.join(_sock_tmpdir, f"hermes_rpc_{uuid.uuid4().hex}.sock")
+        sock_path = os.path.join(_sock_tmpdir, f"reign_rpc_{uuid.uuid4().hex}.sock")
         rpc_endpoint = sock_path
 
     tool_call_log: list = []
@@ -1680,7 +1680,7 @@ def execute_code(
     stop_event = threading.Event()
 
     try:
-        # Write the auto-generated hermes_tools module.
+        # Write the auto-generated reign_tools module.
         # encoding="utf-8" is required on Windows — the stub and user code
         # both contain non-ASCII characters (em-dashes in docstrings, plus
         # whatever the user script carries).  Python's default open() uses
@@ -1690,8 +1690,8 @@ def execute_code(
         # Python source files are decoded as UTF-8 by default (PEP 3120).
         # sandbox_tools is already the correct set (intersection with session
         # tools, or SANDBOX_ALLOWED_TOOLS as fallback — see lines above).
-        tools_src = generate_hermes_tools_module(list(sandbox_tools))
-        with open(os.path.join(tmpdir, "hermes_tools.py"), "w", encoding="utf-8") as f:
+        tools_src = generate_reign_tools_module(list(sandbox_tools))
+        with open(os.path.join(tmpdir, "reign_tools.py"), "w", encoding="utf-8") as f:
             f.write(tools_src)
 
         # Write the user's script
@@ -1706,7 +1706,7 @@ def execute_code(
         #   Windows: AF_INET stream socket on 127.0.0.1 with an ephemeral
         #   port.  No filesystem permission story, but loopback-only bind
         #   means only the current user's processes (not remote) can
-        #   connect.  HERMES_RPC_SOCKET is set to ``tcp://127.0.0.1:<port>``
+        #   connect.  REIGN_RPC_SOCKET is set to ``tcp://127.0.0.1:<port>``
         #   which the generated client parses to pick AF_INET.
         if _use_tcp_rpc:
             server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -1908,7 +1908,7 @@ def execute_code(
 
         # Redact secrets (API keys, tokens, etc.) from sandbox output.
         # The sandbox env-var filter (lines 434-454) blocks os.environ access,
-        # but scripts can still read secrets from disk (e.g. open('~/.hermes/.env')).
+        # but scripts can still read secrets from disk (e.g. open('~/.reign/.env')).
         # This ensures leaked secrets never enter the model context.
         # code_file=True: this is code-execution output — skip false-positive
         # ENV/JSON/f-string-template redaction; real credentials still masked.
@@ -2036,12 +2036,12 @@ def _load_config() -> dict:
     This helper is called while building the module-level execute_code schema
     during tool discovery.  Importing ``cli`` here pulls prompt_toolkit/Rich and
     a large chunk of the classic REPL onto every agent startup path, including
-    ``hermes --tui`` where it is never used.  Read the lightweight raw config
+    ``reign --tui`` where it is never used.  Read the lightweight raw config
     instead; the config layer already caches by (mtime, size), and an absent
     key cleanly falls back to DEFAULT_EXECUTION_MODE.
     """
     try:
-        from hermes_cli.config import read_raw_config
+        from reign_cli.config import read_raw_config
 
         cfg = read_raw_config().get("code_execution", {})
         return cfg if isinstance(cfg, dict) else {}
@@ -2086,7 +2086,7 @@ def _get_execution_mode() -> str:
         with the active virtual environment's python, so project dependencies
         (pandas, torch, project packages) and files resolve naturally.
       - ``strict``: scripts run in an isolated temp directory with
-        ``sys.executable`` (hermes-agent's python). Reproducible and the
+        ``sys.executable`` (reign's python). Reproducible and the
         interpreter is guaranteed to work, but project deps and relative paths
         won't resolve.
 
@@ -2110,7 +2110,7 @@ _PROBE_CACHE_MAX = 32
 _usable_python_cache: dict = {}
 _python_prefix_cache: dict = {}
 
-# Interpreter paths already reported as outside the Hermes environment —
+# Interpreter paths already reported as outside the Reign environment —
 # dedupes the exclusion log to once per path per process.
 _external_env_logged: set = set()
 
@@ -2171,7 +2171,7 @@ def _python_environment_prefix(python_path: str) -> str:
     Successful probes are cached per interpreter path (bounded, FIFO-evicted).
     Failures are NOT cached: a transient probe failure (fork pressure, 5s
     timeout on a loaded host) must not stick for the process lifetime — a
-    sticky empty result would silently drop the hermes root from every
+    sticky empty result would silently drop the reign root from every
     subsequent execute_code call's PYTHONPATH.
     """
     cached = _python_prefix_cache.get(python_path)
@@ -2185,8 +2185,8 @@ def _python_environment_prefix(python_path: str) -> str:
     return ""
 
 
-def _uses_hermes_python_environment(python_path: str) -> bool:
-    """Whether *python_path* belongs to Hermes's active Python environment.
+def _uses_reign_python_environment(python_path: str) -> bool:
+    """Whether *python_path* belongs to Reign's active Python environment.
 
     Short-circuits when *python_path* IS the running interpreter (by path or
     realpath) — no subprocess probe on the default strict-mode path, and no
@@ -2329,7 +2329,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
                               mode: str = None) -> dict:
     """Build the execute_code schema with description listing only enabled tools.
 
-    When tools are disabled via ``hermes tools`` (e.g. web is turned off),
+    When tools are disabled via ``reign tools`` (e.g. web is turned off),
     the schema description should NOT mention web_search / web_extract —
     otherwise the model thinks they are available and keeps trying to use them.
 
@@ -2360,18 +2360,18 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
 
     # Mode-specific CWD guidance. Project mode is the default and matches
     # terminal()'s filesystem/interpreter; strict mode retains the isolated
-    # temp-dir staging and hermes-agent's own python.
+    # temp-dir staging and reign's own python.
     if mode == "strict":
         cwd_note = (
             "Scripts run in their own temp dir, not the session's CWD — use absolute paths "
-            "(os.path.expanduser('~/.hermes/.env')) or terminal()/read_file() for user files."
+            "(os.path.expanduser('~/.reign/.env')) or terminal()/read_file() for user files."
         )
     else:
         cwd_note = (
             "Scripts run in the session's working directory. Interpreter: "
             "the project's activated venv/conda python when one is active "
             "(VIRTUAL_ENV/CONDA_PREFIX — matches terminal()); otherwise "
-            "Hermes's own python (the common case — stdlib plus Hermes's "
+            "Reign's own python (the common case — stdlib plus Reign's "
             "deps; check `import x` before relying on project packages)."
         )
 
@@ -2381,7 +2381,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
     # a kernel fail open to per-call silently — not worth schema words;
     # the result's `kernel` field tells the truth per call.
     description = (
-        "Run Python that calls Hermes tools programmatically. Use when you "
+        "Run Python that calls Reign tools programmatically. Use when you "
         "need 3+ tool calls with logic between them: filtering/reducing "
         "large outputs before they enter context, branching, or loops "
         "(N pages/files, retry on failure). Use normal tool calls for "
@@ -2391,7 +2391,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
         "loaded data survive across execute_code calls, so build on earlier "
         "work instead of re-loading it. A timed-out or interrupted call "
         "loses that state.\n\n"
-        f"Available via `from hermes_tools import ...`:\n\n"
+        f"Available via `from reign_tools import ...`:\n\n"
         f"{tool_lines}\n\n"
         "Limits: 5-minute timeout, max 50 tool calls per call. Stdout over "
         "50KB shows head/tail inline; the FULL text is auto-saved to a file "
@@ -2413,7 +2413,7 @@ def build_execute_code_schema(enabled_sandbox_tools: set = None,
                     "type": "string",
                     "description": (
                         "Python code to execute. Import tools with "
-                        f"`from hermes_tools import {import_str}` "
+                        f"`from reign_tools import {import_str}` "
                         "and print your final result to stdout."
                     ),
                 },

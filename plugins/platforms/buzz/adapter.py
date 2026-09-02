@@ -1,9 +1,9 @@
 """
-Buzz Platform Adapter for Hermes Agent.
+Buzz Platform Adapter for Reign.
 
 A plugin-based gateway adapter that connects to a Buzz community relay
 (Block's open-source human+agent collaboration platform, built on the
-Nostr protocol) and relays messages to/from the Hermes agent.
+Nostr protocol) and relays messages to/from the Reign.
 
 The adapter does not speak Nostr itself — it shells out to the ``buzz``
 CLI binary ("JSON in, JSON out") via ``asyncio.create_subprocess_exec``.
@@ -35,7 +35,7 @@ Or via environment variables (overrides config.yaml):
     BUZZ_REPLY_TO_MODE
 
 The only secret is BUZZ_PRIVATE_KEY (nsec or hex) — it belongs in
-``~/.hermes/.env``.  It is passed to the CLI via the subprocess
+``~/.reign/.env``.  It is passed to the CLI via the subprocess
 environment and is never logged.
 """
 
@@ -106,7 +106,7 @@ def _unscoped_profile_secrets() -> Dict[str, str]:
     gate / validate / is_connected probes all want the same snapshot. Any
     failure degrades to an empty mapping — callers then simply report the
     platform as not configured, which is the pre-fix behavior. The cache
-    is startup-gate-only: it pins whatever ``get_hermes_home()`` resolved
+    is startup-gate-only: it pins whatever ``get_reign_home()`` resolved
     on first build, so it must not be reused off the startup path (where
     a profile scope is always active and shadows it anyway).
     """
@@ -114,10 +114,10 @@ def _unscoped_profile_secrets() -> Dict[str, str]:
     if _UNSCOPED_PROFILE_SECRETS is None:
         try:
             from agent.secret_scope import build_profile_secret_scope
-            from hermes_constants import get_hermes_home
+            from reign_constants import get_reign_home
 
             _UNSCOPED_PROFILE_SECRETS = dict(
-                build_profile_secret_scope(get_hermes_home())
+                build_profile_secret_scope(get_reign_home())
             )
         except Exception:
             logger.warning(
@@ -201,7 +201,7 @@ def _escape_unresolved_presentation_mention(content: str, error: str) -> Optiona
     """Make one CLI-rejected ``@name`` token presentation-only.
 
     Buzz resolves whitespace-prefixed ``@name`` tokens into notification
-    p-tags before signing or publishing. Ordinary prose such as a Hermes
+    p-tags before signing or publishing. Ordinary prose such as a Reign
     ``@session:...`` link can therefore fail mention preflight. Insert an
     invisible separator only after the rejected ``@`` so the rendered text
     remains readable while valid member mentions remain unchanged.
@@ -229,7 +229,7 @@ def _escape_unresolved_presentation_mention(content: str, error: str) -> Optiona
 _FETCH_LIMIT = 50
 # Bound on the per-channel de-dupe set (events, not bytes).
 _SEEN_CAP = 500
-# Where the per-channel cursors survive a restart, relative to HERMES_HOME.
+# Where the per-channel cursors survive a restart, relative to REIGN_HOME.
 _CURSOR_STATE_SUBDIR = "buzz"
 _CURSOR_STATE_FILENAME = "channel-cursors.json"
 # Re-run DM discovery (``dms list`` plus the channels-list fallback) every
@@ -309,7 +309,7 @@ _WS_AUTH_TIMEOUT = 20.0
 _WS_READ_IDLE_TIMEOUT = 300.0
 _WS_MAX_MESSAGE_BYTES = 2_000_000
 _WS_MEMBERSHIP_KIND = 44100
-_WS_MEMBERSHIP_SUB_ID = "hermes-buzz-membership"
+_WS_MEMBERSHIP_SUB_ID = "reign-buzz-membership"
 
 # Where to look for a credentials JSON (keys: nsec / private_key_hex) when
 # BUZZ_PRIVATE_KEY is not set.  Module-level so tests can point it at a tmpdir.
@@ -1242,8 +1242,8 @@ class BuzzAdapter(BasePlatformAdapter):
         Fizz) and the name must be followed by a non-word character or
         end-of-text ("@Riley!!" tags Riley; "@FizzBuzz" does NOT tag a
         member named Fizz).  Longer names match first and consume their
-        span, so "@Hermes Matt" prefers the member "Hermes Matt" over a
-        member "Hermes".
+        span, so "@Reign Matt" prefers the member "Reign Matt" over a
+        member "Reign".
 
         Duplicate display names are ambiguous: the span is consumed but no
         one is tagged (presentation-only), mirroring how Buzz treats
@@ -1812,7 +1812,7 @@ class BuzzAdapter(BasePlatformAdapter):
         for index, channel_id in enumerate(list(self._channel_state)):
             if channel_id in self._restricted_channels:
                 continue
-            subscription_id = f"hermes-buzz-{index}"
+            subscription_id = f"reign-buzz-{index}"
             subscriptions[subscription_id] = channel_id
             await self._send_channel_subscription(websocket, subscription_id, channel_id)
         if self._self_pubkey:
@@ -1836,7 +1836,7 @@ class BuzzAdapter(BasePlatformAdapter):
         for channel_id in list(self._channel_state):
             if channel_id in before:
                 continue
-            subscription_id = f"hermes-buzz-dm-{len(subscriptions)}"
+            subscription_id = f"reign-buzz-dm-{len(subscriptions)}"
             subscriptions[subscription_id] = channel_id
             await self._send_channel_subscription(websocket, subscription_id, channel_id)
             logger.info("Buzz: subscribed to new conversation %s", channel_id)
@@ -2020,9 +2020,9 @@ class BuzzAdapter(BasePlatformAdapter):
 
     @staticmethod
     def _cursor_path() -> Path:
-        from hermes_constants import get_hermes_home
+        from reign_constants import get_reign_home
 
-        return get_hermes_home() / _CURSOR_STATE_SUBDIR / _CURSOR_STATE_FILENAME
+        return get_reign_home() / _CURSOR_STATE_SUBDIR / _CURSOR_STATE_FILENAME
 
     def _load_cursors(self) -> None:
         """Read back the cursors a previous run persisted.
@@ -2874,7 +2874,7 @@ class BuzzAdapter(BasePlatformAdapter):
             ext = (path_match.group("ext") or ".bin").lower()
             label = f"{path_match.group('sha')[:12]}{ext}"
             try:
-                with tempfile.TemporaryDirectory(prefix="hermes-buzz-media-") as temp_dir:
+                with tempfile.TemporaryDirectory(prefix="reign-buzz-media-") as temp_dir:
                     download_path = Path(temp_dir) / f"buzz_{label}"
                     code, _out, _err = await self._run_cli(
                         ["media", "get", "-o", str(download_path), url]
@@ -3030,7 +3030,7 @@ class BuzzAdapter(BasePlatformAdapter):
 def _profile_buzz_extra() -> dict:
     """Read ``buzz.extra`` from the active profile's config.yaml (scoped path).
 
-    Only meaningful inside a secondary profile scope, where the hermes-home
+    Only meaningful inside a secondary profile scope, where the reign-home
     override points at that profile's home. Used by ``check_requirements``
     (which has no PlatformConfig argument) so the multiplex gate consults the
     profile's own configuration instead of the process env. Best-effort: any
@@ -3039,10 +3039,10 @@ def _profile_buzz_extra() -> dict:
     if not _profile_scoped():
         return {}
     try:
-        from hermes_constants import get_hermes_home
-        from hermes_cli.config import read_user_config_raw
+        from reign_constants import get_reign_home
+        from reign_cli.config import read_user_config_raw
 
-        cfg = read_user_config_raw(Path(get_hermes_home()) / "config.yaml")
+        cfg = read_user_config_raw(Path(get_reign_home()) / "config.yaml")
     except Exception:
         return {}
     if not isinstance(cfg, dict):
@@ -3156,7 +3156,7 @@ def _env_enablement() -> Optional[dict]:
     """Seed ``PlatformConfig.extra`` from env vars during gateway config load.
 
     Called BEFORE adapter construction so env-only setups show up in
-    ``hermes gateway status`` and ``get_connected_platforms()``.  Returns
+    ``reign gateway status`` and ``get_connected_platforms()``.  Returns
     ``None`` when Buzz isn't minimally configured.
 
     The special ``home_channel`` key is handled by the core hook — it becomes
@@ -3206,7 +3206,7 @@ async def _standalone_send(
 ) -> Dict[str, Any]:
     """One-shot send without a live adapter (out-of-process cron delivery).
 
-    Used by ``tools/send_message_tool`` when ``hermes cron`` runs separately
+    Used by ``tools/send_message_tool`` when ``reign cron`` runs separately
     from the gateway process.  Without this hook, ``deliver=buzz`` cron jobs
     fail with ``No live adapter for platform 'buzz'``.
     """
@@ -3288,12 +3288,12 @@ async def _standalone_send(
 
 
 def interactive_setup() -> None:
-    """Interactive ``hermes gateway setup`` flow for the Buzz platform.
+    """Interactive ``reign gateway setup`` flow for the Buzz platform.
 
-    Lazy-imports ``hermes_cli.setup`` helpers so the plugin stays importable
+    Lazy-imports ``reign_cli.setup`` helpers so the plugin stays importable
     in non-CLI contexts (gateway runtime, tests).
     """
-    from hermes_cli.setup import (
+    from reign_cli.setup import (
         prompt,
         prompt_yes_no,
         save_env_value,
@@ -3311,7 +3311,7 @@ def interactive_setup() -> None:
         if not prompt_yes_no("Reconfigure Buzz?", False):
             return
 
-    print_info("Connect Hermes to a Buzz community (Block's Nostr-based human+agent platform).")
+    print_info("Connect Reign to a Buzz community (Block's Nostr-based human+agent platform).")
     print_info("   Requires the buzz CLI binary and a Nostr key that is a community member.")
     print()
 
@@ -3360,12 +3360,12 @@ def interactive_setup() -> None:
         save_env_value("BUZZ_ALLOWED_USERS", allowed.replace(" ", "") if allowed else "")
 
     print()
-    print_success("Buzz configuration saved to ~/.hermes/.env")
-    print_info("Restart the gateway for changes to take effect: hermes gateway restart")
+    print_success("Buzz configuration saved to ~/.reign/.env")
+    print_info("Restart the gateway for changes to take effect: reign gateway restart")
 
 
 def register(ctx):
-    """Plugin entry point: called by the Hermes plugin system."""
+    """Plugin entry point: called by the Reign plugin system."""
     ctx.register_platform(
         name="buzz",
         label="Buzz",

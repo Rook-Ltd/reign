@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Bridge desktop-only tools to Hermes-desktop renderer events.
+"""Bridge desktop-only tools to Reign-desktop renderer events.
 
 The preview pane, pane focus, and friends live in the desktop renderer, so
 desktop-gated tools reach them through an emitter the desktop ``tui_gateway``
 installs at session start via :func:`set_emitter`. Everywhere else it stays
 ``None`` and the tools report "desktop only". Routing keys off
-``HERMES_UI_SESSION_ID`` so the event lands on the window that owns the turn
+``REIGN_UI_SESSION_ID`` so the event lands on the window that owns the turn
 (``_emit``/``write_json`` is ``_stdout_lock``-guarded, so emitting from the
 tool's thread is safe).
 """
@@ -37,13 +37,13 @@ def user_enabled(setting: str, default: bool) -> bool:
     whether that gateway is local, SSH, URL, or cloud — where an env var would
     only ever describe the process. Tool ``check_fn``s call it to withdraw
     themselves from the schema when the user has switched the feature off:
-    Hermes should not be told about a surface it isn't allowed to use.
+    Reign should not be told about a surface it isn't allowed to use.
 
     An unreadable config falls back to ``default``, which is how a feature that
     ships on stays on rather than disappearing on a transient read error.
     """
     try:
-        from hermes_cli.config import load_config_readonly
+        from reign_cli.config import load_config_readonly
 
         display = load_config_readonly().get("display")
     except Exception:
@@ -60,5 +60,5 @@ def emit(event: str, payload: dict) -> bool:
     fn = _emit
     if fn is None:
         return False
-    fn(get_session_env("HERMES_UI_SESSION_ID", ""), event, payload)
+    fn(get_session_env("REIGN_UI_SESSION_ID", ""), event, payload)
     return True

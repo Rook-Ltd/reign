@@ -11,7 +11,7 @@ thin dispatcher over the platform-injected callback.
 
 Lives in the ``desktop_ui`` toolset, which the GUI gateway enables only for
 desktop-sourced sessions — on every other surface the agent falls back to
-``hermes mcp install <name>`` in the terminal.
+``reign mcp install <name>`` in the terminal.
 """
 
 import json
@@ -31,9 +31,9 @@ def setup_mcp_tool(
     """Ask the desktop GUI to run an MCP setup flow; return its JSON outcome."""
     if callback is None:
         return tool_error(
-            "setup_mcp is only available in the Hermes desktop app. Use the "
-            "terminal instead: `hermes mcp install <name>` for catalog entries, "
-            "`hermes mcp login <name>` for OAuth."
+            "setup_mcp is only available in the Reign desktop app. Use the "
+            "terminal instead: `reign mcp install <name>` for catalog entries, "
+            "`reign mcp login <name>` for OAuth."
         )
 
     name = (server or "").strip()
@@ -79,7 +79,7 @@ SETUP_MCP_SCHEMA = {
         "user acts. Use when they ask to add an MCP or a task clearly needs "
         "a missing one. Never hand-edit mcp_servers config for them — always "
         "use this tool. Never re-ask after a decline — on declined/"
-        "unanswered, continue without it. Catalog names: `hermes mcp "
+        "unanswered, continue without it. Catalog names: `reign mcp "
         "catalog` in the terminal."
     ),
     "parameters": {

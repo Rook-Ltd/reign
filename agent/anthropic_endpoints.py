@@ -1,6 +1,6 @@
 """Endpoint-family detection for Anthropic-compatible base URLs.
 
-Hermes talks to a dozen services that speak the Anthropic Messages API but
+Reign talks to a dozen services that speak the Anthropic Messages API but
 differ in auth style, accepted beta headers, and request quirks: MiniMax,
 Kimi/Moonshot, DeepSeek, OpenCode, Azure AI Foundry, the Nous portal, Bedrock.
 Every one of those differences is decided by inspecting the configured base
@@ -111,7 +111,7 @@ def _is_kimi_family_endpoint(base_url: str | None, model: str | None = None) -> 
 
     Used to decide whether to drop Anthropic's ``thinking`` kwarg and to
     preserve unsigned reasoning_content-derived thinking blocks on replay.
-    See hermes-agent#13848, #17057.
+    See reign#13848, #17057.
     """
     if _is_kimi_coding_endpoint(base_url):
         return True
@@ -140,7 +140,7 @@ def _is_deepseek_anthropic_endpoint(base_url: str | None) -> bool:
     policy used for Kimi's ``/coding`` endpoint.  The match is pinned to
     the ``/anthropic`` path so the OpenAI-compatible ``api.deepseek.com``
     base URL (which never reaches this adapter) is not misclassified.
-    See hermes-agent#16748.
+    See reign#16748.
     """
     if not base_url_host_matches(base_url or "", "api.deepseek.com"):
         return False
@@ -169,7 +169,7 @@ def _is_nous_portal_endpoint(base_url: str | None) -> bool:
     if base_url_host_matches(base_url or "", "inference-api.nousresearch.com"):
         return True
     try:
-        from hermes_cli.auth import _nous_inference_env_override
+        from reign_cli.auth import _nous_inference_env_override
 
         override = _nous_inference_env_override()
     except Exception:

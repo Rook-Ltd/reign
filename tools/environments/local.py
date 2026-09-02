@@ -15,9 +15,9 @@ import time
 from collections.abc import Mapping
 from pathlib import Path
 
-from hermes_constants import get_process_hermes_home
+from reign_constants import get_process_reign_home
 from tools.environments.base import BaseEnvironment, _pipe_stdin
-from hermes_cli._subprocess_compat import windows_hide_flags
+from reign_cli._subprocess_compat import windows_hide_flags
 
 _IS_WINDOWS = platform.system() == "Windows"
 
@@ -25,14 +25,14 @@ logger = logging.getLogger(__name__)
 
 # --- Terminal temp-cache pruning -------------------------------------------
 #
-# get_temp_dir() now defaults to HERMES_HOME/cache/terminal (real storage)
+# get_temp_dir() now defaults to REIGN_HOME/cache/terminal (real storage)
 # instead of tmpfs /tmp, so stale session artifacts no longer disappear on
 # reboot for free. Prune them ourselves: the gateway housekeeping loop calls
 # cleanup_terminal_temp_cache() hourly (same contract as the other
 # cleanup_*_cache helpers), and a once-per-process best-effort sweep covers
 # CLI-only installs that never run the gateway.
 #
-# Background-process artifacts come in triplets (hermes_bg_<id>.log/.pid/
+# Background-process artifacts come in triplets (reign_bg_<id>.log/.pid/
 # .exit). A long-running server's .pid file never changes mtime while its
 # .log keeps updating — so age is judged per GROUP (newest mtime among files
 # sharing a stem) to avoid yanking the pid/exit files out from under a
@@ -42,14 +42,14 @@ TERMINAL_TEMP_MAX_AGE_HOURS = 72
 _terminal_temp_prune_lock = threading.Lock()
 _terminal_temp_pruned_once = False
 
-_BG_GROUP_RE = re.compile(r"^(hermes_bg_[A-Za-z0-9_-]+)\.(log|pid|exit)$")
+_BG_GROUP_RE = re.compile(r"^(reign_bg_[A-Za-z0-9_-]+)\.(log|pid|exit)$")
 
 
 def _default_terminal_temp_dir() -> "Path | None":
-    """Return HERMES_HOME/cache/terminal, or None if unresolvable."""
+    """Return REIGN_HOME/cache/terminal, or None if unresolvable."""
     try:
-        from hermes_constants import get_hermes_home
-        return get_hermes_home() / "cache" / "terminal"
+        from reign_constants import get_reign_home
+        return get_reign_home() / "cache" / "terminal"
     except Exception:
         return None
 
@@ -63,7 +63,7 @@ def cleanup_terminal_temp_cache(
     ``gateway.platforms.base`` — returns the number of entries removed — so
     the gateway housekeeping loop can prune this dir on its hourly cadence.
 
-    Only prunes the managed default dir (``HERMES_HOME/cache/terminal``).
+    Only prunes the managed default dir (``REIGN_HOME/cache/terminal``).
     User-pointed ``terminal.temp_dir`` locations are the user's to manage —
     we never bulk-delete inside a directory we don't own.
     """
@@ -77,7 +77,7 @@ def cleanup_terminal_temp_cache(
     except OSError:
         return 0
 
-    # Newest mtime per hermes_bg_<id> group, so a live server's fresh .log
+    # Newest mtime per reign_bg_<id> group, so a live server's fresh .log
     # protects its stale-looking .pid/.exit siblings.
     group_newest: dict[str, float] = {}
     for f in entries:
@@ -156,9 +156,9 @@ def _resolve_local_initial_cwd(cwd: str) -> str:
 
     ``TERMINAL_CWD`` can be populated from config.yaml before the terminal
     backend is created.  If that value is relative and happens to match the
-    directory Hermes was already launched from (for example ``hermes-agent``
-    while the process cwd is ``~/.hermes/hermes-agent``), passing it through
-    unchanged makes the wrapper run ``cd hermes-agent`` *inside* the project
+    directory Reign was already launched from (for example ``reign``
+    while the process cwd is ``~/.reign/reign``), passing it through
+    unchanged makes the wrapper run ``cd reign`` *inside* the project
     and fail with a confusing nested-path error.  Anchor relative local cwd
     values once, up front, so both ``subprocess.Popen(cwd=...)`` and the
     in-shell ``cd`` use the same absolute directory.
@@ -178,9 +178,9 @@ def _resolve_local_initial_cwd(cwd: str) -> str:
     candidate = os.path.abspath(expanded)
     current = os.getcwd()
 
-    # Common recovery for config values like ``hermes-agent`` when Hermes was
+    # Common recovery for config values like ``reign`` when Reign was
     # launched from that directory already.  ``os.path.abspath`` would point at
-    # a nonexistent nested ``./hermes-agent``; use the current directory instead.
+    # a nonexistent nested ``./reign``; use the current directory instead.
     if not os.path.isdir(candidate):
         wanted_parts = Path(expanded).parts
         current_parts = Path(current).parts
@@ -298,12 +298,12 @@ def _resolve_safe_cwd(cwd: str) -> str:
     return tempfile.gettempdir()
 
 
-# Hermes-internal env vars that should NOT leak into terminal subprocesses.
-_HERMES_PROVIDER_ENV_FORCE_PREFIX = "_HERMES_FORCE_"
+# Reign-internal env vars that should NOT leak into terminal subprocesses.
+_REIGN_PROVIDER_ENV_FORCE_PREFIX = "_REIGN_FORCE_"
 
-# Hermes-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
+# Reign-managed AWS *inference* credentials for ``auth_type="aws_sdk"``
 # providers (Bedrock).  Scoped DELIBERATELY NARROW: this lists only the
-# Bedrock-specific bearer token, which is a Hermes inference secret exactly
+# Bedrock-specific bearer token, which is a Reign inference secret exactly
 # analogous to ``OPENAI_API_KEY`` — nobody drives the ``aws``/``terraform``/
 # ``boto3`` toolchain off it, so stripping it from terminal/execute_code
 # subprocesses costs no user capability.
@@ -328,7 +328,7 @@ def _build_provider_env_blocklist() -> frozenset:
     blocked: set[str] = set()
 
     try:
-        from hermes_cli.auth import PROVIDER_REGISTRY
+        from reign_cli.auth import PROVIDER_REGISTRY
         for pconfig in PROVIDER_REGISTRY.values():
             blocked.update(pconfig.api_key_env_vars)
             if pconfig.auth_type == "aws_sdk":
@@ -339,7 +339,7 @@ def _build_provider_env_blocklist() -> frozenset:
         pass
 
     try:
-        from hermes_cli.config import OPTIONAL_ENV_VARS
+        from reign_cli.config import OPTIONAL_ENV_VARS
         for name, metadata in OPTIONAL_ENV_VARS.items():
             category = metadata.get("category")
             if category in {"tool", "messaging"}:
@@ -405,7 +405,7 @@ def _build_provider_env_blocklist() -> frozenset:
         "EMAIL_SMTP_HOST",
         "EMAIL_HOME_ADDRESS",
         "EMAIL_HOME_ADDRESS_NAME",
-        "HERMES_DASHBOARD_SESSION_TOKEN",
+        "REIGN_DASHBOARD_SESSION_TOKEN",
         "GATEWAY_ALLOWED_USERS",
         "GH_TOKEN",
         "GITHUB_APP_ID",
@@ -424,8 +424,8 @@ def _build_provider_env_blocklist() -> frozenset:
     })
     # CLAUDE_CODE_OAUTH_TOKEN is deliberately NOT stripped.  It is set and
     # owned by the user's Claude Code install (subscription OAuth), not a
-    # Hermes-managed inference credential — Claude subscription auth is not a
-    # working Hermes provider path.  Stripping it broke agent-spawned
+    # Reign-managed inference credential — Claude subscription auth is not a
+    # working Reign provider path.  Stripping it broke agent-spawned
     # ``claude`` CLIs: the child fell through to the shared macOS Keychain /
     # ``~/.claude/.credentials.json`` store and, on auth failure, cleared it,
     # logging the user out of their interactive Claude sessions (#55878).
@@ -435,7 +435,7 @@ def _build_provider_env_blocklist() -> frozenset:
     # BUZZ_* is deliberately NOT discarded here, even for Buzz-managed agents
     # (BUZZ_MANAGED_AGENT set by the buzz-acp harness).  This blocklist is
     # shared by every scrub surface — the terminal paths, execute_code, and
-    # the :func:`hermes_subprocess_env` Tier-2 strip (browser / TUI host /
+    # the :func:`reign_subprocess_env` Tier-2 strip (browser / TUI host /
     # copilot-executor spawns) — so an import-time discard would leak
     # BUZZ_PRIVATE_KEY into non-terminal children too.  The Buzz carve-out is
     # instead a TERMINAL-ONLY, context-gated scrub-path exemption: see
@@ -444,7 +444,7 @@ def _build_provider_env_blocklist() -> frozenset:
     return frozenset(blocked)
 
 
-_HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
+_REIGN_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 
 # First-party platform credentials the agent's own platform adapters need in
 # terminal children (e.g. the ``BUZZ_*`` vars for the Buzz messaging
@@ -457,7 +457,7 @@ _HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 # actually operating as a Buzz agent — either the process is a Buzz-ACP
 # managed agent (``BUZZ_MANAGED_AGENT`` is set, only by Buzz Desktop's
 # buzz-acp harness; see #76243 / #78511) or the current session's platform is
-# ``buzz`` (the gateway's ``HERMES_SESSION_PLATFORM`` ContextVar; concurrency
+# ``buzz`` (the gateway's ``REIGN_SESSION_PLATFORM`` ContextVar; concurrency
 # safe under a multi-session host). A Telegram/CLI/cron session on a host
 # that also runs a Buzz gateway does NOT get BUZZ_PRIVATE_KEY in its terminal
 # children — blanket passthrough of a signing key to every terminal child on
@@ -471,7 +471,7 @@ _HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 # commands, quick commands, cron scripts, webhook-filter scripts), so those
 # children receive the vars too — matching the approved background/PTY scope.
 # Every other surface stays sealed — execute_code scrubbing,
-# :func:`hermes_subprocess_env` (browser / TUI host / copilot-executor
+# :func:`reign_subprocess_env` (browser / TUI host / copilot-executor
 # spawns), docker children, and ``env_passthrough`` registration (skills/config
 # still cannot register these names). The GHSA-rhgp-j443-p4rf seal is
 # preserved because no registration path is opened; this is a scrub-path
@@ -489,8 +489,8 @@ _HERMES_PROVIDER_ENV_BLOCKLIST = _build_provider_env_blocklist()
 # Prefix-based on purpose: future ``BUZZ_*`` names added by the platform's
 # plugin.yaml (or a user's own credentials file) are covered without another
 # code change. Contrast with CLAUDE_CODE_OAUTH_TOKEN above, which is discarded
-# from the blocklist entirely because it is NOT a Hermes credential; these ARE
-# Hermes-managed first-party platform credentials, so they stay IN the
+# from the blocklist entirely because it is NOT a Reign credential; these ARE
+# Reign-managed first-party platform credentials, so they stay IN the
 # blocklist for every non-terminal surface.
 #
 # See issue #78026 (Buzz agents could not use ``buzz`` from the terminal tool)
@@ -512,10 +512,10 @@ def _buzz_terminal_context_active() -> bool:
     Two independent signals, either suffices:
 
     * ``BUZZ_MANAGED_AGENT`` in the process env — set exclusively by Buzz
-      Desktop's buzz-acp harness when it spawns ``hermes acp`` (#76243).
+      Desktop's buzz-acp harness when it spawns ``reign acp`` (#76243).
       Gateway / CLI / cron / kanban processes never carry it.
     * The live session's platform is ``buzz`` — the gateway's
-      ``HERMES_SESSION_PLATFORM`` ContextVar via
+      ``REIGN_SESSION_PLATFORM`` ContextVar via
       :func:`gateway.session_context.get_session_env`, which is
       ContextVar-authoritative under a concurrent multi-session host, so a
       sibling Telegram/Discord session on the same gateway process resolves
@@ -526,7 +526,7 @@ def _buzz_terminal_context_active() -> bool:
     try:
         from gateway.session_context import get_session_env
 
-        return get_session_env("HERMES_SESSION_PLATFORM", "").strip().lower() == "buzz"
+        return get_session_env("REIGN_SESSION_PLATFORM", "").strip().lower() == "buzz"
     except Exception:
         return False
 
@@ -546,31 +546,31 @@ def _is_terminal_first_party_env(name: str) -> bool:
 # VIRTUAL_ENV (and possibly CONDA_PREFIX). If those leak into commands the
 # agent runs against OTHER Python projects, tools like ``uv``/``poetry`` treat
 # the inherited value as the active environment and build/sync that other
-# project's dependencies into the Hermes venv path instead of the project's own
-# ``.venv`` — silently clobbering the Hermes environment (e.g. a project pinned
+# project's dependencies into the Reign venv path instead of the project's own
+# ``.venv`` — silently clobbering the Reign environment (e.g. a project pinned
 # to a different Python version overwrites it and breaks the gateway). The
-# Hermes venv stays reachable via PATH (its bin dir is first), so stripping
+# Reign venv stays reachable via PATH (its bin dir is first), so stripping
 # these markers is safe and only prevents the cross-project clobber (#23473).
 #
 # PYTHONHOME is included because a gateway-inherited value redirects the
 # standard-library search of ANY child interpreter — including unrelated
-# system/venv Pythons — to the Hermes venv's stdlib, which crashes with
+# system/venv Pythons — to the Reign venv's stdlib, which crashes with
 # version-mismatch errors before a child script even imports a package
-# (#75018). Hermes itself treats PYTHONHOME as contamination in its own
+# (#75018). Reign itself treats PYTHONHOME as contamination in its own
 # child processes (managed_uv.py, sqlite_runtime.py), so stripping it from
 # subprocess envs is consistent. Users who need PYTHONHOME for a specific
 # child can set it explicitly in the command.
 #
 # PYTHONPATH is NOT included here — it's handled by
-# _strip_hermes_owned_pythonpath() which removes only Hermes-owned entries,
+# _strip_reign_owned_pythonpath() which removes only Reign-owned entries,
 # preserving user-set paths.
 _ACTIVE_VENV_MARKER_VARS = ("VIRTUAL_ENV", "CONDA_PREFIX", "PYTHONHOME")
 
 
-def _is_hermes_internal_secret(key: str) -> bool:
-    """Return True for Hermes-internal secrets injected under *dynamic* names.
+def _is_reign_internal_secret(key: str) -> bool:
+    """Return True for Reign-internal secrets injected under *dynamic* names.
 
-    ``_HERMES_PROVIDER_ENV_BLOCKLIST`` is name-based and derived from the
+    ``_REIGN_PROVIDER_ENV_BLOCKLIST`` is name-based and derived from the
     provider/tool registries, but the gateway and CLI also inject secrets into
     ``os.environ`` at runtime under names no static registry knows about:
 
@@ -592,10 +592,10 @@ def _is_hermes_internal_secret(key: str) -> bool:
     ``KEY`` / ``SECRET`` / ``TOKEN``; the terminal backend's narrower name-based
     blocklist did not, which is the leak this predicate closes.
 
-    This is the single source of truth for "Hermes-internal dynamic secret"
+    This is the single source of truth for "Reign-internal dynamic secret"
     across every spawn path — the terminal ``_make_run_env`` /
     ``_sanitize_subprocess_env`` filters, the Docker passthrough filter, and the
-    non-terminal :func:`hermes_subprocess_env` helper all call it, so the
+    non-terminal :func:`reign_subprocess_env` helper all call it, so the
     dynamic patterns are stripped **unconditionally** regardless of
     ``env_passthrough`` skill registration or ``inherit_credentials``. Nothing
     a model-driving CLI legitimately needs matches these patterns.
@@ -628,14 +628,14 @@ def _plugin_terminal_env_strip_keys() -> frozenset:
         return frozenset()
 
 
-def _inject_context_hermes_home(env: dict) -> None:
-    """Bridge the context-local Hermes home override into subprocess env."""
+def _inject_context_reign_home(env: dict) -> None:
+    """Bridge the context-local Reign home override into subprocess env."""
     try:
-        from hermes_constants import get_hermes_home_override
+        from reign_constants import get_reign_home_override
 
-        value = get_hermes_home_override()
+        value = get_reign_home_override()
         if value:
-            env["HERMES_HOME"] = value
+            env["REIGN_HOME"] = value
     except Exception:
         pass
 
@@ -644,7 +644,7 @@ def _inject_session_context_env(env: dict) -> None:
     """Bridge gateway session ContextVars into a subprocess environment dict.
 
     ContextVars don't propagate to child processes, so the live session vars
-    (HERMES_SESSION_*) are bridged onto the child env here.
+    (REIGN_SESSION_*) are bridged onto the child env here.
 
     🔴 Cross-session leak guard. The session vars also have a process-global
     os.environ mirror (written last-writer-wins as a CLI/cron fallback, never
@@ -688,7 +688,7 @@ def _inject_session_context_env(env: dict) -> None:
 
 
 def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = None) -> dict:
-    """Filter Hermes-managed secrets from a subprocess environment."""
+    """Filter Reign-managed secrets from a subprocess environment."""
     try:
         from tools.env_passthrough import (
             is_env_passthrough as _is_passthrough,
@@ -702,15 +702,15 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
     _plugin_strip = _plugin_terminal_env_strip_keys()
 
     for key, value in (base_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
+        if key.startswith(_REIGN_PROVIDER_ENV_FORCE_PREFIX):
             continue
-        if _is_hermes_internal_secret(key):
+        if _is_reign_internal_secret(key):
             continue
         if key in _plugin_strip:
             continue
         first_party = _is_terminal_first_party_env(key)
         passthrough = _is_passthrough(key)
-        if key in _HERMES_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
+        if key in _REIGN_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
             continue
         # First-party platform vars are the process's own env values: use them
         # directly, never scope-resolve (multiplex with no scope would raise
@@ -723,19 +723,19 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
             sanitized[key] = resolved
 
     for key, value in (extra_env or {}).items():
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = key[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
-            if _is_hermes_internal_secret(real_key):
+        if key.startswith(_REIGN_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = key[len(_REIGN_PROVIDER_ENV_FORCE_PREFIX):]
+            if _is_reign_internal_secret(real_key):
                 continue
             sanitized[real_key] = value
-        elif _is_hermes_internal_secret(key):
+        elif _is_reign_internal_secret(key):
             continue
         elif key in _plugin_strip:
             continue
         else:
             first_party = _is_terminal_first_party_env(key)
             passthrough = _is_passthrough(key)
-            if key in _HERMES_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
+            if key in _REIGN_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
                 continue
             resolved = value
             if passthrough and not first_party:
@@ -743,9 +743,9 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
             if resolved is not None:
                 sanitized[key] = resolved
 
-    _inject_context_hermes_home(sanitized)
+    _inject_context_reign_home(sanitized)
 
-    from hermes_constants import apply_subprocess_home_env
+    from reign_constants import apply_subprocess_home_env
     apply_subprocess_home_env(sanitized)
 
     # Same cross-session leak guard as _make_run_env, for the background/PTY
@@ -754,17 +754,17 @@ def _sanitize_subprocess_env(base_env: dict | None, extra_env: dict | None = Non
 
     # Filter PYTHONPATH before removing VIRTUAL_ENV: legacy Windows launchers
     # can run the gateway under a base interpreter while VIRTUAL_ENV identifies
-    # the separate Hermes runtime venv.  The filter validates that relationship
+    # the separate Reign runtime venv.  The filter validates that relationship
     # against the repo layout before trusting it.
-    _strip_hermes_owned_pythonpath_and_runtime_markers(sanitized)
+    _strip_reign_owned_pythonpath_and_runtime_markers(sanitized)
 
-    # Keep bare ``hermes`` invocations available to child jobs even when the
+    # Keep bare ``reign`` invocations available to child jobs even when the
     # gateway was launched by a service manager or cron without the console
     # script's directory on PATH.  The terminal environment already applies
     # this invariant; Cron scripts use this sanitizer directly (#92998).
     path_key = _path_env_key(sanitized)
     if path_key is not None:
-        sanitized[path_key] = _prepend_hermes_bin_dir(sanitized.get(path_key, ""))
+        sanitized[path_key] = _prepend_reign_bin_dir(sanitized.get(path_key, ""))
 
     _apply_windows_msys_bash_env_defaults(sanitized)
 
@@ -791,11 +791,11 @@ def _scrub_delegated_child_kanban_env(env: dict[str, str]) -> dict[str, str]:
 # Tier-1 secrets: stripped from EVERY spawned subprocess unconditionally —
 # even when the caller opts into credential inheritance for a model-driving
 # CLI (claude / codex / gemini).  These are not LLM provider credentials; no
-# legitimate child Hermes spawns needs them, and they are the highest-value
+# legitimate child Reign spawns needs them, and they are the highest-value
 # secrets to keep out of a compromised dependency's reach (gateway bot tokens,
 # GitHub auth, remote-compute tokens, dashboard session secret).  The set is a
-# narrow subset of _HERMES_PROVIDER_ENV_BLOCKLIST; provider keys are handled by
-# the conditional Tier-2 strip in hermes_subprocess_env().
+# narrow subset of _REIGN_PROVIDER_ENV_BLOCKLIST; provider keys are handled by
+# the conditional Tier-2 strip in reign_subprocess_env().
 _ALWAYS_STRIP_KEYS: frozenset[str] = frozenset({
     # GitHub auth
     "GH_TOKEN",
@@ -815,7 +815,7 @@ _ALWAYS_STRIP_KEYS: frozenset[str] = frozenset({
     # provisions and persists to the 0600 .env. Stripped unconditionally on
     # EVERY spawn surface (terminal + model-driving CLIs) so it can't drift
     # between paths: _SECRET / _DELIVERY_KEY are also matched by
-    # _is_hermes_internal_secret, but _ID has no secret suffix, so it must be
+    # _is_reign_internal_secret, but _ID has no secret suffix, so it must be
     # enumerated here to stay stripped on the inherit_credentials=True path
     # (codex / copilot), which skips the Tier-2 blocklist.
     "GATEWAY_RELAY_ID",
@@ -823,7 +823,7 @@ _ALWAYS_STRIP_KEYS: frozenset[str] = frozenset({
     "GATEWAY_RELAY_DELIVERY_KEY",
     "HASS_TOKEN",
     "EMAIL_PASSWORD",
-    "HERMES_DASHBOARD_SESSION_TOKEN",
+    "REIGN_DASHBOARD_SESSION_TOKEN",
     # Remote-compute / infrastructure secrets
     "MODAL_TOKEN_ID",
     "MODAL_TOKEN_SECRET",
@@ -831,14 +831,14 @@ _ALWAYS_STRIP_KEYS: frozenset[str] = frozenset({
 })
 
 
-def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str]:
+def reign_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str]:
     """Build a sanitized environment dict for a spawned subprocess.
 
     Centralized helper for the **non-terminal** spawn surface (browser,
     ACP/CLI executors, computer-use driver, dep-ensure, TUI Node host,
     detached gateway).  Use this instead of copying ``os.environ`` directly
     so strip-by-default is the uniform policy across every spawn site, with a
-    single source of truth (``_HERMES_PROVIDER_ENV_BLOCKLIST``).  The terminal
+    single source of truth (``_REIGN_PROVIDER_ENV_BLOCKLIST``).  The terminal
     / execute_code path keeps using :func:`_sanitize_subprocess_env`, which is
     skill-aware (``env_passthrough``); this helper is for spawns that have no
     skill-passthrough concept.
@@ -847,8 +847,8 @@ def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str
 
     * **Tier 1 (always):** ``_ALWAYS_STRIP_KEYS`` — gateway bot tokens, GitHub
       auth, and remote-compute secrets are removed regardless of
-      ``inherit_credentials``.  No child Hermes spawns legitimately needs them.
-    * **Tier 2 (conditional):** the rest of ``_HERMES_PROVIDER_ENV_BLOCKLIST``
+      ``inherit_credentials``.  No child Reign spawns legitimately needs them.
+    * **Tier 2 (conditional):** the rest of ``_REIGN_PROVIDER_ENV_BLOCKLIST``
       (LLM provider API keys, tool secrets) is removed unless the caller passes
       ``inherit_credentials=True``.
 
@@ -870,35 +870,35 @@ def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str
         env.pop(key, None)
     for key in _plugin_terminal_env_strip_keys():
         env.pop(key, None)
-    # Internal routing hints and Hermes-internal dynamic secrets
+    # Internal routing hints and Reign-internal dynamic secrets
     # (``AUXILIARY_<TASK>_API_KEY`` / ``_BASE_URL`` side-LLM credentials,
     # ``GATEWAY_RELAY_*`` relay-auth material) must never reach a child,
     # regardless of ``inherit_credentials`` — a model-driving CLI has no
-    # legitimate use for them. See :func:`_is_hermes_internal_secret`.
+    # legitimate use for them. See :func:`_is_reign_internal_secret`.
     for key in list(env):
-        if key.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
+        if key.startswith(_REIGN_PROVIDER_ENV_FORCE_PREFIX):
             env.pop(key, None)
-        elif _is_hermes_internal_secret(key):
+        elif _is_reign_internal_secret(key):
             env.pop(key, None)
 
     if not inherit_credentials:
         # Tier 2 — strip provider/tool credentials unless explicitly inherited.
-        for key in _HERMES_PROVIDER_ENV_BLOCKLIST:
+        for key in _REIGN_PROVIDER_ENV_BLOCKLIST:
             env.pop(key, None)
 
     # Windows UTF-8 safety for spawned processes (#31420).
     env.setdefault("PYTHONUTF8", "1")
 
-    _inject_context_hermes_home(env)
-    from hermes_constants import apply_subprocess_home_env
+    _inject_context_reign_home(env)
+    from reign_constants import apply_subprocess_home_env
     apply_subprocess_home_env(env)
 
-    _strip_hermes_owned_pythonpath_and_runtime_markers(env)
+    _strip_reign_owned_pythonpath_and_runtime_markers(env)
 
     _apply_windows_msys_bash_env_defaults(env)
 
     # Cross-session leak guard, same as the terminal spawn paths: this helper
-    # copies os.environ, whose HERMES_SESSION_* mirror is a last-writer-wins
+    # copies os.environ, whose REIGN_SESSION_* mirror is a last-writer-wins
     # global under a concurrent multi-session host. A caller that re-binds the
     # session identity explicitly (slash_worker/ACP via --session-key argv) is
     # unaffected — bound ContextVars win here — but a caller that spawns without
@@ -910,7 +910,7 @@ def hermes_subprocess_env(*, inherit_credentials: bool = False) -> dict[str, str
     # Non-terminal subprocess helpers (browser, lazy-deps, TUI/ACP hosts, etc.)
     # also need the delegate_task child lineage marker.  Otherwise a child
     # context that later imports Kanban DB code in the spawned process would
-    # still see the parent's HERMES_HOME but lose the DB mutation guard.
+    # still see the parent's REIGN_HOME but lose the DB mutation guard.
     env = _scrub_delegated_child_kanban_env(env)
 
     return env
@@ -926,10 +926,10 @@ def build_subprocess_env(
     """Single factory for building a child-process environment.
 
     Every spawn site in the codebase should build its env through this
-    function (or :func:`hermes_subprocess_env` for the model-driving-CLI
+    function (or :func:`reign_subprocess_env` for the model-driving-CLI
     surface) instead of copying ``os.environ`` directly, so profile-home
-    propagation (``HERMES_HOME`` / subprocess ``HOME`` contract) and the
-    Hermes secret-scrub policy have a single owner.  History: ~11 separate
+    propagation (``REIGN_HOME`` / subprocess ``HOME`` contract) and the
+    Reign secret-scrub policy have a single owner.  History: ~11 separate
     commits each fixed one more spawn site that missed profile-HOME or
     secret-scrub propagation; this factory is the fix for the class.
 
@@ -940,9 +940,9 @@ def build_subprocess_env(
       env instead.
     * ``scrub_secrets=True`` (default) — delegate to
       :func:`_sanitize_subprocess_env`, the long-standing owner of the scrub
-      list (provider blocklist + ``_is_hermes_internal_secret`` dynamic
+      list (provider blocklist + ``_is_reign_internal_secret`` dynamic
       patterns + kanban/venv-marker/session-context guards) **and** of
-      ``HERMES_HOME`` / subprocess-HOME propagation.  On this path profile
+      ``REIGN_HOME`` / subprocess-HOME propagation.  On this path profile
       home propagation is inherent — ``inherit_profile_home`` is ignored
       (always applied), exactly matching today's sanitize semantics.
     * ``scrub_secrets=False`` — preserve the base env content byte-for-byte
@@ -951,17 +951,17 @@ def build_subprocess_env(
       scrubbing could change behavior.  The site is still a win: it becomes
       grep-able and future-fixable.
     * ``inherit_profile_home`` — on the non-scrub path, when True, bridge the
-      context-local Hermes home override into ``HERMES_HOME`` and apply the
-      subprocess HOME contract (``hermes_constants.apply_subprocess_home_env``).
+      context-local Reign home override into ``REIGN_HOME`` and apply the
+      subprocess HOME contract (``reign_constants.apply_subprocess_home_env``).
       Pass False to keep the inherited env untouched (exact legacy
       ``os.environ.copy()`` behavior).
     * ``extra`` — applied **last** on the non-scrub path so explicit caller
-      overrides (e.g. a session-scoped ``HERMES_HOME``) always win.  On the
+      overrides (e.g. a session-scoped ``REIGN_HOME``) always win.  On the
       scrub path it is forwarded as ``_sanitize_subprocess_env``'s
       ``extra_env`` (same force-prefix / blocklist handling as today).
     """
     if scrub_secrets:
-        # _sanitize_subprocess_env already performs HERMES_HOME override
+        # _sanitize_subprocess_env already performs REIGN_HOME override
         # bridging + apply_subprocess_home_env unconditionally; delegating
         # wholesale keeps one owner and zero drift.
         return _sanitize_subprocess_env(
@@ -971,8 +971,8 @@ def build_subprocess_env(
 
     env: dict[str, str] = dict(base) if base is not None else os.environ.copy()
     if inherit_profile_home:
-        _inject_context_hermes_home(env)
-        from hermes_constants import apply_subprocess_home_env
+        _inject_context_reign_home(env)
+        from reign_constants import apply_subprocess_home_env
         apply_subprocess_home_env(env)
     if extra:
         env.update(extra)
@@ -992,24 +992,24 @@ def _find_bash() -> str:
 
     candidates: list[str] = []
 
-    custom = os.environ.get("HERMES_GIT_BASH_PATH")
+    custom = os.environ.get("REIGN_GIT_BASH_PATH")
     if custom and os.path.isfile(custom):
         candidates.append(custom)
 
     # Prefer our own portable Git install — a broken or partially-uninstalled
-    # system Git (or a stale HERMES_GIT_BASH_PATH pointing at one) must not
+    # system Git (or a stale REIGN_GIT_BASH_PATH pointing at one) must not
     # brick the terminal.  install.ps1 drops PortableGit here when needed.
     #
     # Layouts (both checked so upgrades between MinGit and PortableGit
     # installs work transparently):
-    #   PortableGit: %LOCALAPPDATA%\hermes\git\bin\bash.exe   (primary)
-    #   MinGit:      %LOCALAPPDATA%\hermes\git\usr\bin\bash.exe (legacy/32-bit fallback)
+    #   PortableGit: %LOCALAPPDATA%\reign\git\bin\bash.exe   (primary)
+    #   MinGit:      %LOCALAPPDATA%\reign\git\usr\bin\bash.exe (legacy/32-bit fallback)
     _local_appdata = os.environ.get("LOCALAPPDATA", "")
-    _hermes_portable_git = os.path.join(_local_appdata, "hermes", "git") if _local_appdata else ""
-    if _hermes_portable_git:
+    _reign_portable_git = os.path.join(_local_appdata, "reign", "git") if _local_appdata else ""
+    if _reign_portable_git:
         for candidate in (
-            os.path.join(_hermes_portable_git, "bin", "bash.exe"),        # PortableGit (primary)
-            os.path.join(_hermes_portable_git, "usr", "bin", "bash.exe"), # MinGit fallback
+            os.path.join(_reign_portable_git, "bin", "bash.exe"),        # PortableGit (primary)
+            os.path.join(_reign_portable_git, "usr", "bin", "bash.exe"), # MinGit fallback
         ):
             if os.path.isfile(candidate) and candidate not in candidates:
                 candidates.append(candidate)
@@ -1031,14 +1031,14 @@ def _find_bash() -> str:
         candidates.append(found)
 
     # Prefer the first candidate that can actually start.  A stale
-    # HERMES_GIT_BASH_PATH pointing at a broken Git-for-Windows install
+    # REIGN_GIT_BASH_PATH pointing at a broken Git-for-Windows install
     # (``Directory \\drivers\\etc does not exist``) must not win over a
-    # healthy portable Git under %LOCALAPPDATA%\\hermes\\git.
+    # healthy portable Git under %LOCALAPPDATA%\\reign\\git.
     for candidate in candidates:
         if _bash_starts(candidate):
             if candidate != custom and custom and os.path.isfile(custom):
                 logger.warning(
-                    "HERMES_GIT_BASH_PATH=%s fails to start; using %s instead",
+                    "REIGN_GIT_BASH_PATH=%s fails to start; using %s instead",
                     custom,
                     candidate,
                 )
@@ -1061,9 +1061,9 @@ def _find_bash() -> str:
         return candidates[0]
 
     raise RuntimeError(
-        "Git Bash not found. Hermes Agent requires Git for Windows on Windows.\n"
+        "Git Bash not found. Reign requires Git for Windows on Windows.\n"
         "Install it from: https://git-scm.com/download/win\n"
-        "Or set HERMES_GIT_BASH_PATH to your bash.exe location."
+        "Or set REIGN_GIT_BASH_PATH to your bash.exe location."
     )
 
 
@@ -1149,7 +1149,7 @@ def _git_bash_aslr_help(bash: str, details: str = "") -> str:
         'Get-Item "$gitRoot\\bin\\bash.exe", "$gitRoot\\usr\\bin\\*.exe" '
         "-ErrorAction SilentlyContinue | ForEach-Object { "
         "Set-ProcessMitigation -Name $_.FullName -Disable ForceRelocateImages }\n"
-        "Then restart Hermes. If the override is blocked or later re-applied, "
+        "Then restart Reign. If the override is blocked or later re-applied, "
         "ask your Windows administrator to allow this per-program exception."
     )
 
@@ -1320,42 +1320,42 @@ _SANE_PATH = (
     "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 )
 
-# Cached directory containing the ``hermes`` console-script.
+# Cached directory containing the ``reign`` console-script.
 # ``_SENTINEL`` distinguishes "not resolved yet" from a resolved ``None``.
 _SENTINEL = object()
-_HERMES_BIN_DIR: "str | None | object" = _SENTINEL
+_REIGN_BIN_DIR: "str | None | object" = _SENTINEL
 
 
-def _resolve_hermes_bin_dir() -> str | None:
-    """Return the directory holding the ``hermes`` console-script, or None.
+def _resolve_reign_bin_dir() -> str | None:
+    """Return the directory holding the ``reign`` console-script, or None.
 
     The terminal tool runs in a freshly-spawned subshell whose PATH is the
     agent process's PATH plus a static set of system dirs (``_SANE_PATH``).
     When the gateway is launched by something that does NOT source the user's
     shell rc — systemd, a service manager, a desktop launcher, cron — the
-    hermes install dir (``~/.local/bin``, the venv ``bin``/``Scripts``, pipx,
-    nix) is absent from that PATH, so plugins shelling out to bare ``hermes``
+    reign install dir (``~/.local/bin``, the venv ``bin``/``Scripts``, pipx,
+    nix) is absent from that PATH, so plugins shelling out to bare ``reign``
     via the terminal tool hit ``command not found`` (exit 127) even though
-    ``hermes`` works fine in the user's own interactive terminal.
+    ``reign`` works fine in the user's own interactive terminal.
 
     We resolve the install dir once (it never changes within a process) and
-    prepend-if-missing it to the subshell PATH so bare ``hermes`` resolves
+    prepend-if-missing it to the subshell PATH so bare ``reign`` resolves
     regardless of how the gateway was started.
 
     Resolution order (cheap, no heavy imports):
-      1. ``shutil.which("hermes")`` — normal PATH-installed shim.
+      1. ``shutil.which("reign")`` — normal PATH-installed shim.
       2. The directory of ``sys.argv[0]`` when it's an absolute path to a
-         real ``hermes`` executable (covers nix-store / venv wrappers).
+         real ``reign`` executable (covers nix-store / venv wrappers).
       3. The directory of ``sys.executable`` — the running interpreter's
          venv ``bin``/``Scripts`` is where its console-scripts live.
     """
-    global _HERMES_BIN_DIR
-    if _HERMES_BIN_DIR is not _SENTINEL:
-        return _HERMES_BIN_DIR  # type: ignore[return-value]
+    global _REIGN_BIN_DIR
+    if _REIGN_BIN_DIR is not _SENTINEL:
+        return _REIGN_BIN_DIR  # type: ignore[return-value]
 
     candidate: str | None = None
 
-    which = shutil.which("hermes")
+    which = shutil.which("reign")
     if which:
         candidate = os.path.dirname(which)
 
@@ -1364,7 +1364,7 @@ def _resolve_hermes_bin_dir() -> str | None:
         base = os.path.basename(argv0).lower()
         if (
             os.path.isabs(argv0)
-            and (base == "hermes" or base.startswith("hermes."))
+            and (base == "reign" or base.startswith("reign."))
             and os.path.isfile(argv0)
         ):
             candidate = os.path.dirname(argv0)
@@ -1372,25 +1372,25 @@ def _resolve_hermes_bin_dir() -> str | None:
     if candidate is None:
         exe_dir = os.path.dirname(sys.executable) if sys.executable else ""
         if exe_dir:
-            shim = "hermes.exe" if _IS_WINDOWS else "hermes"
+            shim = "reign.exe" if _IS_WINDOWS else "reign"
             if os.path.isfile(os.path.join(exe_dir, shim)):
                 candidate = exe_dir
 
     if candidate and not os.path.isdir(candidate):
         candidate = None
 
-    _HERMES_BIN_DIR = candidate
+    _REIGN_BIN_DIR = candidate
     return candidate
 
 
-def _prepend_hermes_bin_dir(existing_path: str) -> str:
-    """Prepend the hermes install dir to ``existing_path`` if it's missing.
+def _prepend_reign_bin_dir(existing_path: str) -> str:
+    """Prepend the reign install dir to ``existing_path`` if it's missing.
 
     Cross-platform (uses ``os.pathsep``). First-occurrence wins, so a PATH
     that already contains the dir is returned unchanged. Returns the input
     unchanged when the install dir can't be resolved.
     """
-    bin_dir = _resolve_hermes_bin_dir()
+    bin_dir = _resolve_reign_bin_dir()
     if not bin_dir:
         return existing_path
     sep = os.pathsep
@@ -1401,28 +1401,28 @@ def _prepend_hermes_bin_dir(existing_path: str) -> str:
 
 
 def _managed_runtime_path_entries() -> list[str]:
-    """Return existing Hermes-managed runtime dirs for the terminal subshell PATH.
+    """Return existing Reign-managed runtime dirs for the terminal subshell PATH.
 
     The terminal tool spawns a subshell whose PATH is the agent process's PATH
-    plus ``_SANE_PATH``. Neither carries the runtimes Hermes installs for
-    itself, so on a machine where Hermes provisioned its own toolchain a
+    plus ``_SANE_PATH``. Neither carries the runtimes Reign installs for
+    itself, so on a machine where Reign provisioned its own toolchain a
     command the agent runs resolves a system copy instead — or nothing at all:
 
-    - ``$HERMES_HOME/node`` (+ ``/bin``) — installed to satisfy the desktop and
+    - ``$REIGN_HOME/node`` (+ ``/bin``) — installed to satisfy the desktop and
       browser toolchain. ``tools/browser_tool.py`` already does this for its own
       subprocesses; the agent's shell deserves the same.
-    - ``$HERMES_HOME/bin`` — the managed ``uv``. ``install.sh`` writes it there
+    - ``$REIGN_HOME/bin`` — the managed ``uv``. ``install.sh`` writes it there
       and nothing has ever put that directory on PATH, so an install whose only
       uv is the managed one looks uv-less to both the agent and the model.
 
     Resolved per call rather than cached in a module constant because
-    ``get_hermes_home()`` is profile-scoped and a managed tree can appear
-    mid-process (``heal_hermes_managed_node``, a first browser install).
+    ``get_reign_home()`` is profile-scoped and a managed tree can appear
+    mid-process (``heal_reign_managed_node``, a first browser install).
     """
     try:
-        from hermes_constants import get_hermes_home, iter_hermes_node_dirs
+        from reign_constants import get_reign_home, iter_reign_node_dirs
 
-        candidates = [*iter_hermes_node_dirs(), get_hermes_home() / "bin"]
+        candidates = [*iter_reign_node_dirs(), get_reign_home() / "bin"]
         return [str(d) for d in candidates if d.is_dir()]
     except Exception:
         return []
@@ -1445,7 +1445,7 @@ def _append_missing_sane_path_entries(existing_path: str) -> str:
     - **Duplicates are collapsed** (first occurrence wins), so a caller PATH
       that already contains repeats is not propagated verbatim.
 
-    Hermes-managed runtime dirs are appended alongside the sane entries, not
+    Reign-managed runtime dirs are appended alongside the sane entries, not
     prepended: a tool the user deliberately put on their own PATH still wins,
     and the managed one only fills the gap where there would otherwise be
     nothing.
@@ -1489,7 +1489,7 @@ def _apply_windows_msys_bash_env_defaults(env: dict) -> None:
 
     Git Bash rewrites arguments that look like Unix paths (``/FO``, ``/TN``,
     ``/Create``) into ``C:/.../git/FO``-style paths, which breaks native
-    Windows commands such as ``tasklist``, ``schtasks``, and ``wmic``.  Hermes
+    Windows commands such as ``tasklist``, ``schtasks``, and ``wmic``.  Reign
     runs terminal commands through bash on Windows, so set the standard MSYS
     opt-out by default.  Users who need conversion can override in their env.
     Refs #56700.
@@ -1539,17 +1539,17 @@ def _make_run_env(env: dict) -> dict:
     merged = dict(os.environ | env)
     run_env = {}
     for k, v in merged.items():
-        if k.startswith(_HERMES_PROVIDER_ENV_FORCE_PREFIX):
-            real_key = k[len(_HERMES_PROVIDER_ENV_FORCE_PREFIX):]
-            if _is_hermes_internal_secret(real_key):
+        if k.startswith(_REIGN_PROVIDER_ENV_FORCE_PREFIX):
+            real_key = k[len(_REIGN_PROVIDER_ENV_FORCE_PREFIX):]
+            if _is_reign_internal_secret(real_key):
                 continue
             run_env[real_key] = v
-        elif _is_hermes_internal_secret(k):
+        elif _is_reign_internal_secret(k):
             continue
         else:
             first_party = _is_terminal_first_party_env(k)
             passthrough = _is_passthrough(k)
-            if k in _HERMES_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
+            if k in _REIGN_PROVIDER_ENV_BLOCKLIST and not (passthrough or first_party):
                 continue
             # First-party vars use the merged env value directly (see
             # _sanitize_subprocess_env); only passthrough names resolve.
@@ -1568,14 +1568,14 @@ def _make_run_env(env: dict) -> dict:
         # error / exit 127).  No-op off Windows and when a login snapshot is
         # healthy (the snapshot re-exports the full PATH inside the shell).
         new_path = _prepend_git_bash_dirs(new_path)
-        # Ensure the hermes install dir is reachable so plugins can shell out
-        # to bare ``hermes`` via the terminal tool even when the gateway was
+        # Ensure the reign install dir is reachable so plugins can shell out
+        # to bare ``reign`` via the terminal tool even when the gateway was
         # launched without it on PATH (systemd, service managers, cron, etc.).
-        run_env[path_key] = _prepend_hermes_bin_dir(new_path)
+        run_env[path_key] = _prepend_reign_bin_dir(new_path)
 
-    _inject_context_hermes_home(run_env)
+    _inject_context_reign_home(run_env)
 
-    from hermes_constants import apply_subprocess_home_env
+    from reign_constants import apply_subprocess_home_env
     apply_subprocess_home_env(run_env)
 
     # Bridge ContextVar-based session vars into the subprocess env (with the
@@ -1583,7 +1583,7 @@ def _make_run_env(env: dict) -> dict:
     # engaged so a sibling session's os.environ mirror can't leak in).
     _inject_session_context_env(run_env)
 
-    _strip_hermes_owned_pythonpath_and_runtime_markers(run_env)
+    _strip_reign_owned_pythonpath_and_runtime_markers(run_env)
 
     _apply_windows_msys_bash_env_defaults(run_env)
 
@@ -1599,17 +1599,17 @@ def _same_path(left: Path, right: Path) -> bool:
     return left_parts == right_parts
 
 
-def _build_hermes_repo_root_aliases(
+def _build_reign_repo_root_aliases(
     resolved_root: Path,
     lexical_root: Path,
     configured_home: Path,
 ) -> tuple[Path, ...]:
-    """Return exact repo-root spellings emitted by Hermes launchers.
+    """Return exact repo-root spellings emitted by Reign launchers.
 
-    ``gateway_windows._preserve_hermes_home_path`` maps a physical path under
-    the resolved HERMES_HOME back onto the configured HERMES_HOME spelling.
+    ``gateway_windows._preserve_reign_home_path`` maps a physical path under
+    the resolved REIGN_HOME back onto the configured REIGN_HOME spelling.
     Mirror that producer contract here so a junction-backed install is matched
-    without treating arbitrary descendants of HERMES_HOME as Hermes-owned.
+    without treating arbitrary descendants of REIGN_HOME as Reign-owned.
     Additionally, when the repo itself is a junction under the configured root
     (repo-level junction, possibly cross-drive), the single deterministic
     candidate <root>/<repo dirname> is accepted only when strict resolve
@@ -1628,10 +1628,10 @@ def _build_hermes_repo_root_aliases(
     # home becomes <root>/profiles/<name>.  The repo root then lives beside
     # the profiles directory (not under the profile home), so the home-
     # relative mapping below cannot reach it.  Derive the root spelling
-    # lexically the same way get_default_hermes_root() does (parent of a
+    # lexically the same way get_default_reign_root() does (parent of a
     # "profiles" component) and run the same exact-ownership mapping against
     # it -- this recovers the launcher's lexical root under profile re-home
-    # while still never matching arbitrary descendants of HERMES_HOME.
+    # while still never matching arbitrary descendants of REIGN_HOME.
     home_candidates = [configured_home]
     if configured_home.parent.name == "profiles":
         home_candidates.append(configured_home.parent.parent)
@@ -1648,13 +1648,13 @@ def _build_hermes_repo_root_aliases(
             pass
 
     # Repo-level junction recovery: the repository itself may be a
-    # junction/symlink under the configured root (e.g. D:\hermes\hermes-agent
-    # -> C:\...\hermes-agent) while the import spelling (editable install)
+    # junction/symlink under the configured root (e.g. D:\reign\reign
+    # -> C:\...\reign) while the import spelling (editable install)
     # resolves to the physical location.  The home-relative mapping above
     # cannot express a cross-drive link (commonpath raises on different
     # drives), so prove the EXACT filesystem identity of the single
     # deterministic candidate -- <lexical root>/<repo dirname> -- with a
-    # strict resolve before accepting it as Hermes-owned.  Fail-closed: a
+    # strict resolve before accepting it as Reign-owned.  Fail-closed: a
     # missing path (strict resolve raises), a real directory that is not the
     # known physical root, or any unrelated spelling never becomes an alias.
     for home in home_candidates:
@@ -1668,28 +1668,28 @@ def _build_hermes_repo_root_aliases(
     return tuple(aliases)
 
 
-# --- Hermes venv / repo-root detection (module-level, computed once) ---
+# --- Reign venv / repo-root detection (module-level, computed once) ---
 
-#: The Hermes repository root - three levels up from this file
+#: The Reign repository root - three levels up from this file
 #: (``tools/environments/local.py`` -> ``tools/environments`` -> ``tools``
 #: -> repo root).  This is the directory the Electron app prepends to
-#: PYTHONPATH so the backend can do ``import tools``, ``import hermes_cli``,
-#: etc.  Subprocesses that are NOT the Hermes backend don't need it and it
+#: PYTHONPATH so the backend can do ``import tools``, ``import reign_cli``,
+#: etc.  Subprocesses that are NOT the Reign backend don't need it and it
 #: can shadow local packages.
-_hermes_repo_root: Path = Path(__file__).resolve().parents[2]
+_reign_repo_root: Path = Path(__file__).resolve().parents[2]
 
-#: Alternate spellings of the repo root that Hermes launchers may emit.
+#: Alternate spellings of the repo root that Reign launchers may emit.
 #: ``Path(__file__).resolve()`` canonicalizes symlinks/junctions, but the
-#: Windows gateway launcher deliberately renders Hermes-owned paths under
-#: the configured HERMES_HOME spelling (which may be a junction to another
-#: drive — see ``hermes_cli/gateway_windows.py::_preserve_hermes_home_path``).
+#: Windows gateway launcher deliberately renders Reign-owned paths under
+#: the configured REIGN_HOME spelling (which may be a junction to another
+#: drive — see ``reign_cli/gateway_windows.py::_preserve_reign_home_path``).
 #: ``Path(__file__)`` (unresolved) keeps that spelling, so a PYTHONPATH
 #: entry written by the launcher still matches even though it differs
 #: lexically from the resolved root.
-_hermes_repo_root_aliases: tuple[Path, ...] = _build_hermes_repo_root_aliases(
-    _hermes_repo_root,
+_reign_repo_root_aliases: tuple[Path, ...] = _build_reign_repo_root_aliases(
+    _reign_repo_root,
     Path(__file__).absolute().parents[2],
-    get_process_hermes_home(),
+    get_process_reign_home(),
 )
 
 #: Whether the current interpreter is running inside a venv.  On Python 3.3+
@@ -1704,7 +1704,7 @@ _in_venv: bool = (
 #: interpreter's own venv.  Computed lazily (once) because ``site`` import
 #: and path construction are not free and this function is called on every
 #: subprocess spawn.
-_hermes_site_packages: list[Path] | None = None
+_reign_site_packages: list[Path] | None = None
 
 
 def _validated_runtime_venv(env: dict) -> Path | None:
@@ -1712,7 +1712,7 @@ def _validated_runtime_venv(env: dict) -> Path | None:
 
     A user may carry an unrelated VIRTUAL_ENV, so the variable alone is not
     provenance.  The legacy Windows base-Python gateway producer uses the exact
-    ``<Hermes repo>/venv`` layout and a real venv marker; require both before
+    ``<Reign repo>/venv`` layout and a real venv marker; require both before
     accepting its separate runtime venv.
     """
     value = env.get("VIRTUAL_ENV")
@@ -1720,7 +1720,7 @@ def _validated_runtime_venv(env: dict) -> Path | None:
         return None
 
     candidate = Path(value)
-    if not any(_same_path(candidate, repo_root / "venv") for repo_root in _hermes_repo_root_aliases):
+    if not any(_same_path(candidate, repo_root / "venv") for repo_root in _reign_repo_root_aliases):
         return None
 
     try:
@@ -1732,8 +1732,8 @@ def _validated_runtime_venv(env: dict) -> Path | None:
     return candidate
 
 
-def _get_hermes_site_packages(env: dict) -> list[Path]:
-    """Return exact site-packages dirs owned by the Hermes runtime.
+def _get_reign_site_packages(env: dict) -> list[Path]:
+    """Return exact site-packages dirs owned by the Reign runtime.
 
     Uses ``site.getsitepackages()`` when available for robustness (it respects
     ``.pth`` rewrites and platform conventions), with a manual fallback that
@@ -1741,9 +1741,9 @@ def _get_hermes_site_packages(env: dict) -> list[Path]:
     A validated Windows base-interpreter launch contributes its separate
     ``VIRTUAL_ENV/Lib/site-packages`` directory as an additional exact entry.
     """
-    global _hermes_site_packages
-    if _hermes_site_packages is not None:
-        result = list(_hermes_site_packages)
+    global _reign_site_packages
+    if _reign_site_packages is not None:
+        result = list(_reign_site_packages)
     else:
         result = []
         if _in_venv:
@@ -1765,7 +1765,7 @@ def _get_hermes_site_packages(env: dict) -> list[Path]:
                     pyver = f"python{sys.version_info[0]}.{sys.version_info[1]}"
                     result.append(Path(sys.prefix) / "lib" / pyver / "site-packages")
 
-        _hermes_site_packages = list(result)
+        _reign_site_packages = list(result)
 
     runtime_venv = _validated_runtime_venv(env)
     if runtime_venv is not None:
@@ -1776,27 +1776,27 @@ def _get_hermes_site_packages(env: dict) -> list[Path]:
     return result
 
 
-def _strip_hermes_owned_pythonpath_and_runtime_markers(env: dict) -> None:
-    """Strip Hermes-owned PYTHONPATH entries, then the runtime marker vars.
+def _strip_reign_owned_pythonpath_and_runtime_markers(env: dict) -> None:
+    """Strip Reign-owned PYTHONPATH entries, then the runtime marker vars.
 
     Ordering is load-bearing: PYTHONPATH filtering must run BEFORE the
     markers are removed so a validated Windows base-interpreter launch
     (VIRTUAL_ENV -> <repo>/venv) can still prove ownership.
     """
-    _strip_hermes_owned_pythonpath(env)
+    _strip_reign_owned_pythonpath(env)
     for _marker in _ACTIVE_VENV_MARKER_VARS:
         env.pop(_marker, None)
 
 
-def _strip_hermes_owned_pythonpath(env: dict) -> None:
-    """Remove Hermes-owned PYTHONPATH entries from subprocess environments.
+def _strip_reign_owned_pythonpath(env: dict) -> None:
+    """Remove Reign-owned PYTHONPATH entries from subprocess environments.
 
-    Launchers prepend the Hermes repo root and the Hermes venv's
+    Launchers prepend the Reign repo root and the Reign venv's
     site-packages so the backend can ``import tools``; leaking those into a
     child Python of a DIFFERENT version makes it load the backend's C
     extensions and crash (``numpy._core._multiarray_umath``, ``PIL._imaging``,
     ``cryptography``).  Blanket-removing PYTHONPATH would discard legitimate
-    user entries, so only entries proven Hermes-owned are removed:
+    user entries, so only entries proven Reign-owned are removed:
 
     1. The exact repo root (never direct children -- no launcher injects
        one, and user paths under the repo must survive).
@@ -1813,7 +1813,7 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
     if not pp:
         return
 
-    hermes_site_packages = _get_hermes_site_packages(env)
+    reign_site_packages = _get_reign_site_packages(env)
 
     kept: list[str] = []
     stripped: list[str] = []
@@ -1821,7 +1821,7 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
     for entry in pp.split(os.pathsep):
         # Empty and non-normalized components are user-owned semantics.  In
         # particular, an empty component means the current working directory.
-        # Preserve raw spelling unless the exact component is Hermes-owned.
+        # Preserve raw spelling unless the exact component is Reign-owned.
         if entry == "":
             kept.append(entry)
             continue
@@ -1829,10 +1829,10 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
         entry_path = Path(entry)
         should_strip = False
 
-        # --- Check 1: Hermes venv site-packages ---
+        # --- Check 1: Reign venv site-packages ---
         # Producers inject the exact directory, never a descendant.  Exact
         # matching avoids deleting a user path nested below site-packages.
-        for sp in hermes_site_packages:
+        for sp in reign_site_packages:
             if _same_path(entry_path, sp):
                 should_strip = True
                 break
@@ -1840,19 +1840,19 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
             stripped.append(entry)
             continue
 
-        # --- Check 2: Hermes repo root ---
+        # --- Check 2: Reign repo root ---
         # The Electron app prepends the repo root so ``import tools`` works
         # in the backend.  Subprocesses don't need it and it can shadow
         # local packages of the same name.  Only the EXACT root is stripped:
         # no launcher injects a direct child (``<repo>/tools`` etc.) as an
         # independent PYTHONPATH entry, and user paths that merely happen to
         # live under the repo directory must be preserved.  Both the
-        # resolved and unresolved (HERMES_HOME/junction) spellings count as
-        # Hermes-owned.
+        # resolved and unresolved (REIGN_HOME/junction) spellings count as
+        # Reign-owned.
         if not should_strip:
             should_strip = any(
                 _same_path(entry_path, repo_root)
-                for repo_root in _hermes_repo_root_aliases
+                for repo_root in _reign_repo_root_aliases
             )
 
         if should_strip:
@@ -1867,7 +1867,7 @@ def _strip_hermes_owned_pythonpath(env: dict) -> None:
 
     if stripped:
         logger.debug(
-            "Stripped Hermes-owned entries from PYTHONPATH: %s",
+            "Stripped Reign-owned entries from PYTHONPATH: %s",
             stripped,
         )
 
@@ -1879,7 +1879,7 @@ def _read_terminal_shell_init_config() -> tuple[list[str], bool]:
     execution never breaks because the config file is unreadable.
     """
     try:
-        from hermes_cli.config import load_config
+        from reign_cli.config import load_config
 
         cfg = load_config() or {}
         terminal_cfg = cfg.get("terminal") or {}
@@ -1898,7 +1898,7 @@ def _resolve_shell_init_files() -> list[str]:
     Expands ``~`` and ``${VAR}`` references and drops anything that doesn't
     exist on disk, so a missing ``~/.bashrc`` never breaks the snapshot.
     The ``auto_source_bashrc`` path runs only when the user hasn't supplied
-    an explicit list — once they have, Hermes trusts them.
+    an explicit list — once they have, Reign trusts them.
     """
     explicit, auto_bashrc = _read_terminal_shell_init_config()
 
@@ -1965,7 +1965,7 @@ class LocalEnvironment(BaseEnvironment):
 
     _profile_scoped_passthrough = True
 
-    # Commands run on the Hermes host itself — controller-side platform
+    # Commands run on the Reign host itself — controller-side platform
     # behavior (macOS TCC pruning, etc.) legitimately applies here.
     is_local = True
 
@@ -1980,7 +1980,7 @@ class LocalEnvironment(BaseEnvironment):
         additions — and ``BUZZ_*`` can NEVER be in it, because env_passthrough
         refuses blocklisted names (GHSA-rhgp-j443-p4rf). Under a multiplexed
         gateway, profile A's BUZZ_PRIVATE_KEY would land in
-        ``hermes-snap-<id>.sh`` and a later command from profile B sharing
+        ``reign-snap-<id>.sh`` and a later command from profile B sharing
         this collapsed LocalEnvironment would ``source`` it: a cross-profile
         nsec leak that defeats profile isolation.
 
@@ -2022,9 +2022,9 @@ class LocalEnvironment(BaseEnvironment):
         environment.
 
         **Default (no override set):** a dedicated cache dir under
-        ``HERMES_HOME`` (``~/.hermes/cache/terminal``) rather than ``/tmp``.
+        ``REIGN_HOME`` (``~/.reign/cache/terminal``) rather than ``/tmp``.
         On several distros (Arch and friends) ``/tmp`` is a small RAM-backed
-        tmpfs, and Hermes session artifacts — background-process logs,
+        tmpfs, and Reign session artifacts — background-process logs,
         code-execution sandboxes, spilled tool results — can fill it under
         load. Real storage is the safer default; stale artifacts are pruned
         by ``cleanup_terminal_temp_cache`` (gateway housekeeping + a
@@ -2035,27 +2035,27 @@ class LocalEnvironment(BaseEnvironment):
         can't open the path, and the Windows default temp (``%TEMP%``) often
         contains spaces (``C:\\Users\\Some Name\\AppData\\Local\\Temp``) that
         break unquoted bash interpolations.  Use a dedicated cache dir under
-        ``HERMES_HOME`` instead — single-word path, guaranteed to exist, same
+        ``REIGN_HOME`` instead — single-word path, guaranteed to exist, same
         string resolves in both Git Bash and native Python.
         """
         if _IS_WINDOWS:
-            # Derive a Windows-safe temp dir under HERMES_HOME.  Using
+            # Derive a Windows-safe temp dir under REIGN_HOME.  Using
             # forward slashes makes the same string work unchanged in bash
             # command interpolations AND in Python ``open()`` — Windows
             # accepts forward slashes in filesystem paths, and we control
             # the path so we can guarantee no spaces.
             try:
-                from hermes_constants import get_hermes_home
-                cache_dir = get_hermes_home() / "cache" / "terminal"
+                from reign_constants import get_reign_home
+                cache_dir = get_reign_home() / "cache" / "terminal"
             except Exception:
-                cache_dir = Path(tempfile.gettempdir()) / "hermes_terminal"
+                cache_dir = Path(tempfile.gettempdir()) / "reign_terminal"
             cache_dir.mkdir(parents=True, exist_ok=True)
             _prune_terminal_temp_once()
             # Force forward slashes so the same string serves both contexts.
             return str(cache_dir).replace("\\", "/")
 
         # Explicit temp-dir override from terminal.temp_dir (TERMINAL_TEMP_DIR).
-        # Honored ahead of the generic TMPDIR so users can redirect Hermes' temp
+        # Honored ahead of the generic TMPDIR so users can redirect Reign' temp
         # root to real storage when /tmp is a small tmpfs.
         configured = self.env.get("TERMINAL_TEMP_DIR") or os.environ.get("TERMINAL_TEMP_DIR")
         if configured and configured.startswith("/") and os.path.isdir(configured):
@@ -2066,12 +2066,12 @@ class LocalEnvironment(BaseEnvironment):
             if candidate and candidate.startswith("/"):
                 return candidate.rstrip("/") or "/"
 
-        # Default: HERMES_HOME/cache/terminal — real storage, mirroring the
+        # Default: REIGN_HOME/cache/terminal — real storage, mirroring the
         # Windows branch above. /tmp is only a last-resort fallback now
-        # because RAM-backed tmpfs /tmp fills up under Hermes load.
+        # because RAM-backed tmpfs /tmp fills up under Reign load.
         try:
-            from hermes_constants import get_hermes_home
-            cache_dir = get_hermes_home() / "cache" / "terminal"
+            from reign_constants import get_reign_home
+            cache_dir = get_reign_home() / "cache" / "terminal"
             cache_dir.mkdir(parents=True, exist_ok=True)
             resolved = str(cache_dir)
             if resolved.startswith("/") and os.access(resolved, os.W_OK | os.X_OK):
@@ -2159,7 +2159,7 @@ class LocalEnvironment(BaseEnvironment):
         )
         if not _IS_WINDOWS:
             try:
-                proc._hermes_pgid = os.getpgid(proc.pid)
+                proc._reign_pgid = os.getpgid(proc.pid)
             except ProcessLookupError:
                 pass
 
@@ -2220,7 +2220,7 @@ class LocalEnvironment(BaseEnvironment):
                 try:
                     pgid = os.getpgid(proc.pid)
                 except ProcessLookupError:
-                    pgid = getattr(proc, "_hermes_pgid", None)
+                    pgid = getattr(proc, "_reign_pgid", None)
                     if pgid is None:
                         raise
 

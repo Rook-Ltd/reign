@@ -4,7 +4,7 @@ import { annotateInPage } from './in-page'
 
 afterEach(() => {
   document.body.replaceChildren()
-  document.querySelectorAll('hermes-annotate').forEach(node => node.remove())
+  document.querySelectorAll('reign-annotate').forEach(node => node.remove())
 })
 
 describe('annotateInPage overlay', () => {
@@ -13,12 +13,12 @@ describe('annotateInPage overlay', () => {
     api.install()
 
     expect(api.isInstalled()).toBe(true)
-    expect(document.querySelector('hermes-annotate')).toBeTruthy()
+    expect(document.querySelector('reign-annotate')).toBeTruthy()
 
     api.teardown()
 
     expect(api.isInstalled()).toBe(false)
-    expect(document.querySelector('hermes-annotate')).toBeNull()
+    expect(document.querySelector('reign-annotate')).toBeNull()
   })
 
   it('paints a blue outline and numbered markers for stacked pins', () => {
@@ -58,7 +58,7 @@ describe('annotateInPage overlay', () => {
     ])
 
     const pin = () =>
-      document.querySelector('hermes-annotate')!.shadowRoot!.querySelector('[data-annotate-pin="1"]') as HTMLElement
+      document.querySelector('reign-annotate')!.shadowRoot!.querySelector('[data-annotate-pin="1"]') as HTMLElement
 
     expect(pin().style.top).toBe('40px')
     top = 200
@@ -88,7 +88,7 @@ describe('annotateInPage overlay', () => {
 
     const api = annotateInPage(document)
     api.install()
-    const host = document.querySelector('hermes-annotate') as HTMLElement
+    const host = document.querySelector('reign-annotate') as HTMLElement
     host.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, clientX: 20, clientY: 48 }))
     host.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0, clientX: 21, clientY: 49 }))
 
@@ -97,7 +97,7 @@ describe('annotateInPage overlay', () => {
     ])
 
     const pin = () =>
-      document.querySelector('hermes-annotate')!.shadowRoot!.querySelector('[data-annotate-pin="1"]') as HTMLElement
+      document.querySelector('reign-annotate')!.shadowRoot!.querySelector('[data-annotate-pin="1"]') as HTMLElement
 
     expect(pin().style.top).toBe('40px')
     top = 180
@@ -127,7 +127,7 @@ describe('annotateInPage overlay', () => {
     const api = annotateInPage(document)
     api.install()
     const pending = api.wait()
-    const host = document.querySelector('hermes-annotate') as HTMLElement
+    const host = document.querySelector('reign-annotate') as HTMLElement
 
     host.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, button: 0, clientX: 20, clientY: 20 }))
     host.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, button: 0, clientX: 21, clientY: 21 }))
@@ -155,7 +155,7 @@ describe('annotateInPage overlay', () => {
 
     const api = annotateInPage(document)
     api.install()
-    const host = document.querySelector('hermes-annotate') as HTMLElement
+    const host = document.querySelector('reign-annotate') as HTMLElement
     const wheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 30 })
 
     host.dispatchEvent(wheel)
