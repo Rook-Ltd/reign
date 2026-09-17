@@ -26706,7 +26706,7 @@ class GatewayRunner(GatewayAuthorizationMixin, GatewayKanbanWatchersMixin, Gatew
                 else:
                     enriched_parts.append(
                         "[The user sent an image but I couldn't quite see it "
-                        "this time (>_<) You can try looking at it yourself "
+                        "this time ✗ You can try looking at it yourself "
                         f"with vision_analyze using image_url: {path}]"
                     )
             except Exception as e:

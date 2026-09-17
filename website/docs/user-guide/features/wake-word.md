@@ -48,7 +48,7 @@ Reign supports **client capture** for that case:
 
 1. The desktop arms wake with `capture: client` (automatic for the GUI when the
    backend has no local input device, or set explicitly below).
-2. openWakeWord still runs **on the backend** (same engines, same models).
+2. The wake engine still runs **on the backend** (same engines, same models).
 3. The desktop opens the **local Mac/PC microphone**, resamples to 16 kHz mono
    int16, and streams short frames via the `wake.feed` RPC.
 4. On detection the backend emits `wake.detected` as usual; the desktop starts
@@ -76,15 +76,15 @@ backend process.
 
 | Engine | Cost | API key | Notes |
 |--------|------|---------|-------|
-| **openWakeWord** (default) | Free | None | Local ONNX models. Ships a bundled **"hey reign"** model (default); also supports `hey_jarvis`, `alexa`, `hey_mycroft`, … and custom models |
-| **sherpa** | Free | None | **Open vocabulary** — detects ANY typed phrase with zero training. Small English model auto-downloads on first use (~13 MB) |
+| **sherpa** (default) | Free | None | **Open vocabulary** — detects ANY typed phrase with zero training. Small English model auto-downloads on first use (~13 MB) |
+| **openWakeWord** | Free | None | Local ONNX/tflite models. Reign bundles **no** model for it: set `openwakeword.model` to a built-in name (`hey_jarvis`, `alexa`, `hey_mycroft`, …) or a custom model file |
 | **Porcupine** | Free tier / paid | `PORCUPINE_ACCESS_KEY` | Picovoice engine; built-in keywords + custom `.ppn` files |
 
-By default the phrase is **"hey reign"** — a model for it ships with Reign, so
-it works out of the box with no training. (On first use, openWakeWord downloads
-its shared feature-extraction models — a small one-time fetch.)
+By default the phrase is **"hey reign"**, detected by the sherpa engine — no
+trained model is needed, so it works out of the box. (On first use, sherpa
+downloads its small English keyword-spotting model — a ~13 MB one-time fetch.)
 
-Both are lazy-installed the first time you enable the wake word (desktop
+All engines are lazy-installed the first time you enable the wake word (desktop
 installs made with `--include-desktop` pre-install them, so the ear works
 instantly). To install ahead of time:
 
@@ -120,20 +120,25 @@ wake_word:
   surface: auto               # eligible surface: "auto" | "cli" | "tui" | "gui"
   input_device: null           # PortAudio input index or device-name substring; null = process default
   capture: auto               # auto | local | client — where PCM is captured (see Remote desktop)
-  provider: openwakeword      # "openwakeword" (free, local) | "sherpa" (free, any phrase) | "porcupine"
-  phrase: "hey reign"        # cosmetic label only — detection is keyed by the model/keyword below
+  provider: sherpa            # "sherpa" (free, any phrase — default) | "openwakeword" (free, needs a model) | "porcupine"
+  phrase: "hey reign"        # sherpa: THE detected phrase (any text). Other engines: cosmetic label — detection is keyed by the model/keyword below
   sensitivity: 0.6            # 0.0-1.0 — higher = stricter (fewer false triggers), consistent across all engines
   confirmation_frames: 3      # openWakeWord only — consecutive over-threshold frames required to fire
   start_new_session: true     # start a fresh session on wake vs. continue the current one
+  sherpa:
+    model_dir: ""             # optional path to a sherpa-onnx KWS model dir; "" = auto-download
   openwakeword:
-    model: hey_reign         # bundled default; OR a built-in name OR a path to a custom .onnx/.tflite
+    model: ""                 # REQUIRED for provider: openwakeword — a built-in name OR a path to a custom .onnx/.tflite (nothing is bundled)
     inference_framework: ""   # "" (auto) | "onnx" | "tflite"
   porcupine:
     keyword: jarvis           # built-in keyword OR path to a custom .ppn
 ```
 
-`sensitivity`, `phrase`, and `start_new_session` apply to both engines. The
-`openwakeword` and `porcupine` blocks select the actual detection model.
+`sensitivity`, `phrase`, and `start_new_session` apply to every engine. With
+sherpa, `phrase` is the detection key itself; the `openwakeword` and
+`porcupine` blocks select the actual detection model for those engines. If
+`provider: openwakeword` is set without a `model`, `/wake status` reports
+"no bundled wake-word model ships with Reign" and the listener refuses to arm.
 
 `input_device` is passed directly to the wake listener's PortAudio
 (`sounddevice`) stream. Use either a numeric device index or an unambiguous
@@ -196,11 +201,11 @@ command records.
 
 ## Using a different phrase
 
-"Hey Reign" works out of the box — the bundled openWakeWord model
-(`model: hey_reign`) is the default. To wake on something else, the easiest
-path is the open-vocabulary engine:
+"Hey Reign" works out of the box — the default sherpa engine detects
+`phrase: "hey reign"` with no trained model. To wake on something else, just
+change the phrase:
 
-### Option A — sherpa (any phrase, zero training)
+### Option A — sherpa (any phrase, zero training — the default)
 
 Type the phrase you want; it's tokenized at runtime — "hey coder",
 "computer", "wake up neo", anything:
@@ -239,7 +244,9 @@ degrade accuracy — tune per-profile `sensitivity` if needed.
 
 ### Option B — openWakeWord (free, trained model)
 
-Name a built-in model (`hey_jarvis`, `alexa`, `hey_mycroft`, …), or train a
+A purpose-trained model gives the lowest false-trigger rate. Reign ships no
+openWakeWord model, so `openwakeword.model` is required with this engine:
+name a built-in model (`hey_jarvis`, `alexa`, `hey_mycroft`, …), or train a
 custom model (≈75–90 min on a free/Colab GPU) for maximum robustness, drop
 the `.onnx` file somewhere, and reference it:
 
@@ -249,7 +256,7 @@ wake_word:
   provider: openwakeword
   phrase: "computer"
   openwakeword:
-    model: ~/.reign/wakewords/computer.onnx   # or a built-in name like hey_jarvis
+    model: ~/.reign/models/computer.onnx   # or a built-in name like hey_jarvis
 ```
 
 Training references:
@@ -274,7 +281,7 @@ wake_word:
   provider: porcupine
   phrase: "hey reign"
   porcupine:
-    keyword: ~/.reign/wakewords/hey_reign.ppn
+    keyword: ~/.reign/models/hey-reign.ppn
 ```
 
 Set your access key in `~/.reign/.env`:

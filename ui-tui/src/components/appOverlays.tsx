@@ -363,7 +363,7 @@ export function FloatingOverlays({
                       </Text>
                     </Box>
                     {item.meta ? (
-                      // Descriptions in the neutral gray, NOT a gold-family
+                      // Descriptions in the neutral gray, NOT a brand-family
                       // tone — label vs muted are near-twins on some skins,
                       // which made command and description read as one run.
                       // Active row: meta rides the chip, so it uses row ink.

@@ -256,7 +256,7 @@ const BRAND: ThemeBrand = {
   welcome: 'Type your message or /help for commands.',
   goodbye: 'Goodbye! ♜',
   tool: '┊',
-  helpHeader: '(^_^)? Commands'
+  helpHeader: '♜ Commands'
 }
 
 const cleanPromptSymbol = (s: string | undefined, fallback: string) => {
@@ -368,17 +368,18 @@ export function buildPalette(seeds: ThemeSeeds, isLight: boolean): ThemeColors {
 }
 
 export const DARK_SEEDS: ThemeSeeds = {
-  accent: '#FFBF00',
-  // The classic Reign navy surfaces are IDENTITY, not derivation drift —
-  // keep them as explicit fill seeds (the ladder derives them for skins
-  // that don't care).
+  accent: '#C0C0C0',
+  // Dark seeds: the Rook monochrome palette, white -> silver -> grey
+  // (#FFFFFF, #C0C0C0, #8A8A8A). The classic navy surfaces are IDENTITY,
+  // not derivation drift — keep them as explicit fill seeds (the ladder
+  // derives them for skins that don't care).
   activeRow: '#333355',
   bg: '#101014',
-  border: '#CD7F32',
+  border: '#8A8A8A',
   error: '#ef5350',
   ok: '#4caf50',
-  primary: '#FFD700',
-  prompt: '#FFF8DC',
+  primary: '#FFFFFF',
+  prompt: '#FFFFFF',
   selection: '#3a3a55',
   shellDollar: '#4dabf7',
   statusBad: '#FF8C00',
@@ -386,32 +387,30 @@ export const DARK_SEEDS: ThemeSeeds = {
   statusGood: '#8FBC8F',
   statusWarn: '#FFD700',
   surface: '#1a1a2e',
-  text: '#FFF8DC',
+  text: '#FFFFFF',
   warn: '#ffa726'
 }
 
-// Light-terminal seeds: darker golds/ambers that stay legible on white.
-// The classic light-mode Reign look was never hand-authored: for years the
-// TUI emitted the DARK golds and hosts with xterm's minimumContrastRatio
-// (Cursor defaults to 4.5) lifted them against white — hue and saturation
-// kept, luminance clamped. These seeds are those exact lifts
-// (liftForContrast(dark, '#ffffff', 4.5)), so hosts WITHOUT a contrast pass
-// render the same thing Cursor always showed. Text/prompt stay ink — body
-// copy historically rendered in the terminal's default near-black fg.
+// Light-terminal seeds: the Rook monochrome palette flipped for white —
+// black -> charcoal -> grey (#000000, #333333, #6B6B6B, #9A9A9A). The brand
+// family (primary/accent/border, text/prompt) is authored ink so hosts
+// WITHOUT a contrast pass render it as-is. Semantic hues (ok/error/warn/
+// status) keep their liftForContrast(dark, white, 4.5) values — the exact
+// colors xterm's minimumContrastRatio rendered on light hosts for years.
 export const LIGHT_SEEDS: ThemeSeeds = {
-  accent: '#956E00',
+  accent: '#333333',
   bg: '#ffffff',
-  border: '#A56628',
+  border: '#6B6B6B',
   error: '#C14240',
   ok: '#367E39',
-  primary: '#867000',
-  prompt: '#2B2014',
+  primary: '#000000',
+  prompt: '#000000',
   shellDollar: '#377BB3',
   statusBad: '#A65A00',
   statusCritical: '#B94D4D',
   statusGood: '#5C7A5C',
   statusWarn: '#867000',
-  text: '#3D2F13',
+  text: '#000000',
   warn: '#956115'
 }
 
@@ -857,8 +856,8 @@ export function fromSkin(
   const hasSkinColors = Object.keys(colors).length > 0
 
   // 1. Seeds: the skin's identity. Anything it doesn't define comes from the
-  //    base seeds for this polarity. The base's IDENTITY FILLS (Reign navy
-  //    surfaces, gold muted) only carry over for the skinless default — a
+  //    base seeds for this polarity. The base's IDENTITY FILLS (navy
+  //    surfaces, muted) only carry over for the skinless default — a
   //    skin with its own identity derives its fills from its own seeds.
   const identityFills: Partial<ThemeSeeds> = hasSkinColors
     ? {}

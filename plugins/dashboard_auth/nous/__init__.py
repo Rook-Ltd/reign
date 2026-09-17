@@ -154,7 +154,7 @@ class NousDashboardAuthProvider(DashboardAuthProvider):
     """Nous Portal OAuth via authorization-code + PKCE (S256)."""
 
     name = "nous"
-    display_name = "Rook"
+    display_name = "Nous Portal"
 
     def __init__(self, *, client_id: str, portal_url: str) -> None:
         if not client_id.startswith("agent:"):

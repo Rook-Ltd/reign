@@ -688,7 +688,7 @@ class CLICommandsMixin:
                 n = len(self._attached_images)
                 _cprint(f"  📎 Image #{n} attached from clipboard")
             else:
-                _cprint(f"  {_DIM}(>_<) Clipboard has an image but extraction failed{_RST}")
+                _cprint(f"  {_DIM}✗ Clipboard has an image but extraction failed{_RST}")
         else:
             _cprint(f"  {_DIM}(._.) No image found in clipboard{_RST}")
 
@@ -765,7 +765,7 @@ class CLICommandsMixin:
         path_token, _remainder = _split_path_input(raw_args)
         image_path = _resolve_attachment_path(path_token)
         if image_path is None:
-            _cprint(f"  {_DIM}(>_<) File not found: {path_token}{_RST}")
+            _cprint(f"  {_DIM}✗ File not found: {path_token}{_RST}")
             return
         if image_path.suffix.lower() not in _IMAGE_EXTENSIONS:
             _cprint(f"  {_DIM}(._.) Not a supported image file: {image_path.name}{_RST}")
@@ -1675,17 +1675,17 @@ class CLICommandsMixin:
                     self.system_prompt = ""
                 self.agent = None  # Force re-init
                 if saved:
-                    print("(^_^)b Personality cleared (saved to config)")
+                    print("✓ Personality cleared (saved to config)")
                 else:
-                    print("(^_^) Personality cleared (session only)")
+                    print("♜ Personality cleared (session only)")
                 print("  No personality overlay — using base agent behavior.")
             else:
                 self.system_prompt = personality_prompt
                 self.agent = None  # Force re-init
                 if saved:
-                    print(f"(^_^)b Personality set to '{name}' (saved to config)")
+                    print(f"✓ Personality set to '{name}' (saved to config)")
                 else:
-                    print(f"(^_^) Personality set to '{name}' (session only)")
+                    print(f"♜ Personality set to '{name}' (session only)")
                 print(f"  \"{personality_prompt[:60]}{'...' if len(personality_prompt) > 60 else ''}\"")
         else:
             # Show available personalities
@@ -1699,7 +1699,7 @@ class CLICommandsMixin:
                 current = ""
             print()
             print("+" + "-" * 50 + "+")
-            print("|" + " " * 12 + "(^o^)/ Personalities" + " " * 15 + "|")
+            print("|" + " " * 14 + "♜ Personalities" + " " * 17 + "|")
             print("+" + "-" * 50 + "+")
             print()
             marker = " *" if not current else "  "
@@ -1734,12 +1734,12 @@ class CLICommandsMixin:
         if not arg or low == "toggle":
             enabled, name, err = toggle_pet_display()
             if err:
-                print(f"(x_x) {err}")
+                print(f"✗ {err}")
                 return
             if enabled:
-                print(f"(^_^)b {name} is out — it'll pop in shortly.")
+                print(f"✓ {name} is out — it'll pop in shortly.")
             else:
-                print(f"(-_-)zzZ {name} put away." if name else "(-_-)zzZ Pet put away.")
+                print(f"… {name} put away." if name else "… Pet put away.")
             return
 
         if low in ("list", "gallery", "browse", "all"):
@@ -1749,25 +1749,25 @@ class CLICommandsMixin:
         if low == "scale" or low.startswith("scale "):
             value = arg[len("scale"):].strip()
             if not value:
-                print("(o_o) Usage: /pet scale <factor>  (e.g. /pet scale 0.5)")
+                print("› Usage: /pet scale <factor>  (e.g. /pet scale 0.5)")
                 return
             scale, err = set_pet_scale(value)
-            print(f"(x_x) {err}" if err else f"(^_^) Pet scale → {scale:g}.")
+            print(f"✗ {err}" if err else f"♜ Pet scale → {scale:g}.")
             return
 
         if low == "off":
             _set_enabled(False)
-            print("(-_-)zzZ Pet put away.")
+            print("… Pet put away.")
             return
 
-        print(f"(o_o) Fetching '{arg}' from petdex…")
+        print(f"› Fetching '{arg}' from petdex…")
         try:
             pet = store.install_pet(arg)
         except (store.PetStoreError, ManifestError) as exc:
-            print(f"(x_x) Couldn't adopt '{arg}': {exc}")
+            print(f"✗ Couldn't adopt '{arg}': {exc}")
             return
         _set_active(arg)
-        print(f"(^_^)b {pet.display_name} is out — it'll pop in shortly.")
+        print(f"✓ {pet.display_name} is out — it'll pop in shortly.")
 
     def _handle_hatch_command(self, cmd: str):
         """Generate ("hatch") a brand-new petdex pet from a description.
@@ -1797,31 +1797,31 @@ class CLICommandsMixin:
             # (None) when prompting isn't safe.
             prompt_helper = getattr(self, "_prompt_text_input", None)
             if callable(prompt_helper):
-                concept = (prompt_helper("(o_o) Describe your pet: ") or "").strip()
+                concept = (prompt_helper("› Describe your pet: ") or "").strip()
             else:
                 try:
-                    concept = input("(o_o) Describe your pet: ").strip()
+                    concept = input("› Describe your pet: ").strip()
                 except (EOFError, KeyboardInterrupt):
                     print()
                     return
 
         if not concept:
-            print("(o_o) Usage: /hatch <description>  (e.g. /hatch a tiny cyber fox)")
+            print("› Usage: /hatch <description>  (e.g. /hatch a tiny cyber fox)")
             return
 
         # A short, friendly display name from the first few words of the concept.
         display_name = " ".join(w.capitalize() for w in concept.split()[:3])[:28].strip() or "Pet"
         slug = store.slugify(display_name) or store.slugify(concept) or "pet"
 
-        print(f"(o_o) Designing '{concept}'… (a minute of image-model calls)")
+        print(f"› Designing '{concept}'… (a minute of image-model calls)")
         try:
             drafts = orchestrate.generate_base_drafts(concept, n=1)
         except GenerationError as exc:
-            print(f"(x_x) Couldn't generate a base look: {exc}")
+            print(f"✗ Couldn't generate a base look: {exc}")
             return
 
         if not drafts:
-            print("(x_x) No base draft came back — try again.")
+            print("✗ No base draft came back — try again.")
             return
 
         def _progress(event: str, detail: str) -> None:
@@ -1843,11 +1843,11 @@ class CLICommandsMixin:
                 on_progress=_progress,
             )
         except GenerationError as exc:
-            print(f"(x_x) Hatch failed: {exc}")
+            print(f"✗ Hatch failed: {exc}")
             return
 
         _set_active(result.slug)
-        print(f"(^_^)b {result.display_name} hatched and adopted — it'll pop in shortly!")
+        print(f"✓ {result.display_name} hatched and adopted — it'll pop in shortly!")
 
     def _handle_cron_command(self, cmd: str):
         """Handle the /cron command to manage scheduled tasks."""
@@ -1927,7 +1927,7 @@ class CLICommandsMixin:
         if len(tokens) == 1:
             print()
             print("+" + "-" * 68 + "+")
-            print("|" + " " * 22 + "(^_^) Scheduled Tasks" + " " * 23 + "|")
+            print("|" + " " * 24 + "♜ Scheduled Tasks" + " " * 25 + "|")
             print("+" + "-" * 68 + "+")
             print()
             print("  Commands:")
@@ -2011,13 +2011,13 @@ class CLICommandsMixin:
                 skills=skills or None,
             )
             if result.get("success"):
-                print(f"(^_^)b Created job: {result['job_id']}")
+                print(f"✓ Created job: {result['job_id']}")
                 print(f"  Schedule: {result['schedule']}")
                 if result.get("skills"):
                     print(f"  Skills: {', '.join(result['skills'])}")
                 print(f"  Next run: {result['next_run_at']}")
             else:
-                print(f"(x_x) Failed to create job: {result.get('error')}")
+                print(f"✗ Failed to create job: {result.get('error')}")
             return
 
         if subcommand == "edit":
@@ -2058,14 +2058,14 @@ class CLICommandsMixin:
             )
             if result.get("success"):
                 job = result["job"]
-                print(f"(^_^)b Updated job: {job['job_id']}")
+                print(f"✓ Updated job: {job['job_id']}")
                 print(f"  Schedule: {job['schedule']}")
                 if job.get("skills"):
                     print(f"  Skills: {', '.join(job['skills'])}")
                 else:
                     print("  Skills: none")
             else:
-                print(f"(x_x) Failed to update job: {result.get('error')}")
+                print(f"✗ Failed to update job: {result.get('error')}")
             return
 
         if subcommand in {"pause", "resume", "run", "remove", "rm", "delete"}:
@@ -2077,19 +2077,19 @@ class CLICommandsMixin:
             action = "remove" if subcommand in {"remove", "rm", "delete"} else subcommand
             result = _cron_api(action=action, job_id=job_id, reason="paused from /cron" if action == "pause" else None)
             if not result.get("success"):
-                print(f"(x_x) Failed to {action} job: {result.get('error')}")
+                print(f"✗ Failed to {action} job: {result.get('error')}")
                 return
             if action == "pause":
-                print(f"(^_^)b Paused job: {result['job']['name']} ({job_id})")
+                print(f"✓ Paused job: {result['job']['name']} ({job_id})")
             elif action == "resume":
-                print(f"(^_^)b Resumed job: {result['job']['name']} ({job_id})")
+                print(f"✓ Resumed job: {result['job']['name']} ({job_id})")
                 print(f"  Next run: {result['job'].get('next_run_at')}")
             elif action == "run":
-                print(f"(^_^)b Triggered job: {result['job']['name']} ({job_id})")
+                print(f"✓ Triggered job: {result['job']['name']} ({job_id})")
                 print("  It will run on the next scheduler tick.")
             else:
                 removed = result.get("removed_job", {})
-                print(f"(^_^)b Removed job: {removed.get('name', job_id)} ({job_id})")
+                print(f"✓ Removed job: {removed.get('name', job_id)} ({job_id})")
             return
 
         print(f"(._.) Unknown cron command: {subcommand}")
@@ -2345,7 +2345,7 @@ class CLICommandsMixin:
 
         # Make sure we have valid credentials
         if not self._ensure_runtime_credentials():
-            _cprint("  (>_<) Cannot start background task: no valid credentials.")
+            _cprint("  ✗ Cannot start background task: no valid credentials.")
             return
 
         _cprint(f"  🔄 Background task #{task_num} started: \"{prompt[:60]}{'...' if len(prompt) > 60 else ''}\"")
@@ -2500,7 +2500,7 @@ class CLICommandsMixin:
         question = parts[1].strip()
 
         if not self._ensure_runtime_credentials():
-            _cprint("  (>_<) Cannot answer side question: no valid credentials.")
+            _cprint("  ✗ Cannot answer side question: no valid credentials.")
             return
 
         # Snapshot NOW, on the UI thread — the foreground turn keeps appending
@@ -3503,7 +3503,7 @@ class CLICommandsMixin:
         try:
             composed = self._compose_in_editor(initial)
         except Exception as exc:
-            _cprint(f"  {_DIM}(>_<) Could not open editor: {exc}{_RST}")
+            _cprint(f"  {_DIM}✗ Could not open editor: {exc}{_RST}")
             return
 
         if not composed:

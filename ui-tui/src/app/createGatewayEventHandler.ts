@@ -79,7 +79,8 @@ let lastSkin: GatewaySkin | null = null
 const themeForSkin = (s: GatewaySkin) => {
   // Polarity overrides OVERLAY the base palette, they don't replace it: a skin
   // can ship a fills-only `light_colors` (flip the dark navy menu/status fills
-  // to light on a light terminal) while its vivid foreground golds keep coming
+  // to light on a light terminal) while its vivid foreground brand colors keep
+  // coming
   // from `colors` and render raw through fromSkin's shim. A full paired block
   // still works — it just overrides every key it lists. Polarity follows the
   // skin's authored background when it has one (the skin paints the terminal
@@ -104,7 +105,8 @@ const themeForSkin = (s: GatewaySkin) => {
 // The force-redraw is load-bearing: a theme swap recolors EVERYTHING, but the
 // renderer's diff/blit cache treats layout-unchanged regions as reusable, so
 // incremental repaints after a swap can tear — stale cells keep the previous
-// palette (observed live: gold headers from the boot theme composited with
+// palette (observed live: brand-colored headers from the boot theme composited
+// with
 // slate chrome, dark status fills surviving on a light terminal, half-
 // overwritten glyphs reading as "shadows"). One full clear+repaint after the
 // new theme has rendered guarantees a coherent frame. Deferred ~2 frames so

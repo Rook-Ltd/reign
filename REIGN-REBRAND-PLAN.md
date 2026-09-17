@@ -166,7 +166,17 @@ Original Phase 2 checklist:
 - Add `NOTICE`; prepend Rook line to `LICENSE`.
 - Script must be idempotent and re-runnable on a fresh upstream checkout.
 
-### Phase 3 — Manual branding surfaces
+### Phase 3 — Manual branding surfaces (DONE 2026-09-17)
+- CLI: `REIGN_AGENT_LOGO` is a 38-col ANSI Shadow "REIGN"; the caduceus hero is now `REIGN_HERO`, the Rook mark in braille (art sources in `rebrand/art/`). Logo shows from 40 columns instead of 95. Kawaii text faces `(^_^)`, `(x_x)`, `(o_o)` etc. across `cli.py`, `reign_cli/cli_commands_mixin.py`, `gateway/run.py` replaced with neutral glyphs; hand-padded box titles re-balanced.
+- Skins: `default` is now the Rook monochrome palette (white/silver/grey on dark, black/charcoal/grey on light) with `rook` registered as an alias; neutral spinner glyphs replace the kawaii faces in both the skin and the `agent/display.py` fallbacks; `(^_^)?` help headers → `[?]`; `⚕` → `♜`. Other built-in skins kept (they carry no imagery).
+- TUI (`ui-tui/src`): same logo/hero art, monochrome default seeds, help header `♜ Commands`. 1,737 vitest tests pass; bundle has zero Hermes/caduceus strings.
+- Images (`rebrand/place_images.py`, re-runnable): README/docs banner, docs logo + favicons + social image, dashboard favicon, Electron `.icns/.ico/.png`, apple-touch icons, Tauri installer icon set, both `brand-mark.tsx` components now load `rook-mark.png`. Deleted: `nous-girl.jpg` (x2), `nous-logo.png`, unused mascot sprite/frames. Desktop backdrop `filler-bg0.jpg` is the outline mark on white (rendered at 2.5% opacity by the app).
+- Docs/repo: README hero rewritten (no caduceus, no dead language badges, plain "Built by Rook" badge, Credits section); `NOTICE` added; `LICENSE` gains a Rook line above the Nous notice; Docusaurus tagline "In Your Corner", `zh-Hans` locale removed, footer "Reign by Rook · Built on Hermes Agent (MIT)". Docs site builds clean.
+- Wake word: default provider `sherpa`, phrase "hey reign", no bundled model; openwakeword without a model path fails with a clear message. 29 tests pass.
+- Corrections to codemod over-reach found here: nested third-party `LICENSE` copyright lines restored to Nous Research (and now excluded in `mapping.yaml`); dashboard OAuth provider label restored to "Nous Portal" (code + docs anchors); web dashboard `brandShort` "HA" → "RG"; achievement share text `☤` → `♜`.
+- Left as-is per decisions: in-product links to `hermes-agent.nousresearch.com` docs and install scripts (full list in `rebrand/audit/urls.txt`), the Nous community "user stories" docs page, docs screenshots of the old UI, the pet feature, `SECURITY.md` disclosure contact `security@nousresearch.com` (**flag: reports would go to Nous — decide whether to point this at a Rook address**).
+
+Original Phase 3 checklist:
 - TUI: replace `LOGO_ART`, tagline, small-terminal fallback; route everything through `agent_name` so nothing stays hardcoded.
 - Skin engine: add `rook` skin (black/white), make it default, remove kawaii faces; neutralize or drop other skins per audit.
 - Web dashboard: logo, favicon, `<title>`, empty states.

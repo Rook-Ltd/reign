@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Reign',
-  tagline: 'The self-improving AI agent',
+  tagline: 'In Your Corner',
   favicon: 'img/favicon.ico',
 
   url: 'https://hermes-agent.nousresearch.com',
@@ -24,14 +24,10 @@ const config: Config = {
 
   i18n: {
     defaultLocale: 'en',
-    locales: ['en', 'zh-Hans'],
+    locales: ['en'],
     localeConfigs: {
       en: {
         label: 'English',
-      },
-      'zh-Hans': {
-        label: '简体中文',
-        htmlLang: 'zh-Hans',
       },
     },
   },
@@ -119,7 +115,7 @@ const config: Config = {
     navbar: {
       title: 'Reign',
       logo: {
-        alt: 'Reign',
+        alt: 'Rook',
         src: 'img/logo.png',
       },
       items: [
@@ -138,10 +134,6 @@ const config: Config = {
           href: 'https://hermes-agent.nousresearch.com/',
           label: 'Download',
           position: 'left',
-        },
-        {
-          type: 'localeDropdown',
-          position: 'right',
         },
         {
           href: 'https://hermes-agent.nousresearch.com',
@@ -185,11 +177,10 @@ const config: Config = {
           items: [
             { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
             { label: 'GitHub', href: 'https://github.com/NousResearch/hermes-agent' },
-            { label: 'Rook', href: 'https://nousresearch.com' },
           ],
         },
       ],
-      copyright: `Built by <a href="https://nousresearch.com">Rook</a> · MIT License · ${new Date().getFullYear()}`,
+      copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
     },
     prism: {
       theme: prismThemes.github,

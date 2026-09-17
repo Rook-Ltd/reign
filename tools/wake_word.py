@@ -8,14 +8,16 @@ pipeline, then answers.
 
 Three engines, all fully on-device (no audio leaves the machine for detection):
 
-* **openwakeword** (default, free, no API key) — loads an ONNX model. Defaults
-  to the bundled "hey reign" model (``tools/wakewords/``) so the wake word
-  works out of the box; or point ``wake_word.openwakeword.model`` at a built-in
-  name (``hey_jarvis``, ``alexa``, …) or a custom ``.onnx`` for another phrase.
-* **sherpa** (free, no API key, open vocabulary) — sherpa-onnx keyword
-  spotting. Detects ANY typed phrase with no training: set
-  ``wake_word.phrase`` and the phrase is tokenized at runtime against a small
-  streaming zipformer model (~13 MB English model, one-time download).
+* **sherpa** (default, free, no API key, open vocabulary) — sherpa-onnx
+  keyword spotting. Detects ANY typed phrase with no training: the default
+  ``wake_word.phrase`` is "hey reign", and whatever phrase is configured is
+  tokenized at runtime against a small streaming zipformer model (~13 MB
+  English model, one-time download). No wake-word model ships with Reign.
+* **openwakeword** (free, no API key, trained model) — loads an openWakeWord
+  ``.onnx``/``.tflite`` model. Reign bundles no model for this engine, so
+  ``wake_word.openwakeword.model`` MUST point at a built-in name
+  (``hey_jarvis``, ``alexa``, …) or a custom model file; the engine refuses to
+  start without one.
 * **porcupine** (premium) — Picovoice's engine. Needs ``PORCUPINE_ACCESS_KEY``;
   supports built-in keywords and custom ``.ppn`` files from the Picovoice
   Console.
@@ -81,23 +83,27 @@ _DEFAULTS: Dict[str, Any] = {
     #   "client" — desktop/TUI streams int16 frames via wake.feed
     #   "auto"   — local when a device exists, else client capture
     "capture": "auto",
-    "provider": "openwakeword",
+    "provider": "sherpa",
     "phrase": "hey reign",
     "sensitivity": 0.6,
     "confirmation_frames": _DEFAULT_CONFIRMATION_FRAMES,
     "start_new_session": True,
 }
 
-# Bundled "hey reign" model (tools/wakewords/) — the default, so the wake word
-# works out of the box. Config names in _ALIASES resolve to it, not a built-in.
-_BUNDLED_MODEL_NAME = "hey_reign"
-_BUNDLED_MODEL_ALIASES = frozenset({"", "hey_reign", "hey reign", "reign"})
+# No wake-word model ships with Reign. The default engine (sherpa) needs none —
+# it tokenizes the configured phrase at runtime. The openwakeword engine must
+# be pointed at a model explicitly; this is the error it raises otherwise.
+NO_BUNDLED_MODEL_MESSAGE = (
+    "no bundled wake-word model ships with Reign; set wake_word.openwakeword.model "
+    "to an openWakeWord .onnx/.tflite path (or a built-in name such as "
+    "hey_jarvis) or use provider: sherpa"
+)
 
 
-def _bundled_wakeword_path(framework: str = "onnx") -> str:
-    """Path to the shipped hey_reign model (.onnx/.tflite) for ``framework``."""
-    ext = "tflite" if str(framework).strip().lower() == "tflite" else "onnx"
-    return os.path.join(os.path.dirname(__file__), "wakewords", f"{_BUNDLED_MODEL_NAME}.{ext}")
+def openwakeword_model_ref(cfg: Dict[str, Any]) -> str:
+    """The configured ``wake_word.openwakeword.model`` (built-in name or path), or ``""``."""
+    sub = cfg.get("openwakeword") if isinstance(cfg.get("openwakeword"), dict) else {}
+    return str(sub.get("model") or "").strip()
 
 
 def _is_macos_arm64() -> bool:
@@ -205,7 +211,7 @@ def _get(cfg: Dict[str, Any], key: str) -> Any:
 
 
 def _provider(cfg: Dict[str, Any]) -> str:
-    return str(_get(cfg, "provider")).strip().lower() or "openwakeword"
+    return str(_get(cfg, "provider")).strip().lower() or "sherpa"
 
 
 def _input_device(cfg: Dict[str, Any]) -> int | str | None:
@@ -527,7 +533,13 @@ def _looks_like_path(value: str) -> bool:
 
 
 class _OpenWakeWordEngine(_Engine):
-    """openWakeWord — free, local ONNX hotword detection."""
+    """openWakeWord — free, local ONNX hotword detection.
+
+    Needs an explicit ``wake_word.openwakeword.model`` (a built-in openWakeWord
+    name or a path to a custom ``.onnx``/``.tflite``): Reign ships no model of
+    its own, so an empty setting raises ``NO_BUNDLED_MODEL_MESSAGE`` instead of
+    arming a detector that can never fire.
+    """
 
     # openWakeWord recommends 80 ms frames (1280 samples) for efficiency.
     frame_length = 1280
@@ -540,8 +552,9 @@ class _OpenWakeWordEngine(_Engine):
         import openwakeword
         from openwakeword.model import Model
 
-        sub = cfg.get("openwakeword") if isinstance(cfg.get("openwakeword"), dict) else {}
-        model_ref = str(sub.get("model") or _BUNDLED_MODEL_NAME).strip()
+        model_ref = openwakeword_model_ref(cfg)
+        if not model_ref:
+            raise RuntimeError(NO_BUNDLED_MODEL_MESSAGE)
         framework = resolve_inference_framework(cfg)
         # openWakeWord returns a 0..1 score per frame; sensitivity IS the raw
         # threshold a score must clear. Higher = stricter (fewer false fires).
@@ -572,11 +585,7 @@ class _OpenWakeWordEngine(_Engine):
                 logger.warning("wake word: no tflite runtime available — falling back to onnx")
                 framework = "onnx"
 
-        # Default (or explicit "hey_reign") → the bundled model; a built-in name
-        # or custom path is used as-is.
-        if model_ref.lower() in _BUNDLED_MODEL_ALIASES:
-            model_ref = _bundled_wakeword_path(framework)
-
+        # A built-in name or custom path is used as-is — nothing is bundled.
         # openWakeWord needs its shared feature models (melspectrogram + embedding)
         # for ANY model — download_models() fetches those first on every call, so a
         # custom path must call it too, else a fresh install crashes on a missing
@@ -934,9 +943,17 @@ def check_wake_word_requirements(cfg: Optional[Dict[str, Any]] = None) -> Dict[s
         if framework == "tflite":
             tflite_ok = ensure_tflite_runtime() or lazy_deps.is_available("wake.openwakeword.tflite") or lazy_ok
 
+    # openWakeWord has no bundled model: without one the engine constructor
+    # raises, so report that up front rather than arming and failing.
+    model_ok = True
+    if provider not in ("porcupine", "sherpa", "sherpa-onnx", "kws", "open") and not openwakeword_model_ref(cfg):
+        model_ok = False
+
     if provider == "porcupine" and not (os.getenv("PORCUPINE_ACCESS_KEY") or "").strip():
         key_ok = False
         hint = "Set PORCUPINE_ACCESS_KEY (free key at https://console.picovoice.ai)."
+    elif not model_ok:
+        hint = NO_BUNDLED_MODEL_MESSAGE
     elif not deps_ok and not lazy_ok:
         hint = lazy_deps.feature_install_command(feature) or ""
     elif not tflite_ok:
@@ -969,7 +986,7 @@ def check_wake_word_requirements(cfg: Optional[Dict[str, Any]] = None) -> Dict[s
             )
 
     return {
-        "available": key_ok and stt_ok and tts_ok and tflite_ok and mic_ok,
+        "available": key_ok and model_ok and stt_ok and tts_ok and tflite_ok and mic_ok,
         "provider": provider,
         "deps_available": deps_ok,
         "audio_available": audio_ok,

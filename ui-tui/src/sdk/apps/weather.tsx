@@ -65,7 +65,7 @@ const ART: Record<Art, readonly string[]> = {
   thunder: ['     .-.     ', '    (   ).   ', '   (___(__)  ', '  ⚡‚ʻ⚡‚ʻ   ', '  ‚ʻ⚡‚ʻ⚡   ']
 }
 
-/** Art tint rides the theme family: sun in primary gold, rain in the shell
+/** Art tint rides the theme family: sun in primary, rain in the shell
  *  blue, fog in muted — never hardcoded hexes. */
 const artColor = (art: Art, t: Theme): string =>
   ({

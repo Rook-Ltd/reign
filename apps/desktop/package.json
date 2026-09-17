@@ -286,7 +286,7 @@
     },
     "linux": {
       "category": "Development",
-      "maintainer": "Rook <support@nousresearch.com>",
+      "maintainer": "Rook",
       "synopsis": "Native desktop shell for Reign.",
       "target": [
         "AppImage",

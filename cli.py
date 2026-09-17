@@ -4842,30 +4842,29 @@ class ChatConsole:
         """
         yield self
 
-# ASCII Art - REIGN logo (full width, single line - requires ~95 char terminal)
-REIGN_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
-[bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
-[#FFBF00]███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
-[#FFBF00]██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
-[#CD7F32]██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
-[#CD7F32]╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
+# ASCII Art - REIGN logo (38 columns; Rook mark hero below)
+REIGN_AGENT_LOGO = """[bold #FFFFFF]██████╗ ███████╗██╗ ██████╗ ███╗   ██╗[/]
+[bold #FFFFFF]██╔══██╗██╔════╝██║██╔════╝ ████╗  ██║[/]
+[#C0C0C0]██████╔╝█████╗  ██║██║  ███╗██╔██╗ ██║[/]
+[#C0C0C0]██╔══██╗██╔══╝  ██║██║   ██║██║╚██╗██║[/]
+[#8A8A8A]██║  ██║███████╗██║╚██████╔╝██║ ╚████║[/]
+[#8A8A8A]╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝[/]"""
 
-# ASCII Art - Reign Caduceus (compact, fits in left panel)
-REIGN_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
-[#FFBF00]⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀[/]
-[#FFBF00]⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀[/]
-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
+REIGN_HERO = """[#8A8A8A]⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠖⠛⠛⠛⠛⠛⠛⠲⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+[#8A8A8A]⠀⠀⠀⠀⠀⣠⡴⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⣄⠀⠀⠀⠀⠀[/]
+[#C0C0C0]⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀[/]
+[#C0C0C0]⠀⠀⣴⠋⠀⠀⠀⠀⠀⠀⣿⣇⣸⣿⣿⣿⣿⣇⣸⣿⠀⠀⠀⠀⠀⠀⠙⣦⠀⠀[/]
+[#FFFFFF]⠀⣼⠃⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠘⣧⠀[/]
+[#FFFFFF]⢰⠇⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⡆[/]
+[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
+[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
+[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
+[#C0C0C0]⠸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠇[/]
+[#C0C0C0]⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀[/]
+[#8A8A8A]⠀⠀⠻⣆⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⣰⠟⠀⠀[/]
+[#8A8A8A]⠀⠀⠀⠙⢷⣄⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⣠⡾⠋⠀⠀⠀[/]
+[#5C5C5C]⠀⠀⠀⠀⠀⠙⠳⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠞⠋⠀⠀⠀⠀⠀[/]
+[#5C5C5C]⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
 
 
 
@@ -8976,7 +8975,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         if hasattr(self, 'agent') and self.agent and hasattr(self.agent, 'context_compressor'):
             ctx_len = self.agent.context_compressor.context_length
         
-        # Auto-compact for narrow terminals — the full banner with caduceus
+        # Auto-compact for narrow terminals — the full banner with the Rook hero
         # + tool list needs ~80 columns minimum to render without wrapping.
         term_width = shutil.get_terminal_size().columns
         use_compact = self.compact or term_width < 80
@@ -9895,10 +9894,10 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         try:
             from reign_cli.skin_engine import get_active_help_header
-            header = get_active_help_header("(^_^)? Available Commands")
+            header = get_active_help_header("[?] Available Commands")
         except Exception:
-            header = "(^_^)? Available Commands"
-        header = (header or "").strip() or "(^_^)? Available Commands"
+            header = "[?] Available Commands"
+        header = (header or "").strip() or "[?] Available Commands"
         inner_width = 55
         if len(header) > inner_width:
             header = header[:inner_width]
@@ -10007,7 +10006,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             _cprint(f"  {_DIM}Paste image: Alt+V (or /paste){_RST}\n")
     
     def show_tools(self):
-        """Display available tools with kawaii ASCII art."""
+        """Display available tools with ASCII art."""
         # Pre-assembly list: /tools is a discovery/inspection surface, so it
         # must show the full catalog including tools deferred behind the
         # tool_search bridge (users check this to verify an MCP installed).
@@ -10015,12 +10014,12 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                                      skip_tool_search_assembly=True)
         
         if not tools:
-            print("(;_;) No tools available")
+            print("✗ No tools available")
             return
         
         # Header
         print()
-        title = "(^_^)/ Available Tools"
+        title = "♜ Available Tools"
         width = 78
         pad = width - len(title)
         print("+" + "-" * width + "+")
@@ -10049,17 +10048,17 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 print(f"    * {name:<20} - {desc}")
             print()
         
-        print(f"  Total: {len(tools)} tools  ヽ(^o^)ノ")
+        print(f"  Total: {len(tools)} tools")
         print()
 
 
     def show_toolsets(self):
-        """Display available toolsets with kawaii ASCII art."""
+        """Display available toolsets with ASCII art."""
         all_toolsets = get_all_toolsets()
         
         # Header
         print()
-        title = "(^_^)b Available Toolsets"
+        title = "✓ Available Toolsets"
         width = 58
         pad = width - len(title)
         print("+" + "-" * width + "+")
@@ -10102,7 +10101,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         print()
 
     def show_config(self):
-        """Display current configuration with kawaii ASCII art."""
+        """Display current configuration with ASCII art."""
         # Get terminal config from environment (which was set from cli-config.yaml)
         terminal_env = os.getenv("TERMINAL_ENV", "local")
         terminal_cwd = os.getenv("TERMINAL_CWD", os.getcwd())
@@ -10139,7 +10138,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             api_key_display = "Not set!"
         
         print()
-        title = "(^_^) Configuration"
+        title = "♜ Configuration"
         width = 50
         pad = width - len(title)
         print("+" + "-" * width + "+")
@@ -10259,7 +10258,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         _cli_visible_print()
         _cli_visible_print("+" + "-" * 50 + "+")
-        _cli_visible_print("|" + " " * 12 + "(^_^) Conversation History" + " " * 11 + "|")
+        _cli_visible_print("|" + " " * 14 + "♜ Conversation History" + " " * 13 + "|")
         _cli_visible_print("+" + "-" * 50 + "+")
 
         for msg in self.conversation_history:
@@ -10609,9 +10608,9 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
 
         if not silent:
             if title:
-                print(f"(^_^)v New session started: {title}")
+                print(f"✓ New session started: {title}")
             else:
-                print("(^_^)v New session started!")
+                print("✓ New session started!")
 
 
     def _consume_pending_resume_selection(self, text: str) -> bool:
@@ -10705,7 +10704,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 session_data = None
         if not session_data:
             if not self.conversation_history:
-                print("(;_;) No conversation to save.")
+                print("✗ No conversation to save.")
                 return
             session_data = {
                 "id": self.session_id,
@@ -10724,7 +10723,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         try:
             saved_dir.mkdir(parents=True, exist_ok=True)
         except Exception as e:
-            print(f"(x_x) Failed to create save directory {saved_dir}: {e}")
+            print(f"✗ Failed to create save directory {saved_dir}: {e}")
             return
         if filename:
             path = Path(filename).expanduser()
@@ -10738,11 +10737,11 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             with open(path, "w", encoding="utf-8") as f:
                 f.write(content)
             label = {"json": "JSON", "md": "Markdown", "html": "HTML"}[fmt]
-            print(f"(^_^)v Conversation saved to: {path} ({label})")
+            print(f"✓ Conversation saved to: {path} ({label})")
             if self.session_id:
                 print(f"       Resume the live session with: reign --resume {self.session_id}")
         except Exception as e:
-            print(f"(x_x) Failed to save: {e}")
+            print(f"✗ Failed to save: {e}")
 
     def _rewind_persisted_user_turn(
         self,
@@ -10923,7 +10922,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     warm_live_view=live_view,
                 )
             except Exception as exc:
-                print(f"(x_x) Retry rewind failed; history was not changed: {exc}")
+                print(f"✗ Retry rewind failed; history was not changed: {exc}")
                 return None
 
         self.conversation_history = truncated
@@ -10935,7 +10934,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
             if hasattr(self.agent, "_db_flush_scan_prefix"):
                 self.agent._db_flush_scan_prefix = self.conversation_history[:]
         
-        print(f"(^_^)b Retrying: \"{last_message[:60]}{'...' if len(last_message) > 60 else ''}\"")
+        print(f"✓ Retrying: \"{last_message[:60]}{'...' if len(last_message) > 60 else ''}\"")
         return last_message
     
     def undo_last(self, n: int = 1, prefill: bool = True):
@@ -11023,7 +11022,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                 rewound_rows = result.get("rewound_count", 0)
             except Exception as e:
                 logger.debug("undo: durable rewind failed: %s", e)
-                print(f"(x_x) Undo failed; history was not changed: {e}")
+                print(f"✗ Undo failed; history was not changed: {e}")
                 return
 
         # Publish only after the durable rewind succeeds (or no store exists).
@@ -11063,7 +11062,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
         turn_word = "turn" if turns_undone == 1 else "turns"
         msg_count = rewound_rows or removed_count
         print(
-            f"(^_^)b Undid {turns_undone} {turn_word} ({msg_count} message(s)). "
+            f"✓ Undid {turns_undone} {turn_word} ({msg_count} message(s)). "
             f"Backed up to: \"{removed_text[:60]}{'...' if len(removed_text) > 60 else ''}\""
         )
         remaining = len(self.conversation_history)
@@ -12669,7 +12668,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                         context_length=ctx_len,
                         provider=self.provider,
                     )
-                _cprint("  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n")
+                _cprint("  Fresh start! Screen cleared and conversation reset.\n")
                 # Show a random tip on new session
                 try:
                     from reign_cli.tips import get_random_tip
@@ -12684,7 +12683,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
                     pass
             else:
                 self.show_banner()
-                print("  ✨ (◕‿◕)✨ Fresh start! Screen cleared and conversation reset.\n")
+                print("  Fresh start! Screen cleared and conversation reset.\n")
                 # Show a random tip on new session
                 try:
                     from reign_cli.tips import get_random_tip

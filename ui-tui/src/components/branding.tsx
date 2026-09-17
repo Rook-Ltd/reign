@@ -2,7 +2,7 @@ import { Box, Text, useStdout } from '@reign/ink'
 import { useEffect, useState } from 'react'
 import unicodeSpinners from 'unicode-animations'
 
-import { artWidth, caduceus, CADUCEUS_WIDTH, logo, LOGO_WIDTH } from '../banner.js'
+import { artWidth, logo, LOGO_WIDTH, rook, ROOK_WIDTH } from '../banner.js'
 import { mix } from '../lib/color.js'
 import { flat } from '../lib/text.js'
 import type { Theme } from '../theme.js'
@@ -212,8 +212,8 @@ const TOOLSETS_MAX = 8
 export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
   const term = useStdout().stdout?.columns ?? 100
   const cols = Math.max(20, Math.min(term, maxWidth ?? term))
-  const heroLines = caduceus(t.color, t.bannerHero || undefined)
-  const leftW = Math.min((artWidth(heroLines) || CADUCEUS_WIDTH) + 4, Math.floor(cols * 0.4))
+  const heroLines = rook(t.color, t.bannerHero || undefined)
+  const leftW = Math.min((artWidth(heroLines) || ROOK_WIDTH) + 4, Math.floor(cols * 0.4))
   const wide = cols >= 90 && leftW + 40 < cols
   const w = Math.max(20, wide ? cols - leftW - 14 : cols - 12)
   const lineBudget = Math.max(12, w - 2)

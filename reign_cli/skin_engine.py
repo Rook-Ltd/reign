@@ -99,7 +99,7 @@ All fields are optional. Missing values inherit from the ``default`` skin.
       goodbye: "Goodbye! ♜"              # Shown on exit
       response_label: " ♜ Reign "       # Response box header label
       prompt_symbol: "❯"                 # Input prompt symbol (bare token; renderers add trailing space)
-      help_header: "(^_^)? Commands"      # /help header text
+      help_header: "[?] Commands"         # /help header text
 
     # Tool prefix: character for tool output lines (default: ┊)
     tool_prefix: "┊"
@@ -118,7 +118,7 @@ USAGE
     from reign_cli.skin_engine import get_active_skin, list_skins, set_active_skin
 
     skin = get_active_skin()
-    print(skin.colors["banner_title"])    # "#FFD700"
+    print(skin.colors["banner_title"])    # "#FFFFFF"
     print(skin.get_branding("agent_name"))  # "Reign"
 
     set_active_skin("ares")               # Switch to built-in ares skin
@@ -127,7 +127,7 @@ USAGE
 BUILT-IN SKINS
 ==============
 
-- ``default`` — Classic Reign gold/kawaii (the current look)
+- ``default`` — Rook monochrome: white/silver on dark, black/charcoal on light (alias ``rook``)
 - ``ares``    — Crimson/bronze war-god theme with custom spinner wings
 - ``mono``    — Clean grayscale monochrome
 - ``slate``   — Cool blue developer-focused theme
@@ -174,7 +174,7 @@ class SkinConfig:
     tool_prefix: str = "┊"
     tool_emojis: Dict[str, str] = field(default_factory=dict)  # per-tool emoji overrides
     banner_logo: str = ""    # Rich-markup ASCII art logo (replaces REIGN_AGENT_LOGO)
-    banner_hero: str = ""    # Rich-markup hero art (replaces REIGN_CADUCEUS)
+    banner_hero: str = ""    # Rich-markup hero art (replaces REIGN_HERO)
 
     def get_color(self, key: str, fallback: str = "") -> str:
         """Get a color value with fallback."""
@@ -201,77 +201,71 @@ class SkinConfig:
 _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
     "default": {
         "name": "default",
-        "description": "Classic Reign — gold and kawaii",
-        # Dark-authored. Values match the TUI's DARK_THEME so the classic CLI
-        # and the TUI render the same Reign gold.
+        "description": "Rook — monochrome black and white (default)",
+        # Dark-authored. Monochrome Rook palette: white title, silver accent,
+        # grey rules. The TUI's DARK_THEME mirrors these values.
         "colors": {
-            "banner_border": "#CD7F32",
-            "banner_title": "#FFD700",
-            "banner_accent": "#FFBF00",
-            "banner_dim": "#B8860B",
-            "banner_text": "#FFF8DC",
-            "ui_accent": "#FFBF00",
-            "ui_label": "#DAA520",
+            "banner_border": "#5C5C5C",
+            "banner_title": "#FFFFFF",
+            "banner_accent": "#C0C0C0",
+            "banner_dim": "#8A8A8A",
+            "banner_text": "#E6E6E6",
+            "ui_accent": "#C0C0C0",
+            "ui_label": "#A8A8A8",
             "ui_ok": "#4caf50",
             "ui_error": "#ef5350",
             "ui_warn": "#ffa726",
-            "prompt": "#FFF8DC",
-            "input_rule": "#CD7F32",
-            "response_border": "#FFD700",
-            "status_bar_bg": "#1a1a2e",
+            "prompt": "#FFFFFF",
+            "input_rule": "#5C5C5C",
+            "response_border": "#C0C0C0",
+            "status_bar_bg": "#111111",
             "status_bar_text": "#C0C0C0",
-            "status_bar_strong": "#FFD700",
-            "status_bar_dim": "#8A7A4A",
+            "status_bar_strong": "#FFFFFF",
+            "status_bar_dim": "#6E6E6E",
             "status_bar_good": "#8FBC8F",
-            "status_bar_warn": "#FFD700",
+            "status_bar_warn": "#E0E0E0",
             "status_bar_bad": "#FF8C00",
             "status_bar_critical": "#FF6B6B",
-            "session_label": "#DAA520",
-            "session_border": "#8B8682",
-            "completion_menu_bg": "#1a1a2e",
-            "completion_menu_current_bg": "#333355",
-            "selection_bg": "#3a3a55",
+            "session_label": "#A8A8A8",
+            "session_border": "#5C5C5C",
+            "completion_menu_bg": "#1A1A1A",
+            "completion_menu_current_bg": "#333333",
+            "selection_bg": "#3A3A3A",
             "shell_dollar": "#4dabf7",
-            "voice_status_bg": "#1a1a2e",
+            "voice_status_bg": "#111111",
         },
-        # Light overlay (merged onto `colors`; dark mode renders the vivid
-        # block above untouched). The goldenrod ladder: on white, the vivid
-        # #FFD700/#FFBF00 read as glare and WCAG-darkened mustard (#867000)
-        # reads as mud — the sweet spot is the statusbar's goldenrod family
-        # (#B8860B/#DAA520): hue kept, saturation tamed, mid luminance.
-        # Hierarchy on white: ink body 8.9:1 > fade 5.2 > label 3.7 >
-        # muted 3.3 > title 2.7 > headers 2.4 (accents recede last, like
-        # slate's pastels — the raw-canon look, just not neon).
+        # Light overlay: black title, charcoal accents, grey rules on white.
         "light_colors": {
-            "banner_title": "#C8961E",
-            "banner_accent": "#D89B04",
-            "banner_dim": "#B8860B",
-            "banner_text": "#5C4718",
-            "ui_accent": "#D89B04",
-            "ui_label": "#A97E10",
+            "banner_title": "#000000",
+            "banner_accent": "#333333",
+            "banner_dim": "#6B6B6B",
+            "banner_text": "#1A1A1A",
+            "ui_accent": "#333333",
+            "ui_label": "#4A4A4A",
             "ui_ok": "#2E7D32",
             "ui_error": "#C62828",
             "ui_warn": "#D97706",
-            "prompt": "#5C4718",
-            "response_border": "#C8961E",
-            "session_label": "#A97E10",
-            "status_bar_text": "#6F6F6F",
-            "status_bar_strong": "#C8961E",
-            "status_bar_dim": "#9A8A5A",
+            "prompt": "#000000",
+            "response_border": "#333333",
+            "session_label": "#4A4A4A",
+            "status_bar_text": "#4A4A4A",
+            "status_bar_strong": "#000000",
+            "status_bar_dim": "#8A8A8A",
             "status_bar_good": "#2E7D32",
-            "status_bar_warn": "#C8961E",
+            "status_bar_warn": "#333333",
             "status_bar_bad": "#C2410C",
             "status_bar_critical": "#B91C1C",
             "shell_dollar": "#1E6FC0",
             # Fills: flip the dark navy surfaces to light polarity.
             "completion_menu_bg": "#F5F5F5",
-            "completion_menu_current_bg": "#E0D1BF",
+            "completion_menu_current_bg": "#DDDDDD",
             "selection_bg": "#D4E4F7",
             "status_bar_bg": "#F5F5F5",
             "voice_status_bg": "#F5F5F5",
         },
         "spinner": {
-            # Empty = use hardcoded defaults in display.py
+            "waiting_faces": ["(♜)", "(◌)", "(○)", "(◇)", "(·)"],
+            "thinking_faces": ["(♜)", "(◌)", "(●)", "(◆)", "(⌁)"],
         },
         "branding": {
             "agent_name": "Reign",
@@ -279,7 +273,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "goodbye": "Goodbye! ♜",
             "response_label": " ♜ Reign ",
             "prompt_symbol": "❯",
-            "help_header": "(^_^)? Available Commands",
+            "help_header": "[?] Available Commands",
         },
         "tool_prefix": "┊",
     },
@@ -444,7 +438,7 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
             "goodbye": "Goodbye! ♜",
             "response_label": " ♜ Reign ",
             "prompt_symbol": "❯",
-            "help_header": "(^_^)? Available Commands",
+            "help_header": "[?] Available Commands",
         },
         "tool_prefix": "┊",
     },
@@ -533,10 +527,10 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
         "branding": {
             "agent_name": "Reign",
             "welcome": "Welcome to Reign! Type your message or /help for commands.",
-            "goodbye": "Goodbye! \u2695",
-            "response_label": " \u2695 Reign ",
+            "goodbye": "Goodbye! ♜",
+            "response_label": " ♜ Reign ",
             "prompt_symbol": "\u276f",
-            "help_header": "(^_^)? Available Commands",
+            "help_header": "[?] Available Commands",
         },
         "tool_prefix": "\u250a",
     },
@@ -782,6 +776,10 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
 # =============================================================================
 
 _active_skin: Optional[SkinConfig] = None
+# ``rook`` is an alias for the default skin so ``/skin rook`` and
+# ``display.skin: rook`` both work.
+_BUILTIN_SKINS["rook"] = {**_BUILTIN_SKINS["default"], "name": "rook", "description": "Alias of default (Rook monochrome)"}
+
 _active_skin_name: str = "default"
 
 
@@ -967,7 +965,7 @@ def get_active_prompt_symbol(fallback: str = "❯") -> str:
 
 
 
-def get_active_help_header(fallback: str = "(^_^)? Available Commands") -> str:
+def get_active_help_header(fallback: str = "[?] Available Commands") -> str:
     """Get the /help header from the active skin."""
     try:
         return get_active_skin().get_branding("help_header", fallback)

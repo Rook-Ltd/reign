@@ -23,8 +23,11 @@ import tools.wake_word as ww
 
 
 def test_config_defaults_and_clamping():
-    assert ww._provider({}) == "openwakeword"
+    # sherpa is the zero-training default: no wake-word model ships with Reign.
+    assert ww._provider({}) == "sherpa"
+    assert ww._provider({"provider": ""}) == "sherpa"
     assert ww._provider({"provider": "Porcupine"}) == "porcupine"
+    assert ww._provider({"provider": "openwakeword"}) == "openwakeword"
     assert ww._input_device({}) is None
     assert ww._input_device({"input_device": 7}) == 7
     assert ww._input_device({"input_device": " Microphone Array "}) == "Microphone Array"
@@ -35,8 +38,10 @@ def test_config_defaults_and_clamping():
     # Invalid input falls back to the configured default, not a hardcoded 0.5.
     assert ww._sensitivity({"sensitivity": "nope"}) == ww._DEFAULTS["sensitivity"]
     assert ww._sensitivity({}) == ww._DEFAULTS["sensitivity"]
-    assert ww.wake_phrase({"phrase": "hey reign"}) == "hey reign"
+    assert ww.wake_phrase({"phrase": "hey coder"}) == "hey coder"
     assert ww.wake_phrase({}) == "hey reign"
+    assert ww._DEFAULTS["provider"] == "sherpa"
+    assert ww._DEFAULTS["phrase"] == "hey reign"
 
 
 def test_wake_surface_enabled_gate():
@@ -55,7 +60,7 @@ def test_wake_surface_enabled_gate():
 
 
 def test_looks_like_path():
-    assert ww._looks_like_path("models/hey_reign.onnx")
+    assert ww._looks_like_path("models/custom.onnx")
     assert ww._looks_like_path("custom.ppn")
     assert not ww._looks_like_path("hey_jarvis")
 
@@ -65,7 +70,10 @@ def test_load_wake_word_config_is_a_dict_with_defaults():
     cfg = ww.load_wake_word_config()
     assert isinstance(cfg, dict)
     assert cfg.get("enabled") is False
-    assert cfg.get("provider") == "openwakeword"
+    assert cfg.get("provider") == "sherpa"
+    assert cfg.get("phrase") == "hey reign"
+    # openWakeWord has no bundled model, so its model slot defaults to empty.
+    assert (cfg.get("openwakeword") or {}).get("model", "") == ""
 
 
 def test_load_wake_word_config_guards_non_dict(monkeypatch):
@@ -81,6 +89,10 @@ def test_load_wake_word_config_guards_non_dict(monkeypatch):
 def test_build_engine_dispatch(monkeypatch):
     monkeypatch.setattr(ww, "_OpenWakeWordEngine", lambda cfg: "oww")
     monkeypatch.setattr(ww, "_PorcupineEngine", lambda cfg: "pv")
+    monkeypatch.setattr(ww, "_SherpaKwsEngine", lambda cfg: "sherpa")
+    # Empty config → the sherpa default.
+    assert ww._build_engine({}) == "sherpa"
+    assert ww._build_engine({"provider": "sherpa"}) == "sherpa"
     assert ww._build_engine({"provider": "openwakeword"}) == "oww"
     assert ww._build_engine({"provider": "porcupine"}) == "pv"
     with pytest.raises(ValueError):
@@ -102,11 +114,43 @@ def test_requirements_openwakeword_available(monkeypatch):
     monkeypatch.setattr(ww, "_audio_available", lambda: True)
     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
     r = ww.check_wake_word_requirements(
-        {"provider": "openwakeword", "phrase": "hey reign"}
+        {"provider": "openwakeword", "phrase": "hey reign",
+         "openwakeword": {"model": "hey_jarvis"}}
     )
     assert r["available"] is True
     assert r["provider"] == "openwakeword"
     assert r["phrase"] == "hey reign"
+
+
+def test_requirements_default_is_sherpa_hey_reign(monkeypatch):
+    # An empty wake_word section resolves to the zero-training default: the
+    # sherpa engine listening for "hey reign". No model file is involved.
+    _voice_loop_ready(monkeypatch)
+    monkeypatch.setattr(ww, "_audio_available", lambda: True)
+    seen = []
+    monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: seen.append(f) or True)
+    r = ww.check_wake_word_requirements({})
+    assert r["available"] is True
+    assert r["provider"] == "sherpa"
+    assert r["phrase"] == "hey reign"
+    assert r["hint"] == ""
+    assert "wake.sherpa" in seen
+
+
+def test_requirements_openwakeword_without_model_is_unavailable(monkeypatch):
+    # No bundled model ships with Reign: openwakeword with an empty model slot
+    # must be reported as unavailable with the pointer to sherpa, not armed.
+    _voice_loop_ready(monkeypatch)
+    monkeypatch.setattr(ww, "_audio_available", lambda: True)
+    monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
+    for cfg in ({"provider": "openwakeword"},
+                {"provider": "openwakeword", "openwakeword": {"model": ""}},
+                {"provider": "openwakeword", "openwakeword": {"model": None}}):
+        r = ww.check_wake_word_requirements(cfg)
+        assert r["available"] is False, cfg
+        assert r["hint"] == ww.NO_BUNDLED_MODEL_MESSAGE
+        assert "no bundled wake-word model ships with Reign" in r["hint"]
+        assert "provider: sherpa" in r["hint"]
 
 
 def test_tts_ready_is_a_probe_never_an_installer(monkeypatch):
@@ -162,7 +206,9 @@ def test_requirements_fresh_install_lazy_allowed(monkeypatch):
     monkeypatch.setattr(ww, "_audio_available", _boom)
     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: False)
     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: True)
-    r = ww.check_wake_word_requirements({"provider": "openwakeword"})
+    r = ww.check_wake_word_requirements(
+        {"provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
+    )
     assert r["available"] is True
     assert r["deps_available"] is False
     assert r["hint"] == ""
@@ -176,12 +222,14 @@ def test_requirements_deps_present_but_no_audio_hint(monkeypatch):
     monkeypatch.setattr(ww, "_local_input_device_ready", lambda: False)
     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: True)
-    r = ww.check_wake_word_requirements({"provider": "openwakeword", "capture": "local"})
+    r = ww.check_wake_word_requirements(
+        {"provider": "openwakeword", "capture": "local", "openwakeword": {"model": "hey_jarvis"}}
+    )
     assert r["available"] is False
     assert "audio device" in r["hint"] or "microphone" in r["hint"].lower()
 
 
-# ── openWakeWord engine (bundled model + base-model fetch) ───────────────
+# ── openWakeWord engine (explicit model required + base-model fetch) ─────
 
 
 def _install_fake_openwakeword(monkeypatch):
@@ -194,10 +242,11 @@ def _install_fake_openwakeword(monkeypatch):
     class _FakeModel:
         def __init__(self, wakeword_models, inference_framework="onnx"):
             self.wakeword_models = list(wakeword_models)
-            self.models = {"hey_reign": object()}
+            self.inference_framework = inference_framework
+            self.models = {"custom": object()}
 
         def predict(self, frame):
-            return {"hey_reign": 0.0}
+            return {"custom": 0.0}
 
         def reset(self):
             pass
@@ -220,20 +269,53 @@ def test_openwakeword_ensures_base_models_for_custom_path(monkeypatch):
     # so a fresh install crashed at load time on a missing melspectrogram.onnx.
     # The base feature models must be ensured for a custom path too.
     calls = _install_fake_openwakeword(monkeypatch)
+    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
     eng = ww._OpenWakeWordEngine(
-        {"provider": "openwakeword", "openwakeword": {"model": "/models/hey_reign.onnx"}}
+        {"provider": "openwakeword", "openwakeword": {"model": "/models/custom.onnx"}}
     )
-    assert calls["download"] == [["/models/hey_reign.onnx"]]
-    assert eng._labels == ["hey_reign"]
+    assert calls["download"] == [["/models/custom.onnx"]]
+    assert eng._labels == ["custom"]
 
 
-def test_bundled_hey_reign_model_ships_on_disk():
-    # The "hey reign" wake word works out of the box only if the model is
-    # actually bundled. Both framework artifacts must exist and be non-trivial.
-    for framework in ("onnx", "tflite"):
-        path = ww._bundled_wakeword_path(framework)
-        assert os.path.exists(path), path
-        assert os.path.getsize(path) > 1024, path
+def test_openwakeword_builtin_name_is_used_as_is(monkeypatch):
+    # A built-in openWakeWord name is passed straight through — there is no
+    # bundled model and no alias resolution in front of it any more.
+    calls = _install_fake_openwakeword(monkeypatch)
+    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
+    eng = ww._OpenWakeWordEngine(
+        {"provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
+    )
+    assert calls["download"] == [["hey_jarvis"]]
+    assert eng._model.wakeword_models == ["hey_jarvis"]
+
+
+def test_openwakeword_without_model_raises_clear_error(monkeypatch):
+    # Reign ships no wake-word model. The openwakeword engine must refuse to
+    # build without an explicit model, with a message that points at sherpa —
+    # and it must NOT touch the network/download path before doing so.
+    calls = _install_fake_openwakeword(monkeypatch)
+    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
+    for cfg in ({"provider": "openwakeword"},
+                {"provider": "openwakeword", "openwakeword": {}},
+                {"provider": "openwakeword", "openwakeword": {"model": "  "}}):
+        with pytest.raises(RuntimeError) as exc:
+            ww._OpenWakeWordEngine(cfg)
+        msg = str(exc.value)
+        assert "no bundled wake-word model ships with Reign" in msg
+        assert "wake_word.openwakeword.model" in msg
+        assert ".onnx/.tflite" in msg
+        assert "provider: sherpa" in msg
+    assert calls["download"] == []
+
+
+def test_no_bundled_model_helpers_remain():
+    # The bundled hey_* model concept is gone for good: nothing in the module
+    # should resolve a model name to a file under the package tree.
+    for name in ("_BUNDLED_MODEL_NAME", "_BUNDLED_MODEL_ALIASES", "_bundled_wakeword_path"):
+        assert not hasattr(ww, name), name
+    assert not (Path(ww.__file__).parent / "wakewords").exists()
+    assert ww.openwakeword_model_ref({}) == ""
+    assert ww.openwakeword_model_ref({"openwakeword": {"model": " hey_jarvis "}}) == "hey_jarvis"
 
 
 # ── platform-aware backend selection (openWakeWord onnx is broken on macOS ARM64,
@@ -273,11 +355,13 @@ def test_explicit_framework_kept_where_onnx_works(monkeypatch):
     # An operator who pins a backend keeps it everywhere ONNX actually works.
     calls = _install_fake_openwakeword(monkeypatch)
     monkeypatch.setattr(ww, "_is_macos_arm64", lambda: False)
-    ww._OpenWakeWordEngine(
-        {"provider": "openwakeword", "openwakeword": {"inference_framework": "onnx"}}
+    eng = ww._OpenWakeWordEngine(
+        {"provider": "openwakeword",
+         "openwakeword": {"model": "hey_jarvis", "inference_framework": "onnx"}}
     )
     (downloaded,) = calls["download"]
-    assert downloaded == [ww._bundled_wakeword_path("onnx")]
+    assert downloaded == ["hey_jarvis"]
+    assert eng._model.inference_framework == "onnx"
 
 
 def test_empty_framework_falls_back_to_platform_default(monkeypatch):
@@ -303,10 +387,10 @@ def _openwakeword_engine_with_scores(monkeypatch, cfg_wake, scores):
 
     class _ScriptedModel:
         def __init__(self, wakeword_models, inference_framework="onnx"):
-            self.models = {"hey_reign": object()}
+            self.models = {"custom": object()}
 
         def predict(self, frame):
-            return {"hey_reign": next(seq)}
+            return {"custom": next(seq)}
 
         def reset(self):
             pass
@@ -319,6 +403,7 @@ def _openwakeword_engine_with_scores(monkeypatch, cfg_wake, scores):
     monkeypatch.setitem(sys.modules, "openwakeword.model", model_mod)
     monkeypatch.setattr("tools.lazy_deps.ensure", lambda *a, **k: None)
     monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
+    cfg_wake.setdefault("openwakeword", {"model": "hey_jarvis"})
     return ww._OpenWakeWordEngine({"provider": "openwakeword", **cfg_wake})
 
 
@@ -741,7 +826,9 @@ def test_requirements_client_capture_without_local_mic(monkeypatch):
     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: False)
 
-    reqs = ww.check_wake_word_requirements({"capture": "client", "provider": "openwakeword"})
+    reqs = ww.check_wake_word_requirements(
+        {"capture": "client", "provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
+    )
     assert reqs["available"] is True
     assert reqs["capture"] == "client"
 

@@ -8,6 +8,8 @@
 exclude_files:            # never touched by content replace, never renamed
   - LICENSE
   - NOTICE
+  - "**/LICENSE"          # nested third-party / plugin licenses keep their copyright holders
+  - "**/NOTICE"
   - REIGN-REBRAND-PLAN.md
   - "contributors/**"     # git author identities, not branding
   - "brand/**"

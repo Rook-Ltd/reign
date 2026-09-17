@@ -32,7 +32,7 @@ display:
 
 | Skin | Description | Agent branding | Visual character |
 |------|-------------|----------------|------------------|
-| `default` | Classic Reign — gold and kawaii | `Reign` | Warm gold borders, cornsilk text, kawaii faces in spinners. The familiar caduceus banner. Clean and inviting. |
+| `default` | Rook — monochrome black and white (alias `rook`) | `Reign` | White title, silver accents and grey rules on dark terminals; black, charcoal and grey on light ones. Neutral spinner glyphs. The Rook mark hero beside the info panel. |
 | `ares` | War-god theme — crimson and bronze | `Ares Agent` | Deep crimson borders with bronze accents. Aggressive spinner verbs ("forging", "marching", "tempering steel"). Custom sword-and-shield ASCII art banner. |
 | `mono` | Monochrome — clean grayscale | `Reign` | All grays — no color. Borders are `#555555`, text is `#c9d1d9`. Ideal for minimal terminal setups or screen recordings. |
 | `slate` | Cool blue — developer-focused | `Reign` | Royal blue borders (`#4169e1`), soft blue text. Calm and professional. No custom spinner — uses default faces. |
@@ -50,13 +50,13 @@ Controls all color values throughout the CLI. Values are hex color strings.
 
 | Key | Description | Default (`default` skin) |
 |-----|-------------|--------------------------|
-| `banner_border` | Panel border around the startup banner | `#CD7F32` (bronze) |
-| `banner_title` | Title text color in the banner | `#FFD700` (gold) |
-| `banner_accent` | Section headers in the banner (Available Tools, etc.) | `#FFBF00` (amber) |
-| `banner_dim` | Muted text in the banner (separators, secondary labels) | `#B8860B` (dark goldenrod) |
-| `banner_text` | Body text in the banner (tool names, skill names) | `#FFF8DC` (cornsilk) |
+| `banner_border` | Panel border around the startup banner | `#5C5C5C` (dark grey) |
+| `banner_title` | Title text color in the banner | `#FFFFFF` (white) |
+| `banner_accent` | Section headers in the banner (Available Tools, etc.) | `#C0C0C0` (silver) |
+| `banner_dim` | Muted text in the banner (separators, secondary labels) | `#8A8A8A` (grey) |
+| `banner_text` | Body text in the banner (tool names, skill names) | `#E6E6E6` (off-white) |
 | `ui_accent` | General UI accent color (highlights, active elements) | `#FFBF00` |
-| `ui_label` | UI labels and tags | `#DAA520` (goldenrod) |
+| `ui_label` | UI labels and tags | `#A8A8A8` (light grey) |
 | `ui_ok` | Success indicators (checkmarks, completion) | `#4caf50` (green) |
 | `ui_error` | Error indicators (failures, blocked) | `#ef5350` (red) |
 | `ui_warn` | Warning indicators (caution, approval prompts) | `#ffa726` (orange) |
@@ -106,7 +106,7 @@ Text strings used throughout the CLI interface.
 | `tool_prefix` | string | Character prefixed to tool output lines in the CLI | `┊` |
 | `tool_emojis` | dict | Per-tool emoji overrides for spinners and progress (`{tool_name: emoji}`) | `{}` |
 | `banner_logo` | string | Rich-markup ASCII art logo (replaces the default REIGN_AGENT banner) | `""` |
-| `banner_hero` | string | Rich-markup hero art (replaces the default caduceus art) | `""` |
+| `banner_hero` | string | Rich-markup hero art (replaces the default Rook mark art) | `""` |
 
 ## Custom skins
 
