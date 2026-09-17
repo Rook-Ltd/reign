@@ -9586,7 +9586,7 @@ def _reign_exe_shims(scripts_dir: Path) -> list[Path]:
     if not _is_windows():
         return []
 
-    names = set(_load_console_script_names()) or {"reign", "reign", "reign-acp"}
+    names = set(_load_console_script_names()) or {"reign", "reign-agent", "reign-acp"}
     # The gateway shim is not a [project.scripts] entry point, but older
     # update/install paths still rewrite and quarantine it.
     names.add("reign-gateway")

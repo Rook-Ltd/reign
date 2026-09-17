@@ -890,7 +890,7 @@ class GitHubSource(SkillSource):
         tags = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            reign_meta = metadata.get("reign", {})
+            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
             if isinstance(reign_meta, dict):
                 tags = reign_meta.get("tags", [])
         if not tags:
@@ -1659,7 +1659,7 @@ class UrlSource(SkillSource):
         tags: List[str] = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            reign_meta = metadata.get("reign", {})
+            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
             if isinstance(reign_meta, dict):
                 raw_tags = reign_meta.get("tags", [])
                 if isinstance(raw_tags, list):
@@ -3834,7 +3834,7 @@ class OptionalSkillSource(SkillSource):
         meta_block = fm.get("metadata")
         if not isinstance(meta_block, dict):
             return None
-        reign_meta = meta_block.get("reign")
+        reign_meta = (meta_block.get("reign") or meta_block.get("hermes"))
         if not isinstance(reign_meta, dict):
             return None
         upstream = reign_meta.get("upstream")
@@ -3919,7 +3919,7 @@ class OptionalSkillSource(SkillSource):
             tags = []
             meta_block = fm.get("metadata", {})
             if isinstance(meta_block, dict):
-                reign_meta = meta_block.get("reign", {})
+                reign_meta = (meta_block.get("reign") or meta_block.get("hermes") or {})
                 if isinstance(reign_meta, dict):
                     tags = reign_meta.get("tags", [])
 

@@ -230,7 +230,7 @@ class TestIterBackupFiles:
         rel_nested = str(Path("skills/autonomous-ai-agents/reign/SKILL.md"))
         assert rel_nested in selected
         assert str(Path("models/big.gguf")) not in selected
-        assert not any(s.startswith("reign") for s in selected)
+        assert not any(s.startswith("reign/") for s in selected)
 
     def test_skipped_dirs_collected_for_summary(self, tmp_path):
         from reign_cli.backup import _iter_backup_files

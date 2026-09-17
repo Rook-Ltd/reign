@@ -106,7 +106,7 @@ def parse_blueprint(skill_md_text: str) -> Optional[BlueprintSpec]:
     name = str(fm.get("name", "")).strip()
 
     meta = fm.get("metadata")
-    reign = meta.get("reign") if isinstance(meta, dict) else None
+    reign = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
     blueprint = reign.get("blueprint") if isinstance(reign, dict) else None
     if blueprint is None:
         return None

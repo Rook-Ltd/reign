@@ -30,7 +30,7 @@ class TestGatewayLifecyclePattern:
         "reign gateway stop",
         "reign gateway uninstall",
         "reign  gateway  restart",         # double spaces
-        "Hermez Gateway Restart".lower().replace("z", "s"),  # case handled
+        "Reigz Gateway Restart".lower().replace("z", "n"),  # case handled
         "REIGN GATEWAY RESTART",           # uppercase
     ])
     def test_reign_gateway_commands(self, text):

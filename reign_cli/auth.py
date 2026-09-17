@@ -6123,8 +6123,8 @@ def fetch_nous_models(
         model_id = item.get("id")
         if isinstance(model_id, str) and model_id.strip():
             mid = model_id.strip()
-            # Skip Reign models — they're not reliable for agentic tool-calling
-            if "reign" in mid.lower():
+            # Skip Nous Hermes models — they're not reliable for agentic tool-calling
+            if "hermes" in mid.lower():
                 continue
             model_ids.append(mid)
 

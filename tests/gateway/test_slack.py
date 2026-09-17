@@ -1200,7 +1200,7 @@ class TestStandaloneSendUserDmResolution:
 
         assert result["success"] is True
         payload = session.post.call_args.kwargs["json"]
-        assert payload["text"] == "<https://example.com/hermes|Hermes>"
+        assert payload["text"] == "<https://example.com/hermes|Reign>"
         assert payload["unfurl_links"] is False
         assert payload["unfurl_media"] is False
 

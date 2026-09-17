@@ -40,7 +40,13 @@ protect:                  # regex; matches are restored verbatim after replaceme
   # GitHub org/repo slugs and Docker Hub images under the Nous org
   - '[Nn]ous[Rr]esearch/[\w.\-]+'
   # Nous model family identifiers: Hermes 2/3/4(.x) ..., "Nous Hermes"
-  - '\b[Hh]ermes[- ]?[2-4](?:\.\d+)?(?:[-_][A-Za-z0-9.]+)*'
+  - '\b[Hh]ermes[-_ ]?[2-4](?:\.\d+)?(?:[-_][A-Za-z0-9.]+)*'   # also hermes_4_70b
+  # Model-family detection needles: a bare lowercase "hermes" compared against a
+  # model id (agent/coding_context.py, reign_cli/auth.py, model_switch.py regex,
+  # godmode auto_jailbreak.py). These must keep matching Nous model names.
+  - '"hermes"(?=, "llama")'
+  - '(?<=if )"hermes"(?= in (?:mid|model_lower))'
+  - '(?<=\[/:\]\))hermes(?=\[-_ \]\?\[34\])'
   # Named security incident and a contributor handle cited in code comments
   - 'hermes-0day'
   - '@5L-hermes01'
@@ -96,6 +102,13 @@ rename_paths:             # applied to each path component, in order
 
 # Residual-check allowlist: lines matching these after the run are expected.
 check_allow:
+  # intentional survivors after the manual model-needle / skill-key fixes
+  - 'get\("hermes"\)'
+  - '"hermes" in (?:mid|model_lower|name)'
+  - '"hermes", "llama"'
+  - 'hermes-brain'
+  - 'hermes\[-_ \]\?\[34\]'
+  - 'hermes-agent\.nousresearch\.\.\.'
   - '[Nn]ous[Rr]esearch/[\w.\-]+'          # org/repo slugs, ghcr/docker images
   - '[\w.-]*nousresearch\.com[^\s"''<>)]*' # bare domains
   - '\bnous_\w+|\w+_nous\w*'              # Nous Portal provider snake_case identifiers
@@ -106,7 +119,7 @@ check_allow:
   - 'hermes-(?:estree|parser)\b'           # third-party npm packages (Facebook Hermes JS)
   - '[Nn]ous[Rr]esearch'
   - 'nousresearch\.com'
-  - '[Hh]ermes[- ]?[2-4](?:\.\d+)?'
+  - '[Hh]ermes[-_ ]?[2-4](?:\.\d+)?'
   - 'hermes-0day'
   - '5L-hermes01'
   - '[Nn]ous[- ][Hh]ermes'
@@ -116,3 +129,7 @@ check_allow:
   - 'Nous[A-Z][A-Za-z]+'       # NousPortalAdapter, NousCloud, NousProfile ...
   - '(?:hermes|nous)[\w.+\-]*@|@[\w.\-]*(?:hermes|nous)'   # emails
   - 'https?://[^\s]*(?:hermes|nous)'
+
+# Post-run manual fixes that are NOT codemod-able (see REIGN-REBRAND-PLAN.md Phase 4):
+#  - skill frontmatter key: code reads metadata.reign OR metadata.hermes (hub skills publish `hermes:`)
+#  - nested LICENSE files keep their upstream copyright holders (excluded above)

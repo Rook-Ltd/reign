@@ -1686,7 +1686,7 @@ def skill_view(
         reign_meta = {}
         metadata = frontmatter.get("metadata")
         if isinstance(metadata, dict):
-            reign_meta = metadata.get("reign", {}) or {}
+            reign_meta = metadata.get("reign") or metadata.get("hermes") or {}
 
         tags = _parse_tags(reign_meta.get("tags") or frontmatter.get("tags", ""))
         related_skills = _parse_tags(

@@ -76,7 +76,7 @@ class TestSendMessageBlocks:
         await adapter.send("C1", content)
 
         kwargs = client.chat_postMessage.await_args.kwargs
-        assert kwargs["text"] == "<https://example.com/hermes|Hermes>"
+        assert kwargs["text"] == "<https://example.com/hermes|Reign>"
         assert kwargs["unfurl_links"] is False
         assert kwargs["unfurl_media"] is False
 

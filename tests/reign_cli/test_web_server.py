@@ -2945,7 +2945,7 @@ class TestNewEndpoints:
         body = self.client.get("/api/tools/terminal/backends").json()
         ssh = next(r for r in body["backends"] if r["name"] == "ssh")
         assert ssh["status"] == "ready"
-        assert "hermes@devbox.example.com" in ssh["detail"]
+        assert "reign@devbox.example.com" in ssh["detail"]
 
 
 

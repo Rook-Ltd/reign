@@ -362,17 +362,17 @@ _REIGN_MODEL_WARNING = (
     "(Claude, GPT, Gemini, DeepSeek, etc.)."
 )
 
-# Match only the real Rook Hermes 3 / Hermes 4 chat families.
-# The previous substring check (`"reign" in name.lower()`) false-positived on
-# unrelated local Modelfiles like ``reign-brain:qwen3-14b-ctx16k`` that just
-# happen to carry "reign" in their tag but are fully tool-capable.
+# Match only the real Nous Hermes 3 / Hermes 4 chat families.
+# The previous substring check (`"hermes" in name.lower()`) false-positived on
+# unrelated local Modelfiles like ``hermes-brain:qwen3-14b-ctx16k`` that just
+# happen to carry "hermes" in their tag but are fully tool-capable.
 #
 # Positive examples the regex must match:
 #   NousResearch/Hermes-3-Llama-3.1-70B, hermes-4-405b, openrouter/hermes3:70b
 # Negative examples it must NOT match:
-#   reign-brain:qwen3-14b-ctx16k, qwen3:14b, claude-opus-4-6
+#   hermes-brain:qwen3-14b-ctx16k, qwen3:14b, claude-opus-4-6
 _NOUS_REIGN_NON_AGENTIC_RE = re.compile(
-    r"(?:^|[/:])reign[-_ ]?[34](?:[-_.:]|$)",
+    r"(?:^|[/:])hermes[-_ ]?[34](?:[-_.:]|$)",
     re.IGNORECASE,
 )
 

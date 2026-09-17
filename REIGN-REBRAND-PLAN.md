@@ -185,7 +185,29 @@ Original Phase 3 checklist:
 - Gateway: bot names, welcome/help text per platform. Flag any in-product Nous links for decision (section 1 caveat).
 - README / AGENTS.md: rewrite hero and install instructions to `reign`.
 
-### Phase 4 — Verification
+### Phase 4 — Verification (DONE 2026-09-17)
+
+| Check | Result |
+|---|---|
+| Full Python suite (`scripts/run_tests.sh -j 6`, 33 min) | 43,258 passed / 53 failed on first pass. 35 of the failures are the host-specific baseline set (names shifted by the rename). The 18 new ones were all fixed; the affected 16 files rerun green (983 tests). |
+| TUI (`ui-tui`) | 1,737 vitest tests pass; `npm run build` OK; bundle free of Hermes/caduceus strings |
+| Web dashboard (`web`) | `tsc -b && vite build` OK into `reign_cli/web_dist`; only residual string is the upstream docs URL (decision 8) |
+| Desktop app (`apps/desktop`) | `tsc --noEmit` clean |
+| Docs site (`website`) | `npm run build` OK; rendered and screenshotted at `/docs/`: Rook mark navbar, monochrome theme, "In Your Corner" tagline |
+| Image bytes | No upstream image hash survives except the neutral set (doc screenshots, telegram/unbroker illustrations, feature tiles, pet egg) |
+| Residual `hermes`/`nous` text | 74 lines in 17 files after allowlist, all reviewed (Nous Portal provider code, upstream URLs, test fixtures, contributor identities, Credits line) |
+| CLI smoke (`REIGN_HOME` isolated) | `reign --help`, `reign --version` OK; welcome banner renders REIGN logo + Rook braille mark; nothing written to `~/.reign` |
+
+**Real regressions the codemod introduced, found by the suite and fixed** (recorded in `rebrand/mapping.yaml` so a re-run cannot repeat them):
+- Model-family detection needles: `agent/coding_context.py`, `reign_cli/auth.py`, `reign_cli/model_switch.py` regex, godmode skill — a bare `"hermes"` compared against model ids was renamed to `"reign"`, so Nous Hermes models were no longer recognized. Restored.
+- `scripts/install.sh` wrote the CLI launcher and the agent launcher under the same name `reign` (upstream: `hermes` and `hermes-agent`), the second overwriting the first. Agent launcher is now `reign-agent`, matching the `pyproject` console script; `reign_cli/profiles.py`, `main.py`, `uninstall.py` name sets updated.
+- Skill frontmatter key: bundled skills now use `metadata.reign:` but community hub skills publish `metadata.hermes:`. Readers in `tools/skills_hub.py`, `skills_tool.py`, `blueprints.py`, `skill_linter.py` accept both.
+- Test fixtures where a protected URL/email kept `hermes` while the code side was renamed (Slack link text, Discord truncated URL, hindsight template URL, SSH user, Telegram/photon/google-meet bot names, packaging artifact globs, a `"Hermez".replace` trick). Fixed in the tests.
+- Docs theme: `website/src/css/custom.css` and the intro page carried the Hermes gold palette and inline gold button; now monochrome. Two Nous marketing sentences ("the lab behind Hermes, Nomos, and Psyche") removed from the docs intro.
+
+Not replicated locally: upstream's Linux and Windows CI lanes (skipped markers), Docker image build, Electron packaging, Tauri installer build. Docker smoke test deferred to after the first push so CI can run it.
+
+Original Phase 4 checklist:
 - Zero-hit check: `grep -rniE 'hermes|nous'` returns only allowlisted lines (model names, URLs, LICENSE, NOTICE). Report the residual list explicitly.
 - Image check: no upstream image hashes from the audit inventory remain.
 - Rebuild TUI, web, desktop, docs. Screenshot every surface: CLI banner, TUI, dashboard, desktop, docs home, one gateway welcome message.

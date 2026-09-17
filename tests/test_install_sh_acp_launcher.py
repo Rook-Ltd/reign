@@ -134,8 +134,8 @@ def test_acp_launcher_does_not_follow_a_symlink_into_the_venv(tmp_path):
 # ---------------------------------------------------------------------------
 
 REIGN_AGENT_BLOCK = re.compile(
-    r'(rm -f "\$command_link_dir/reign".*?'
-    r'log_success "Installed reign launcher[^\n]*\n)',
+    r'(rm -f "\$command_link_dir/reign-agent".*?'
+    r'log_success "Installed reign-agent launcher[^\n]*\n)',
     re.S,
 )
 
@@ -182,7 +182,7 @@ def _run_reign_agent_block(tmp_path: Path, use_venv: str) -> Path | None:
     assert result.returncode == 0, (
         f"reign shim block failed:\nstdout={result.stdout}\nstderr={result.stderr}"
     )
-    return command_link_dir / "reign"
+    return command_link_dir / "reign-agent"
 
 
 def test_venv_install_writes_executable_reign_agent_launcher(tmp_path):
@@ -195,7 +195,7 @@ def test_venv_install_writes_executable_reign_agent_launcher(tmp_path):
     text = shim.read_text(encoding="utf-8")
     assert "unset PYTHONPATH" in text
     assert "unset PYTHONHOME" in text
-    assert "run_agent.py" in text, "reign must dispatch to run_agent.py"
+    assert "run_agent.py" in text, "reign-agent must dispatch to run_agent.py"
 
 
 def test_reign_agent_launcher_cleanup_on_uninstall(tmp_path):

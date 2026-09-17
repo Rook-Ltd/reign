@@ -2104,28 +2104,28 @@ EOF
     chmod +x "$command_link_dir/reign"
     log_success "Installed reign launcher → $command_link_display_dir/reign"
 
-    # Also expose `reign`. The `reign` console script declared in
+    # Also expose `reign-agent`. The `reign-agent` console script declared in
     # pyproject.toml's [project.scripts] lives inside the venv, which is not on
     # the login-shell PATH. Without this launcher users can't invoke the agent
     # entrypoint directly from outside the venv. (#74819)
-    rm -f "$command_link_dir/reign"
+    rm -f "$command_link_dir/reign-agent"
     if [ "$USE_VENV" = true ]; then
-        cat > "$command_link_dir/reign" <<EOF
+        cat > "$command_link_dir/reign-agent" <<EOF
 #!/usr/bin/env bash
 unset PYTHONPATH
 unset PYTHONHOME
 exec "$REIGN_BIN" "$INSTALL_DIR/run_agent.py" "\$@"
 EOF
     else
-        cat > "$command_link_dir/reign" <<EOF
+        cat > "$command_link_dir/reign-agent" <<EOF
 #!/usr/bin/env bash
 unset PYTHONPATH
 unset PYTHONHOME
 exec "$REIGN_BIN" run_agent.py "\$@"
 EOF
     fi
-    chmod +x "$command_link_dir/reign"
-    log_success "Installed reign launcher → $command_link_display_dir/reign"
+    chmod +x "$command_link_dir/reign-agent"
+    log_success "Installed reign-agent launcher → $command_link_display_dir/reign-agent"
 
     # Also expose `reign-acp`. ACP hosts (Zed, JetBrains, Buzz) resolve the
     # agent by command name on the login-shell PATH, and the `reign-acp`

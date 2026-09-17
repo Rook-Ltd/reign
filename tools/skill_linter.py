@@ -196,7 +196,7 @@ def _check_metadata_block(frontmatter: Dict[str, Any]) -> List[LintFinding]:
                 )
             )
     meta = frontmatter.get("metadata")
-    reign_meta = meta.get("reign") if isinstance(meta, dict) else None
+    reign_meta = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
     if not isinstance(reign_meta, dict):
         findings.append(
             LintFinding(

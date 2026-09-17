@@ -114,10 +114,10 @@ def remove_wrapper_script():
     wrapper_paths = [
         Path.home() / ".local" / "bin" / "reign",
         Path.home() / ".local" / "bin" / "reign-acp",
-        Path.home() / ".local" / "bin" / "reign",
+        Path.home() / ".local" / "bin" / "reign-agent",
         Path("/usr/local/bin/reign"),
         Path("/usr/local/bin/reign-acp"),
-        Path("/usr/local/bin/reign"),
+        Path("/usr/local/bin/reign-agent"),
     ]
     
     removed = []
