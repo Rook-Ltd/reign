@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@reign/ink": ["src/types/reign-ink.d.ts"]
+    }
+  }
+}

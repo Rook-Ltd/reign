@@ -1,0 +1,15 @@
+# Upstream provenance
+
+- Upstream: https://github.com/NousResearch/hermes-agent
+- Branch: main
+- Forked at: 00b2e03c8028cbe9e6b59b03306be300c6a6df8c
+- Upstream commit date: 2026-09-01 21:46:46 -0500
+- Cloned: 2026-09-02T02:52Z
+- Remotes: `upstream` = Nous, `origin` = https://github.com/asxi9832/reign
+
+## Re-syncing with upstream (future)
+```
+git fetch upstream
+# then either merge (rename detection will do some work) or re-run the codemod on a fresh checkout and diff:
+python rebrand/rebrand.py --check
+```
