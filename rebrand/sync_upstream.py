@@ -81,7 +81,8 @@ def main() -> None:
     print("  " + "\n  ".join(l for l in out.splitlines() if l.startswith(("deleted", "files ", "post_replace", "mode"))))
 
     print("→ applying hand-edit overlay (3-way)")
-    r = subprocess.run(["git", "apply", "--3way", "--index", str(REBRAND / "overlay" / "hand-edits.patch")],
+    sh("git", "add", "-A", cwd=wt, quiet=True)  # --3way needs the index to match the codemod output
+    r = subprocess.run(["git", "apply", "--3way", str(REBRAND / "overlay" / "hand-edits.patch")],
                        cwd=wt, text=True, capture_output=True)
     overlay_msgs = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()]
     conflicts = sh("git", "diff", "--name-only", "--diff-filter=U", cwd=wt, quiet=True).split()
@@ -109,11 +110,19 @@ def main() -> None:
     sh("git", "add", "-A", cwd=wt, quiet=True)
     res = subprocess.run([str(PY), "rebrand/rebrand.py", "--check"], cwd=wt, text=True, capture_output=True).stdout
     (wt / "rebrand/audit/residual-after-sync.txt").write_text(res)
-    baseline = {l.strip() for l in (REBRAND / "audit" / "residual-after-phase4.txt").read_text().splitlines() if re.match(r"\s+\d+: ", l)}
-    new_lines = [l for l in res.splitlines() if re.match(r"\s+\d+: ", l) and l.strip() not in baseline]
+    def keyed(text: str) -> list[tuple[str, str]]:
+        out, cur = [], ""
+        for l in text.splitlines():
+            if l and not l.startswith(" ") and not l.startswith("residual:"):
+                cur = l
+            elif re.match(r"\s+\d+: ", l):
+                out.append((cur, re.sub(r"^\s+\d+: ", "", l).strip()))
+        return out
+    baseline = set(keyed((REBRAND / "audit" / "residual-after-phase4.txt").read_text()))
+    new_lines = [(f, l) for f, l in keyed(res) if (f, l) not in baseline]
     print(f"  residual: {res.strip().splitlines()[-1]}; {len(new_lines)} line(s) not in the Phase 4 baseline")
-    for l in new_lines[:25]:
-        print(f"   {l.strip()[:150]}")
+    for f, l in new_lines[:25]:
+        print(f"   {f}: {l[:130]}")
     upstream_hashes = {l.split()[0] for l in (REBRAND / "audit" / "images-sha256.txt").read_text().splitlines()}
     survivors = []
     for p in wt.rglob("*"):

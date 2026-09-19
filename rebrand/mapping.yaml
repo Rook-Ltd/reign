@@ -5,7 +5,7 @@
 #   4. rename_paths  - per-path-component substitutions (git mv)
 # Everything is case-sensitive unless a rule says otherwise.
 
-exclude_files:            # never touched by content replace, never renamed
+exclude_files:            # never touched by content replace
   - LICENSE
   - NOTICE
   - "**/LICENSE"          # nested third-party / plugin licenses keep their copyright holders
@@ -18,6 +18,15 @@ exclude_files:            # never touched by content replace, never renamed
   - uv.lock
   - flake.lock
   - "tools/wakewords/**"  # deleted below
+  - ".git/**"
+
+rename_exclude:           # never MOVED. Everything else in exclude_files still moves with
+  - LICENSE               # its renamed directory (nested LICENSE files in plugins/hermes-*)
+  - NOTICE
+  - REIGN-REBRAND-PLAN.md
+  - "contributors/**"
+  - "brand/**"
+  - "rebrand/**"
   - ".git/**"
 
 delete:
@@ -49,6 +58,25 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"hermes"(?=, "llama")'
   - '(?<=if )"hermes"(?= in (?:mid|model_lower))'
   - '(?<=\[/:\]\))hermes(?=\[-_ \]\?\[34\])'
+  # The `hermes-agent` console script / launcher must not collapse into `hermes`->`reign`
+  # (it would overwrite the CLI launcher). Kept here, mapped to reign-agent in post_replace.
+  - 'command_link_dir/hermes-agent'
+  - 'Installed hermes-agent launcher'
+  - 'expose `hermes-agent`\. The `hermes-agent` console script'
+  - 'hermes-agent must dispatch'
+  - '"hermes-agent", "hermes-acp"'
+  - '"bin" / "hermes-agent"'
+  - '/usr/local/bin/hermes-agent"'
+  - '(?m)^hermes-agent = "run_agent:main"'
+  # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
+  # over an already-branded tree is a no-op)
+  - 'meta(?:data|_block)?\.get\("hermes"\)'
+  - '\[Hermes Agent\]\([^)]*\) by Nous Research'   # URL span is already shielded by then
+  - 'Built on Hermes Agent \(MIT\)'
+  - 'hermes-agent\.nousresearch\.\.\.'
+  - '`"hermes" in name\.lower\(\)`'
+  - 'hermes-brain:qwen3-14b-ctx16k'
+  - 'carry "hermes" in their tag'
   # Named security incident and a contributor handle cited in code comments
   - 'hermes-0day'
   - '@5L-hermes01'
@@ -84,6 +112,8 @@ replace:                  # ordered; {plain} or {regex}
   - plain: "hermes-agent"
     with:  "reign"
   - plain: "⚕"
+    with:  "♜"
+  - plain: "☤"
     with:  "♜"
   - plain: "hermes"
     with:  "reign"
@@ -130,7 +160,9 @@ check_allow:
   - '\bNous\b'                 # Nous Portal / NousPortalAdapter etc.
   - 'Nous[A-Z][A-Za-z]+'       # NousPortalAdapter, NousCloud, NousProfile ...
   - '(?:hermes|nous)[\w.+\-]*@|@[\w.\-]*(?:hermes|nous)'   # emails
-  - 'https?://[^\s]*(?:hermes|nous)'
+  - '(?i)https?://[^\s]*(?:hermes|nous)'
+  - '(?i)github\.com/[\w.-]+/[\w.-]*hermes[\w.-]*'   # third-party plugin repos
+  - '~?nouser\b'
 
 # Post-run manual fixes that are NOT codemod-able (see REIGN-REBRAND-PLAN.md Phase 4):
 #  - skill frontmatter key: code reads metadata.reign OR metadata.hermes (hub skills publish `hermes:`)
@@ -147,6 +179,7 @@ post_replace:
       - "scripts/dev-sandbox.sh"
       - "scripts/release.py"
       - "tests/install/*"
+      - ".github/actions/**"        # plugin-validate installs the agent from the repo
       - "reign_cli/update_cmd.py"
       - "reign_cli/banner.py"
       - "apps/desktop/electron/update-remote*"
@@ -184,3 +217,69 @@ post_replace:
         with:  "updates from asxi9832/reign"
       - plain: "canonical NousResearch/hermes-agent repo"
         with:  "canonical asxi9832/reign repo"
+  - files:
+      - "scripts/install.sh"
+      - "tests/**/test_install_sh_acp_launcher.py"
+      - "reign_cli/profiles.py"
+      - "reign_cli/main.py"
+      - "reign_cli/uninstall.py"
+      - "pyproject.toml"
+    replace:
+      - plain: "command_link_dir/hermes-agent"
+        with:  "command_link_dir/reign-agent"
+      - plain: "Installed hermes-agent launcher"
+        with:  "Installed reign-agent launcher"
+      - plain: "expose `hermes-agent`. The `hermes-agent` console script"
+        with:  "expose `reign-agent`. The `reign-agent` console script"
+      - plain: "hermes-agent must dispatch"
+        with:  "reign-agent must dispatch"
+      - regex: '(?m)^hermes-agent = "run_agent:main"'
+        with:  'reign-agent = "run_agent:main"'
+  - files:                # exact console-script name strings, safe tree-wide
+      - "**/*.py"
+      - "**/*.sh"
+      - "**/*.ps1"
+      - "**/*.ts"
+      - "**/*.tsx"
+    replace:
+      - plain: '"hermes-agent", "hermes-acp"'
+        with:  '"reign-agent", "reign-acp"'
+      - plain: '"bin" / "hermes-agent"'
+        with:  '"bin" / "reign-agent"'
+      - plain: '/usr/local/bin/hermes-agent"'
+        with:  '/usr/local/bin/reign-agent"'
+  - files:                # kawaii text faces in CLI output -> neutral glyphs (order matters)
+      - "cli.py"
+      - "reign_cli/*.py"
+      - "gateway/*.py"
+    replace:
+      - plain: "✨ (◕‿◕)✨ "
+        with:  ""
+      - plain: "ヽ(^o^)ノ"
+        with:  ""
+      - plain: "  Total: {len(tools)} tools  \""
+        with:  "  Total: {len(tools)} tools\""
+      - plain: "(^o^)/"
+        with:  "♜"
+      - plain: "(^_^)b"
+        with:  "✓"
+      - plain: "(^_^)v"
+        with:  "✓"
+      - plain: "(^_^)/"
+        with:  "♜"
+      - plain: "(^_^)?"
+        with:  "[?]"
+      - regex: '" " \* (\d+) \+ "\(\^_\^\) ([^"]+)" \+ " " \* (\d+) \+ "\|"'
+        with:  '" " * \1 + "  ♜ \2" + " " * \3 + "  |"'
+      - plain: "(^_^)"
+        with:  "♜"
+      - plain: "(x_x)"
+        with:  "✗"
+      - plain: "(>_<)"
+        with:  "✗"
+      - plain: "(;_;)"
+        with:  "✗"
+      - plain: "(o_o)"
+        with:  "›"
+      - plain: "(-_-)zzZ"
+        with:  "…"

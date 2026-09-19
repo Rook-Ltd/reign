@@ -52,6 +52,7 @@ class Rebrander:
     def __init__(self, mapping: dict):
         self.m = mapping
         self.exclude = mapping.get("exclude_files", [])
+        self.rename_exclude = mapping.get("rename_exclude", self.exclude)
         self.protect = [re.compile(p) for p in mapping.get("protect", [])]
         self.replace = []
         for r in mapping.get("replace", []):
@@ -82,8 +83,9 @@ class Rebrander:
             text, n = rx.subn(repl, text)
             if n:
                 self.rule_hits[rx.pattern[:40]] += n
-        if store:
-            text = re.sub(f"{SENT_L}(\\d+){SENT_R}", lambda m: store[int(m.group(1))], text)
+        sent = re.compile(f"{SENT_L}(\\d+){SENT_R}")
+        while store and sent.search(text):  # loop: a protected span may itself contain a sentinel
+            text = sent.sub(lambda m: store[int(m.group(1))], text)
         return text
 
     def rewrite_files(self, files: list[str], apply: bool) -> list[str]:
@@ -140,7 +142,7 @@ class Rebrander:
 
     # ---------- paths ----------
     def new_path(self, rel: str) -> str:
-        if globs_match(rel, self.exclude):
+        if globs_match(rel, self.rename_exclude):
             return rel
         parts = []
         for comp in rel.split("/"):

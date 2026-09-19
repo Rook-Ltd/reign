@@ -1,4 +1,0 @@
-[console_scripts]
-reign = reign_cli.main:main
-reign-acp = acp_adapter.entry:main
-reign-agent = run_agent:main
