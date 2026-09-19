@@ -15,7 +15,9 @@ ROOT = Path(__file__).resolve().parent.parent
 PY = ROOT / ".venv" / "bin" / "python"
 EXCLUDES = [":(exclude)rebrand", ":(exclude)brand", ":(exclude)REIGN-REBRAND-PLAN.md",
             ":(exclude)*.png", ":(exclude)*.jpg", ":(exclude)*.ico", ":(exclude)*.icns", ":(exclude)*.svg",
-            ":(exclude)MagicMock", ":(exclude)hermes_agent.egg-info"]
+            ":(exclude)MagicMock", ":(exclude)hermes_agent.egg-info",
+            ":(exclude)uv.lock", ":(exclude)package-lock.json", ":(exclude)**/package-lock.json",
+            ":(exclude)flake.lock"]  # regenerated per sync
 
 
 def main() -> None:

@@ -3,14 +3,14 @@
 
     python rebrand/sync_upstream.py --dry-run          # gates only, report, no commit
     python rebrand/sync_upstream.py                    # also creates branch sync/upstream-<date>
-    python rebrand/sync_upstream.py --ref upstream/main --lockfiles
+    python rebrand/sync_upstream.py --ref upstream/main --no-lockfiles
 
 Steps (all in a throwaway git worktree at the upstream ref):
   1. copy rebrand/ + brand/ + plan into the worktree
   2. run rebrand/rebrand.py            (stages 1-5: delete, protect, replace, rename, post_replace)
   3. git apply --3way rebrand/overlay/hand-edits.patch   (Phase 3/4 hand edits)
   4. run rebrand/place_images.py
-  5. optional: regenerate uv.lock and npm lockfiles
+  5. regenerate uv.lock and npm lockfiles (--no-lockfiles to skip; the overlay never carries them)
   6. gates: rebrand.py --check residual delta vs. rebrand/audit/residual-after-phase4.txt,
             upstream image hashes, conflict markers left by step 3
   7. git commit-tree with parents (current Reign HEAD, upstream commit) -> branch sync/upstream-<date>
@@ -51,7 +51,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--ref", default="upstream/main")
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--lockfiles", action="store_true", help="regenerate uv.lock and npm lockfiles (slow)")
+    ap.add_argument("--no-lockfiles", dest="lockfiles", action="store_false", help="skip regenerating uv.lock and npm lockfiles")
     ap.add_argument("--keep-worktree", action="store_true")
     args = ap.parse_args()
 
@@ -80,18 +80,22 @@ def main() -> None:
     out = sh(str(PY), "rebrand/rebrand.py", cwd=wt, quiet=True)
     print("  " + "\n  ".join(l for l in out.splitlines() if l.startswith(("deleted", "files ", "post_replace", "mode"))))
 
-    print("→ applying hand-edit overlay (3-way)")
+    print("→ applying hand-edit overlay (3-way, per file so one failure cannot abort the rest)")
     sh("git", "add", "-A", cwd=wt, quiet=True)  # --3way needs the index to match the codemod output
-    r = subprocess.run(["git", "apply", "--3way", str(REBRAND / "overlay" / "hand-edits.patch")],
-                       cwd=wt, text=True, capture_output=True)
-    overlay_msgs = [l for l in (r.stdout + r.stderr).splitlines() if l.strip()]
+    patch = REBRAND / "overlay" / "hand-edits.patch"
+    patch_files = re.findall(r"^diff --git a/(.*?) b/", patch.read_text(errors="replace"), re.M)
+    failed = []
+    for pf in patch_files:
+        r = subprocess.run(["git", "apply", "--3way", f"--include={pf}", str(patch)], cwd=wt, text=True, capture_output=True)
+        if r.returncode != 0 and "with conflicts" not in (r.stdout + r.stderr):
+            msg = next((l for l in (r.stdout + r.stderr).splitlines() if "error:" in l), r.stderr.strip()[:120])
+            failed.append(f"{pf}: {msg}")
     conflicts = sh("git", "diff", "--name-only", "--diff-filter=U", cwd=wt, quiet=True).split()
-    failed = [l for l in overlay_msgs if "error:" in l or "does not exist" in l]
-    print(f"  overlay: {len(conflicts)} file(s) with conflicts, {len(failed)} hard failure(s)")
+    print(f"  overlay: {len(patch_files)} files; {len(conflicts)} with conflicts, {len(failed)} could not apply")
     for c in conflicts:
         print(f"   conflict: {c}")
     for f in failed[:20]:
-        print(f"   {f}")
+        print(f"   failed:   {f}")
 
     print("→ placing images")
     sh(str(PY), "rebrand/place_images.py", cwd=wt, quiet=True)
