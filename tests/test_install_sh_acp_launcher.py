@@ -204,7 +204,7 @@ def test_reign_agent_launcher_cleanup_on_uninstall(tmp_path):
     from reign_cli.uninstall import remove_wrapper_script
 
     # Simulate a reign wrapper in the user-local location
-    local_shim = tmp_path / ".local" / "bin" / "reign"
+    local_shim = tmp_path / ".local" / "bin" / "reign-agent"
     local_shim.parent.mkdir(parents=True)
     local_shim.write_text("#!/usr/bin/env bash\nexec reign\n", encoding="utf-8")
 

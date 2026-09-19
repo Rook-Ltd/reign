@@ -41,6 +41,8 @@ def globs_match(path: str, patterns: list[str]) -> bool:
     for pat in patterns:
         if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(path, pat.rstrip("/**")) or path.startswith(pat.rstrip("*").rstrip("/") + "/"):
             return True
+        if pat.startswith("**/") and fnmatch.fnmatch(path, pat[3:]):  # "**/x.py" also means root-level x.py
+            return True
     return False
 
 
@@ -163,22 +165,17 @@ class Rebrander:
             if b in existing and b not in {x for x, _ in moves}:
                 sys.exit(f"rename target already exists: {a} -> {b}")
         if apply:
+            # Filesystem moves + one `git add -A` at the end: `git mv` per file rewrites
+            # the whole index each time (O(n^2) on a 40k-entry tree, >10 min for 2k moves).
             for a, b in moves:
                 (ROOT / b).parent.mkdir(parents=True, exist_ok=True)
-                for attempt in range(6):
-                    r = subprocess.run(["git", "mv", "-k", a, b], cwd=ROOT, capture_output=True, text=True)
-                    if r.returncode == 0:
-                        break
-                    if "index.lock" in r.stderr and attempt < 5:
-                        import time; time.sleep(0.5 * (attempt + 1))
-                        continue
-                    sys.exit(f"git mv failed: {a} -> {b}\n{r.stderr}")
-            # prune emptied directories
+                os.replace(ROOT / a, ROOT / b)
             for a, _ in moves:
                 d = (ROOT / a).parent
                 while d != ROOT and d.exists() and not any(d.iterdir()):
                     d.rmdir()
                     d = d.parent
+            subprocess.run(["git", "add", "-A", "--", "."], cwd=ROOT, check=True)
         self.stats["files_renamed"] = len(moves)
         return moves
 

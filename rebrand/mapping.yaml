@@ -61,6 +61,7 @@ protect:                  # regex; matches are restored verbatim after replaceme
   # The `hermes-agent` console script / launcher must not collapse into `hermes`->`reign`
   # (it would overwrite the CLI launcher). Kept here, mapped to reign-agent in post_replace.
   - 'command_link_dir/hermes-agent'
+  - 'command_link_dir / "hermes-agent"'
   - 'Installed hermes-agent launcher'
   - 'expose `hermes-agent`\. The `hermes-agent` console script'
   - 'hermes-agent must dispatch'
@@ -144,7 +145,7 @@ check_allow:
   - '[Nn]ous[Rr]esearch/[\w.\-]+'          # org/repo slugs, ghcr/docker images
   - '[\w.-]*nousresearch\.com[^\s"''<>)]*' # bare domains
   - '\bnous_\w+|\w+_nous\w*'              # Nous Portal provider snake_case identifiers
-  - '\bNOUS_\w+'                          # NOUS_API_KEY, NOUS_MANAGED_PROVIDER ...
+  - '\bNOUS_'                             # NOUS_API_KEY, NOUS_MANAGED_PROVIDER, 'NOUS_' prefix literals
   - '\bnous[A-Z]\w*'                      # camelCase: nousAuthSignIn, nousTheme ...
   - 'noUsage\w*|noUser\w*'                # false positives: "noUsage", "noUserInfo" contain "nous"
   - 'NOUS-\d+'                             # Nous Portal OAuth device-code fixtures
@@ -219,7 +220,7 @@ post_replace:
         with:  "canonical asxi9832/reign repo"
   - files:
       - "scripts/install.sh"
-      - "tests/**/test_install_sh_acp_launcher.py"
+      - "**/test_install_sh_acp_launcher.py"
       - "reign_cli/profiles.py"
       - "reign_cli/main.py"
       - "reign_cli/uninstall.py"
@@ -227,6 +228,8 @@ post_replace:
     replace:
       - plain: "command_link_dir/hermes-agent"
         with:  "command_link_dir/reign-agent"
+      - plain: 'command_link_dir / "hermes-agent"'
+        with:  'command_link_dir / "reign-agent"'
       - plain: "Installed hermes-agent launcher"
         with:  "Installed reign-agent launcher"
       - plain: "expose `hermes-agent`. The `hermes-agent` console script"
@@ -283,3 +286,8 @@ post_replace:
         with:  "›"
       - plain: "(-_-)zzZ"
         with:  "…"
+  - files:                # dashboard sidebar abbreviation "HA" (Hermes Agent)
+      - "web/src/i18n/*.ts"
+    replace:
+      - plain: 'brandShort: "HA"'
+        with:  'brandShort: "RG"'
