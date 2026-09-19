@@ -214,7 +214,21 @@ Original Phase 4 checklist:
 - Full test suite green.
 - Fresh-install smoke test in Docker: `reign setup`, `reign model`, `reign gateway`. Never against the local `~/.hermes`.
 
-### Phase 5 — Handoff
+### Phase 5 — Handoff and distribution model (decided 2026-09-19)
+
+**Distribution: Rook is the distributor.** Clients install from and `reign update` against `asxi9832/reign`. Rook re-cuts Reign from upstream on a cadence with a test gate (weekly or biweekly), never by `git merge upstream/main`: upstream moves ~600 commits/day and touched 8,111 files in the 18 days after the fork, 1,557 of them under renamed paths and 5,801 containing Hermes/Nous text, so a merge is not viable.
+
+**Sync mechanics (to build next):** `rebrand/sync_upstream.py` takes a fresh `upstream/main` checkout, runs `rebrand.py` (all five stages), replays the hand-edit overlay (Phase 3/4 changes as a patch set plus `place_images.py`), runs the residual and image-hash gates, then records the result as a merge commit whose parents are the previous Reign head and the upstream commit (`git commit-tree`). Client installs fast-forward on every sync; mechanical branding cannot come back because the codemod runs every time; new *kinds* of branding surface on the residual list for review.
+
+**Code-fetch paths repointed to the Rook repo** (codemod stage 5 `post_replace` in `mapping.yaml`, so re-syncs keep them): `scripts/install.sh` / `install.ps1` clone and zip URLs, `reign update` zip fallback and official-repo detection, desktop passive update check and bootstrap script download, nix/desktop homepage, release links, user-agent strings. Documentation links stay on upstream (decision 8). Left on Nous deliberately: the skills hub "official optional skills" source (`tools/skills_hub.py`), the local-runtime catalog JSON, the model catalog JSON, the Telegram security-advisory link, and the GitHub workflow `github.repository` gates (Docker Hub / Vercel / skills-index publishing need Nous credentials; they stay dormant in the Rook repo).
+
+**Sync tooling built and tested (2026-09-19).** `rebrand/sync_upstream.py` (worktree → codemod → per-file 3-way overlay → images → lockfiles → gates → merge commit on `sync/upstream-<date>`), `rebrand/make_overlay.py` (overlay = diff of codemod output at the fork point vs HEAD, so every hand edit promoted to a mapping rule drops out automatically), `rebrand/overlay/hand-edits.patch` (68 files). Seven dry runs against upstream `d7b836ab1c` (about 11,000 commits past the fork point) found and fixed: a mapping list that had been split by an edit, nested protected spans not being restored, `git apply` aborting the whole overlay on one missing file (upstream moved the test), lockfiles riding in the overlay, per-file `git mv` costing twelve minutes. A sync now takes about five minutes and the codemod is a verified no-op on the branded tree.
+
+**Honest per-sync cost for an 18-day gap:** all gates clean (0 residual lines beyond baseline, 0 upstream images, 0 files that fail to apply), and **35 conflict hunks in 19 files** where upstream changed the same lines as a hand edit (`tools/wake_word.py` 5, `tools/skills_hub.py` 3, `reign_cli/skin_engine.py` 3, `banner.py` 3, `auth.py` 3, the rest 1–2 each). Those are resolved by hand in the kept worktree, then `run_tests.sh`, then the sync branch is pushed as a PR. Shorter cadence means fewer hunks. Seen in the dry run and worth a rule before the first real sync: upstream added a new reader of the `hermes:` skill-metadata key (`agent/learning_graph.py`), which the codemod renames to `reign` and so silently breaks for hub skills; the dual-key fix currently lives in the overlay for four files only. A `protect` + `post_replace` regex for `.get("hermes")` would cover every current and future reader. Next reduction: turn the remaining block-style hand edits (banner art constants, default skin dict, spinner face lists, wake-word defaults) into regex block rules so they leave the overlay too.
+
+**Open: repo visibility.** `asxi9832/reign` is private. Every client install and update needs a GitHub credential until it is public or a deploy key / token scheme exists.
+
+Original Phase 5 checklist:
 - Push to the Rook GitHub repo (link to be provided). Tag `v0.1.0`.
 - `rebrand/UPSTREAM.md` documents the upstream SHA and the exact command to re-run the codemod for a future sync.
 

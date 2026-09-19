@@ -1,0 +1,2932 @@
+diff --git a/.gitignore b/.gitignore
+index 87778a4c97..1429daccfd 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -217,3 +217,7 @@ native/fts5_cjk/*.so
+ 
+ # Disposable profile created by scripts/probe_active_session_exclusivity.py
+ .probe-home/
++
++# test pollution: mocked db paths that stringify into the repo dir
++MagicMock/
++*.egg-info/
+diff --git a/AGENTS.md b/AGENTS.md
+index f3d89ed6db..266af39745 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -722,7 +722,7 @@ reign_cli/skin_engine.py    # SkinConfig dataclass, built-in skins, YAML loader
+ 
+ ### Built-in skins
+ 
+-- `default` — Classic Reign gold/kawaii (the current look)
++- `default` — Rook monochrome (the current look)
+ - `ares` — Crimson/bronze war-god theme with custom spinner wings
+ - `mono` — Clean grayscale monochrome
+ - `slate` — Cool blue developer-focused theme
+diff --git a/LICENSE b/LICENSE
+index 75410e7331..ab94f92788 100644
+--- a/LICENSE
++++ b/LICENSE
+@@ -1,5 +1,6 @@
+ MIT License
+ 
++Copyright (c) 2026 Rook
+ Copyright (c) 2025 Nous Research
+ 
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+diff --git a/NOTICE b/NOTICE
+new file mode 100644
+index 0000000000..4c2573302e
+--- /dev/null
++++ b/NOTICE
+@@ -0,0 +1,11 @@
++Reign
++Copyright (c) 2026 Rook
++
++Reign is a product of Rook and is based on Hermes Agent by Nous Research,
++distributed under the MIT License:
++
++    https://github.com/NousResearch/hermes-agent
++
++The original Nous Research copyright notice and MIT permission notice are
++retained in the LICENSE file. Model names such as "Hermes 4" refer to models
++published by Nous Research and are not products of Rook.
+diff --git a/README.md b/README.md
+index 5f53cfca54..9495a074d3 100644
+--- a/README.md
++++ b/README.md
+@@ -2,7 +2,7 @@
+   <img src="assets/banner.png" alt="Reign" width="100%">
+ </p>
+ 
+-# Reign ♜
++# Reign
+ <p align="center">
+   <a href="https://hermes-agent.nousresearch.com/">Reign</a> | <a href="https://hermes-agent.nousresearch.com/">Reign Desktop</a>
+ </p>
+@@ -10,13 +10,10 @@
+   <a href="https://hermes-agent.nousresearch.com/docs/"><img src="https://img.shields.io/badge/Docs-hermes--agent.nousresearch.com-FFD700?style=for-the-badge" alt="Documentation"></a>
+   <a href="https://discord.gg/NousResearch"><img src="https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+   <a href="https://github.com/NousResearch/hermes-agent/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge" alt="License: MIT"></a>
+-  <a href="https://nousresearch.com"><img src="https://img.shields.io/badge/Built%20by-Nous%20Research-blueviolet?style=for-the-badge" alt="Built by Rook"></a>
+-  <a href="README.zh-CN.md"><img src="https://img.shields.io/badge/Lang-中文-red?style=for-the-badge" alt="中文"></a>
+-  <a href="README.ur-pk.md"><img src="https://img.shields.io/badge/Lang-اردو-green?style=for-the-badge" alt="اردو"></a>
+-  <a href="README.es.md"><img src="https://img.shields.io/badge/Lang-Español-orange?style=for-the-badge" alt="Español"></a>
++  <img src="https://img.shields.io/badge/Built%20by-Rook-000000?style=for-the-badge" alt="Built by Rook">
+ </p>
+ 
+-**The self-improving AI agent built by [Rook](https://nousresearch.com).** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
++**The self-improving AI agent built by Rook.** It's the only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, searches its own past conversations, and builds a deepening model of who you are across sessions. Run it on a $5 VPS, a GPU cluster, or serverless infrastructure that costs nearly nothing when idle. It's not tied to your laptop — talk to it from Telegram while it works on a cloud VM.
+ 
+ Use any model you want — [Nous Portal](https://portal.nousresearch.com), OpenRouter, OpenAI, your own endpoint, and [many others](https://hermes-agent.nousresearch.com/docs/integrations/providers). Switch with `reign model` — no code changes, no lock-in.
+ 
+@@ -261,4 +258,10 @@ scripts/run_tests.sh
+ 
+ MIT — see [LICENSE](LICENSE).
+ 
+-Built by [Rook](https://nousresearch.com).
++Built by Rook.
++
++---
++
++## Credits
++
++Reign is built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research, released under the MIT license. See [NOTICE](NOTICE) for details.
+diff --git a/agent/display.py b/agent/display.py
+index 6b8c95c59e..a8f7f7906d 100644
+--- a/agent/display.py
++++ b/agent/display.py
+@@ -1096,14 +1096,11 @@ class KawaiiSpinner:
+     }
+ 
+     KAWAII_WAITING = [
+-        "(｡◕‿◕｡)", "(◕‿◕✿)", "٩(◕‿◕｡)۶", "(✿◠‿◠)", "( ˘▽˘)っ",
+-        "♪(´ε` )", "(◕ᴗ◕✿)", "ヾ(＾∇＾)", "(≧◡≦)", "(★ω★)",
++        "(♜)", "(◌)", "(○)", "(◇)", "(·)",
+     ]
+ 
+     KAWAII_THINKING = [
+-        "(｡•́︿•̀｡)", "(◔_◔)", "(¬‿¬)", "( •_•)>⌐■-■", "(⌐■_■)",
+-        "(´･_･`)", "◉_◉", "(°ロ°)", "( ˘⌣˘)♡", "ヽ(>∀<☆)☆",
+-        "٩(๑❛ᴗ❛๑)۶", "(⊙_⊙)", "(¬_¬)", "( ͡° ͜ʖ ͡°)", "ಠ_ಠ",
++        "(♜)", "(◌)", "(●)", "(◆)", "(⌁)", "(…)",
+     ]
+ 
+     THINKING_VERBS = [
+diff --git a/agent/learning_graph.py b/agent/learning_graph.py
+index d7d89c7899..8abafa8a08 100644
+--- a/agent/learning_graph.py
++++ b/agent/learning_graph.py
+@@ -52,7 +52,7 @@ def _reign_meta(fm: dict[str, Any]) -> dict[str, Any]:
+     """``metadata.reign`` as a dict, tolerant of the string-valued frontmatter
+     that ``parse_frontmatter``'s malformed-YAML fallback produces."""
+     meta = fm.get("metadata")
+-    reign = meta.get("hermes") if isinstance(meta, dict) else None
++    reign = meta.get("reign") if isinstance(meta, dict) else None
+     return reign if isinstance(reign, dict) else {}
+ 
+ 
+diff --git a/agent/skill_utils.py b/agent/skill_utils.py
+index 8524d06577..293499cfc4 100644
+--- a/agent/skill_utils.py
++++ b/agent/skill_utils.py
+@@ -1079,7 +1079,7 @@ def extract_skill_conditions(frontmatter: Dict[str, Any]) -> Dict[str, List]:
+     # Handle cases where metadata is not a dict (e.g., a string from malformed YAML)
+     if not isinstance(metadata, dict):
+         metadata = {}
+-    reign = metadata.get("hermes") or {}
++    reign = metadata.get("reign") or {}
+     if not isinstance(reign, dict):
+         reign = {}
+     return {
+@@ -1119,7 +1119,7 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
+     metadata = frontmatter.get("metadata")
+     if not isinstance(metadata, dict):
+         return []
+-    reign = metadata.get("hermes")
++    reign = metadata.get("reign")
+     if not isinstance(reign, dict):
+         return []
+     raw = reign.get("config")
+diff --git a/apps/bootstrap-installer/src/components/brand-mark.tsx b/apps/bootstrap-installer/src/components/brand-mark.tsx
+index b6a20e47cd..eefc0bd855 100644
+--- a/apps/bootstrap-installer/src/components/brand-mark.tsx
++++ b/apps/bootstrap-installer/src/components/brand-mark.tsx
+@@ -2,12 +2,12 @@ import { cn } from '../lib/utils'
+ 
+ const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
+ 
+-// Brand badge: nous-girl mark on a white tile, identical in light/dark.
++// Brand badge: the Rook mark on a white tile, identical in light/dark.
+ // Ported from apps/desktop's BrandMark; asset lives in this app's public/.
+ export function BrandMark({ className, ...props }: React.ComponentProps<'span'>) {
+   return (
+     <span className={cn('inline-flex size-14 shrink-0 items-center justify-center bg-white', className)} {...props}>
+-      <img alt="" className="size-full object-contain" src={assetPath('nous-girl.jpg')} />
++      <img alt="" className="size-full object-contain" src={assetPath('rook-mark.png')} />
+     </span>
+   )
+ }
+diff --git a/apps/desktop/DESIGN.md b/apps/desktop/DESIGN.md
+index cfa8ed889c..b52dc4eff0 100644
+--- a/apps/desktop/DESIGN.md
++++ b/apps/desktop/DESIGN.md
+@@ -253,7 +253,7 @@ Sizes: `default`, `xs`, `overlay` (titlebar glyph counts).
+   action. Do not introduce a third icon set or mix styles within one control
+   group.
+ - **`BrandMark`** (`src/components/brand-mark.tsx`) is the brand glyph — the
+-  `nous-girl` mark on a white tile, softly rounded, identical in light/dark.
++  Rook mark on a white tile, softly rounded, identical in light/dark.
+   It replaced scattered Sparkles glyphs in updates / onboarding / about. Use it
+   for hero/brand moments; don't reintroduce decorative star/sparkle icons.
+ 
+diff --git a/apps/desktop/README.md b/apps/desktop/README.md
+index 3c59033b8d..75874a75da 100644
+--- a/apps/desktop/README.md
++++ b/apps/desktop/README.md
+@@ -1,4 +1,4 @@
+-# Reign Desktop ♜
++# Reign Desktop ☤
+ 
+ <p align="center">
+   <a href="https://github.com/NousResearch/hermes-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
+diff --git a/apps/desktop/package.json b/apps/desktop/package.json
+index 25c5e23f82..e316a4e5ba 100644
+--- a/apps/desktop/package.json
++++ b/apps/desktop/package.json
+@@ -286,7 +286,7 @@
+     },
+     "linux": {
+       "category": "Development",
+-      "maintainer": "Rook <support@nousresearch.com>",
++      "maintainer": "Rook",
+       "synopsis": "Native desktop shell for Reign.",
+       "target": [
+         "AppImage",
+diff --git a/apps/desktop/src/components/brand-mark.tsx b/apps/desktop/src/components/brand-mark.tsx
+index 72edfe22bf..762fa1f123 100644
+--- a/apps/desktop/src/components/brand-mark.tsx
++++ b/apps/desktop/src/components/brand-mark.tsx
+@@ -2,7 +2,7 @@ import { cn } from '@/lib/utils'
+ 
+ const assetPath = (path: string) => `${import.meta.env.BASE_URL}${path.replace(/^\/+/, '')}`
+ 
+-// Brand badge: nous-girl mark on a white tile, identical in light/dark.
++// Brand badge: the Rook mark on a white tile, identical in light/dark.
+ // Fills the tile (softly rounded); size via className (default size-14).
+ export function BrandMark({ className, ...props }: React.ComponentProps<'span'>) {
+   return (
+@@ -13,7 +13,7 @@ export function BrandMark({ className, ...props }: React.ComponentProps<'span'>)
+       )}
+       {...props}
+     >
+-      <img alt="" className="size-full object-contain" src={assetPath('nous-girl.jpg')} />
++      <img alt="" className="size-full object-contain" src={assetPath('rook-mark.png')} />
+     </span>
+   )
+ }
+diff --git a/cli-config.yaml.example b/cli-config.yaml.example
+index 5e1b04a958..cc900449fe 100644
+--- a/cli-config.yaml.example
++++ b/cli-config.yaml.example
+@@ -1517,10 +1517,15 @@ stt:
+ #     voice: "default"
+ 
+ # "Hey Reign" hands-free wake word (off by default; toggle with /wake).
++# Default engine is sherpa (open-vocabulary, zero training): `phrase` IS the
++# detected phrase. No wake-word model is bundled — `provider: openwakeword`
++# needs `openwakeword.model` set to a built-in name or an .onnx/.tflite path.
+ # Full engine/provider options inherit from DEFAULT_CONFIG in
+-# reign_cli/config_defaults.py — only capture placement is documented here.
++# reign_cli/config_defaults.py — only the essentials are documented here.
+ # wake_word:
+ #   enabled: false
++#   provider: "sherpa" # sherpa (default, any phrase) | openwakeword (needs model) | porcupine
++#   phrase: "hey reign"
+ #   capture: "auto"    # auto | local | client
+ #                      # auto: backend PortAudio mic when one exists; a remote
+ #                      #       desktop on a mic-less (headless/VPS) backend
+@@ -1745,7 +1750,7 @@ display:
+   # response box label, and branding text. Change at runtime with /skin <name>.
+   #
+   # Built-in skins:
+-  #   default        — Classic Reign gold/kawaii
++  #   default        — Rook monochrome (alias: rook)
+   #   ares           — Crimson/bronze war-god theme with spinner wings
+   #   mono           — Clean grayscale monochrome
+   #   slate          — Cool blue developer-focused
+diff --git a/cli.py b/cli.py
+index f82cad9c7e..5c6c30db79 100644
+--- a/cli.py
++++ b/cli.py
+@@ -4842,30 +4842,29 @@ class ChatConsole:
+         """
+         yield self
+ 
+-# ASCII Art - REIGN logo (full width, single line - requires ~95 char terminal)
+-REIGN_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
+-[bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
+-[#FFBF00]███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
+-[#FFBF00]██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
+-[#CD7F32]██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
+-[#CD7F32]╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
+-
+-# ASCII Art - Reign Caduceus (compact, fits in left panel)
+-REIGN_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀[/]
+-[#FFBF00]⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀[/]
+-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
++# ASCII Art - REIGN logo (38 columns; Rook mark hero below)
++REIGN_AGENT_LOGO = """[bold #FFFFFF]██████╗ ███████╗██╗ ██████╗ ███╗   ██╗[/]
++[bold #FFFFFF]██╔══██╗██╔════╝██║██╔════╝ ████╗  ██║[/]
++[#C0C0C0]██████╔╝█████╗  ██║██║  ███╗██╔██╗ ██║[/]
++[#C0C0C0]██╔══██╗██╔══╝  ██║██║   ██║██║╚██╗██║[/]
++[#8A8A8A]██║  ██║███████╗██║╚██████╔╝██║ ╚████║[/]
++[#8A8A8A]╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝[/]"""
++
++REIGN_HERO = """[#8A8A8A]⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠖⠛⠛⠛⠛⠛⠛⠲⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀[/]
++[#8A8A8A]⠀⠀⠀⠀⠀⣠⡴⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⣄⠀⠀⠀⠀⠀[/]
++[#C0C0C0]⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀[/]
++[#C0C0C0]⠀⠀⣴⠋⠀⠀⠀⠀⠀⠀⣿⣇⣸⣿⣿⣿⣿⣇⣸⣿⠀⠀⠀⠀⠀⠀⠙⣦⠀⠀[/]
++[#FFFFFF]⠀⣼⠃⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠘⣧⠀[/]
++[#FFFFFF]⢰⠇⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⡆[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#C0C0C0]⠸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠇[/]
++[#C0C0C0]⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀[/]
++[#8A8A8A]⠀⠀⠻⣆⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⣰⠟⠀⠀[/]
++[#8A8A8A]⠀⠀⠀⠙⢷⣄⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⣠⡾⠋⠀⠀⠀[/]
++[#5C5C5C]⠀⠀⠀⠀⠀⠙⠳⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠞⠋⠀⠀⠀⠀⠀[/]
++[#5C5C5C]⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
+ 
+ 
+ 
+@@ -8976,7 +8975,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
+         if hasattr(self, 'agent') and self.agent and hasattr(self.agent, 'context_compressor'):
+             ctx_len = self.agent.context_compressor.context_length
+         
+-        # Auto-compact for narrow terminals — the full banner with caduceus
++        # Auto-compact for narrow terminals — the full banner with the Rook hero
+         # + tool list needs ~80 columns minimum to render without wrapping.
+         term_width = shutil.get_terminal_size().columns
+         use_compact = self.compact or term_width < 80
+@@ -10007,7 +10006,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
+             _cprint(f"  {_DIM}Paste image: Alt+V (or /paste){_RST}\n")
+     
+     def show_tools(self):
+-        """Display available tools with kawaii ASCII art."""
++        """Display available tools with ASCII art."""
+         # Pre-assembly list: /tools is a discovery/inspection surface, so it
+         # must show the full catalog including tools deferred behind the
+         # tool_search bridge (users check this to verify an MCP installed).
+@@ -10054,7 +10053,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
+ 
+ 
+     def show_toolsets(self):
+-        """Display available toolsets with kawaii ASCII art."""
++        """Display available toolsets with ASCII art."""
+         all_toolsets = get_all_toolsets()
+         
+         # Header
+@@ -10102,7 +10101,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
+         print()
+ 
+     def show_config(self):
+-        """Display current configuration with kawaii ASCII art."""
++        """Display current configuration with ASCII art."""
+         # Get terminal config from environment (which was set from cli-config.yaml)
+         terminal_env = os.getenv("TERMINAL_ENV", "local")
+         terminal_cwd = os.getenv("TERMINAL_CWD", os.getcwd())
+@@ -10259,7 +10258,7 @@ class ReignCLI(CLIAgentSetupMixin, CLICommandsMixin, CLIBillingMixin):
+ 
+         _cli_visible_print()
+         _cli_visible_print("+" + "-" * 50 + "+")
+-        _cli_visible_print("|" + " " * 12 + "  ♜ Conversation History" + " " * 11 + "  |")
++        _cli_visible_print("|" + " " * 14 + "♜ Conversation History" + " " * 13 + "|")
+         _cli_visible_print("+" + "-" * 50 + "+")
+ 
+         for msg in self.conversation_history:
+diff --git a/plugins/dashboard_auth/nous/__init__.py b/plugins/dashboard_auth/nous/__init__.py
+index 87a1266d72..fae8d60be9 100644
+--- a/plugins/dashboard_auth/nous/__init__.py
++++ b/plugins/dashboard_auth/nous/__init__.py
+@@ -154,7 +154,7 @@ class NousDashboardAuthProvider(DashboardAuthProvider):
+     """Nous Portal OAuth via authorization-code + PKCE (S256)."""
+ 
+     name = "nous"
+-    display_name = "Rook"
++    display_name = "Nous Portal"
+ 
+     def __init__(self, *, client_id: str, portal_url: str) -> None:
+         if not client_id.startswith("agent:"):
+diff --git a/plugins/platforms/irc/adapter.py b/plugins/platforms/irc/adapter.py
+index 6fd1853b4d..90cb147ef2 100644
+--- a/plugins/platforms/irc/adapter.py
++++ b/plugins/platforms/irc/adapter.py
+@@ -439,7 +439,7 @@ class IRCAdapter(BasePlatformAdapter):
+ 
+         # ERR_NICKNAMEINUSE (433) — nick collision during registration
+         if command == "433":
+-            # Retry with incrementing suffix: reign_, reign_1, hermes_2...
++            # Retry with incrementing suffix: reign_, reign_1, reign_2...
+             base = self.nickname.rstrip("_0123456789")
+             suffix_match = re.search(r"_(\d+)$", self._current_nick)
+             if suffix_match:
+diff --git a/plugins/reign-achievements/dashboard/dist/index.js b/plugins/reign-achievements/dashboard/dist/index.js
+index 7cf82fc129..754190fa3b 100644
+--- a/plugins/reign-achievements/dashboard/dist/index.js
++++ b/plugins/reign-achievements/dashboard/dist/index.js
+@@ -335,7 +335,7 @@
+     // paste in the same flow.
+     function tweetText() {
+       const tierPart = achievement.tier ? (achievement.tier + " tier ") : "";
+-      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Reign ♜", {
++      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Reign ☤", {
+         tier_part: tierPart,
+         name: achievement.name,
+       });
+diff --git a/plugins/security-guidance/NOTICE b/plugins/security-guidance/NOTICE
+index cb5067c3d0..6ace73a8a4 100644
+--- a/plugins/security-guidance/NOTICE
++++ b/plugins/security-guidance/NOTICE
+@@ -1,4 +1,4 @@
+-Hermes Agent security-guidance plugin
++Reign security-guidance plugin
+ =====================================
+ 
+ This plugin (plugins/security-guidance/) includes work originally
+@@ -23,8 +23,8 @@ unmodified.
+ Original work
+ -------------
+ 
+-The Hermes-side plugin glue code (__init__.py, plugin.yaml, README.md,
++The Reign-side plugin glue code (__init__.py, plugin.yaml, README.md,
+ tests) is original work by NousResearch and is licensed under the MIT
+-License that applies to the rest of the hermes-agent project, except
++License that applies to the rest of the reign project, except
+ where it imports from patterns.py — that import does not change the
+ license of either file.
+diff --git a/reign_cli/auth.py b/reign_cli/auth.py
+index bc719ba099..512933663e 100644
+--- a/reign_cli/auth.py
++++ b/reign_cli/auth.py
+@@ -6123,7 +6123,7 @@ def fetch_nous_models(
+         model_id = item.get("id")
+         if isinstance(model_id, str) and model_id.strip():
+             mid = model_id.strip()
+-            # Skip Reign models — they're not reliable for agentic tool-calling
++            # Skip Nous Hermes models — they're not reliable for agentic tool-calling
+             if "hermes" in mid.lower():
+                 continue
+             model_ids.append(mid)
+diff --git a/reign_cli/banner.py b/reign_cli/banner.py
+index c9a629731a..d6e9867721 100644
+--- a/reign_cli/banner.py
++++ b/reign_cli/banner.py
+@@ -67,28 +67,28 @@ def _skin_color(key: str, fallback: str) -> str:
+ 
+ from reign_cli import __version__ as VERSION, __release_date__ as RELEASE_DATE
+ 
+-REIGN_AGENT_LOGO = """[bold #FFD700]██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗[/]
+-[bold #FFD700]██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝[/]
+-[#FFBF00]███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║[/]
+-[#FFBF00]██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║[/]
+-[#CD7F32]██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║[/]
+-[#CD7F32]╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝[/]"""
+-
+-REIGN_CADUCEUS = """[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀[/]
+-[#FFBF00]⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀[/]
+-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFD700]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#FFBF00]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#CD7F32]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]
+-[#B8860B]⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
++REIGN_AGENT_LOGO = """[bold #FFFFFF]██████╗ ███████╗██╗ ██████╗ ███╗   ██╗[/]
++[bold #FFFFFF]██╔══██╗██╔════╝██║██╔════╝ ████╗  ██║[/]
++[#C0C0C0]██████╔╝█████╗  ██║██║  ███╗██╔██╗ ██║[/]
++[#C0C0C0]██╔══██╗██╔══╝  ██║██║   ██║██║╚██╗██║[/]
++[#8A8A8A]██║  ██║███████╗██║╚██████╔╝██║ ╚████║[/]
++[#8A8A8A]╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝[/]"""
++
++REIGN_HERO = """[#8A8A8A]⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠖⠛⠛⠛⠛⠛⠛⠲⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀[/]
++[#8A8A8A]⠀⠀⠀⠀⠀⣠⡴⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⣄⠀⠀⠀⠀⠀[/]
++[#C0C0C0]⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀[/]
++[#C0C0C0]⠀⠀⣴⠋⠀⠀⠀⠀⠀⠀⣿⣇⣸⣿⣿⣿⣿⣇⣸⣿⠀⠀⠀⠀⠀⠀⠙⣦⠀⠀[/]
++[#FFFFFF]⠀⣼⠃⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠘⣧⠀[/]
++[#FFFFFF]⢰⠇⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⡆[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#FFFFFF]⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿[/]
++[#C0C0C0]⠸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠇[/]
++[#C0C0C0]⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀[/]
++[#8A8A8A]⠀⠀⠻⣆⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⣰⠟⠀⠀[/]
++[#8A8A8A]⠀⠀⠀⠙⢷⣄⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⣠⡾⠋⠀⠀⠀[/]
++[#5C5C5C]⠀⠀⠀⠀⠀⠙⠳⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠞⠋⠀⠀⠀⠀⠀[/]
++[#5C5C5C]⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀[/]"""
+ 
+ 
+ 
+@@ -966,7 +966,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
+                          provider: str = None,
+                          availability: Dict[str, Any] = None,
+                          skills_by_category: Dict[str, List[str]] = None):
+-    """Build and print a welcome banner with caduceus on left and info on right.
++    """Build and print a welcome banner with the Rook mark on the left and info on the right.
+ 
+     Args:
+         console: Rich Console instance.
+@@ -1010,14 +1010,14 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
+     text = _skin_color("banner_text", "#FFF8DC")
+     session_color = _skin_color("session_border", "#8B8682")
+ 
+-    # Use skin's custom caduceus art if provided
++    # Use skin's custom hero art if provided
+     try:
+         from reign_cli.skin_engine import get_active_skin
+         _bskin = get_active_skin()
+-        _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else REIGN_CADUCEUS
++        _hero = _bskin.banner_hero if hasattr(_bskin, 'banner_hero') and _bskin.banner_hero else REIGN_HERO
+     except Exception:
+         _bskin = None
+-        _hero = REIGN_CADUCEUS
++        _hero = REIGN_HERO
+     left_lines = ["", _hero, ""]
+     if (provider or "").strip().lower() == "moa":
+         # MoA virtual provider: ``model`` is a preset name. Show the preset and
+@@ -1295,7 +1295,7 @@ def build_welcome_banner(console: "Console", model: str, cwd: str,
+ 
+     console.print()
+     term_width = shutil.get_terminal_size().columns
+-    if term_width >= 95:
++    if term_width >= 40:
+         _logo = _bskin.banner_logo if _bskin and hasattr(_bskin, 'banner_logo') and _bskin.banner_logo else REIGN_AGENT_LOGO
+         console.print(_logo)
+         console.print()
+diff --git a/reign_cli/cli_commands_mixin.py b/reign_cli/cli_commands_mixin.py
+index f76b6def02..d29590d34c 100644
+--- a/reign_cli/cli_commands_mixin.py
++++ b/reign_cli/cli_commands_mixin.py
+@@ -1699,7 +1699,7 @@ class CLICommandsMixin:
+                 current = ""
+             print()
+             print("+" + "-" * 50 + "+")
+-            print("|" + " " * 12 + "♜ Personalities" + " " * 15 + "|")
++            print("|" + " " * 14 + "♜ Personalities" + " " * 17 + "|")
+             print("+" + "-" * 50 + "+")
+             print()
+             marker = " *" if not current else "  "
+@@ -1927,7 +1927,7 @@ class CLICommandsMixin:
+         if len(tokens) == 1:
+             print()
+             print("+" + "-" * 68 + "+")
+-            print("|" + " " * 22 + "  ♜ Scheduled Tasks" + " " * 23 + "  |")
++            print("|" + " " * 24 + "♜ Scheduled Tasks" + " " * 25 + "|")
+             print("+" + "-" * 68 + "+")
+             print()
+             print("  Commands:")
+diff --git a/reign_cli/config_defaults.py b/reign_cli/config_defaults.py
+index cd40d09ae1..65e22830e6 100644
+--- a/reign_cli/config_defaults.py
++++ b/reign_cli/config_defaults.py
+@@ -2027,18 +2027,20 @@ DEFAULT_CONFIG = {
+         "surface": "auto",            # eligible surface: "auto" (first claimant) | "cli" | "tui" | "gui"
+         "input_device": None,          # PortAudio input device index/name; null uses the process default
+         "capture": "auto",            # auto | local | client — where PCM is captured (client = desktop streams mic via wake.feed)
+-        "provider": "openwakeword",   # "openwakeword" (free, local) | "sherpa" (free, ANY phrase, no training) | "porcupine" (premium; needs PORCUPINE_ACCESS_KEY)
+-        "phrase": "hey reign",       # for "sherpa" this IS the detected phrase (any text works); for other engines it's a cosmetic label — detection is keyed by the model/keyword below
++        "provider": "sherpa",         # "sherpa" (free, ANY phrase, no training — default) | "openwakeword" (free; needs a model path, none is bundled) | "porcupine" (premium; needs PORCUPINE_ACCESS_KEY)
++        "phrase": "hey reign",        # for "sherpa" (the default) this IS the detected phrase (any text works); for other engines it's a cosmetic label — detection is keyed by the model/keyword below
+         "sensitivity": 0.6,           # 0.0-1.0 detection threshold, consistent across engines (higher = stricter, fewer false triggers)
+         "confirmation_frames": 3,     # openWakeWord only: consecutive over-threshold frames required to fire (higher = fewer false triggers on ambient speech, slightly more latency; 1 = old single-frame behavior)
+         "start_new_session": True,    # start a fresh session on wake vs. continue the current one
+         "profile_routing": True,      # sherpa only: also listen for every wake-enabled profile's phrase and route the wake to the matching profile
+         "openwakeword": {
+-            # "hey_reign" (the bundled, works-out-of-the-box default) OR a
+-            # built-in openWakeWord name ("hey_jarvis", "alexa", "hey_mycroft",
+-            # ...) OR a path to a custom .onnx/.tflite model for another phrase.
+-            # See the wake-word docs for the custom-model training guide.
+-            "model": "hey_reign",
++            # REQUIRED when provider is "openwakeword": Reign bundles no model.
++            # A built-in openWakeWord name ("hey_jarvis", "alexa", "hey_mycroft",
++            # ...) OR a path to a custom .onnx/.tflite model for your phrase.
++            # Empty = the engine refuses to start (use provider: sherpa for a
++            # zero-training "hey reign"). See the wake-word docs for the
++            # custom-model training guide.
++            "model": "",
+             # "" (auto — tflite on macOS ARM64, onnx elsewhere) | "onnx" | "tflite".
+             # openWakeWord's onnx backend scores near-zero on macOS ARM64
+             # (dscripka/openWakeWord#336), so auto avoids a listener that arms
+@@ -4683,7 +4685,7 @@ OPTIONAL_ENV_VARS = {
+         "category": "tool",
+     },
+     "PORCUPINE_ACCESS_KEY": {
+-        "description": "Picovoice access key for the Porcupine 'Hey Reign' wake word engine (optional; openWakeWord is the free default)",
++        "description": "Picovoice access key for the Porcupine 'Hey Reign' wake word engine (optional; sherpa is the free default)",
+         "prompt": "Picovoice access key",
+         "url": "https://console.picovoice.ai/",
+         "password": True,
+diff --git a/reign_cli/model_switch.py b/reign_cli/model_switch.py
+index eeaa51d10e..29279f1f31 100644
+--- a/reign_cli/model_switch.py
++++ b/reign_cli/model_switch.py
+@@ -362,7 +362,7 @@ _REIGN_MODEL_WARNING = (
+     "(Claude, GPT, Gemini, DeepSeek, etc.)."
+ )
+ 
+-# Match only the real Rook Hermes 3 / Hermes 4 chat families.
++# Match only the real Nous Hermes 3 / Hermes 4 chat families.
+ # The previous substring check (`"hermes" in name.lower()`) false-positived on
+ # unrelated local Modelfiles like ``hermes-brain:qwen3-14b-ctx16k`` that just
+ # happen to carry "hermes" in their tag but are fully tool-capable.
+diff --git a/reign_cli/pets.py b/reign_cli/pets.py
+index ed04d47105..1e58f52f9d 100644
+--- a/reign_cli/pets.py
++++ b/reign_cli/pets.py
+@@ -396,7 +396,7 @@ def print_pet_gallery(*, limit: int = 20) -> None:
+ 
+     installed = {p.slug for p in store.installed_pets()}
+     shown = entries[:limit] if limit > 0 else entries
+-    print(f"♜ petdex gallery — first {len(shown)} of {len(entries)}:")
++    print(f"(^o^)/ petdex gallery — first {len(shown)} of {len(entries)}:")
+     for entry in shown:
+         mark = "●" if entry.slug in installed else "○"
+         print(f"  {mark} {entry.slug:<24} {entry.display_name}")
+diff --git a/reign_cli/session_export_html.py b/reign_cli/session_export_html.py
+index 4c1e955987..b160095175 100644
+--- a/reign_cli/session_export_html.py
++++ b/reign_cli/session_export_html.py
+@@ -563,7 +563,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
+             {sessions_html}
+             
+             <footer>
+-                Built with ♜ Reign • Generated on {generated_at}
++                Built with ☤ Reign • Generated on {generated_at}
+             </footer>
+         </div>
+     </div>
+diff --git a/reign_cli/skin_engine.py b/reign_cli/skin_engine.py
+index 83e8402f9d..6711122d75 100644
+--- a/reign_cli/skin_engine.py
++++ b/reign_cli/skin_engine.py
+@@ -99,7 +99,7 @@ All fields are optional. Missing values inherit from the ``default`` skin.
+       goodbye: "Goodbye! ♜"              # Shown on exit
+       response_label: " ♜ Reign "       # Response box header label
+       prompt_symbol: "❯"                 # Input prompt symbol (bare token; renderers add trailing space)
+-      help_header: "[?] Commands"      # /help header text
++      help_header: "[?] Commands"         # /help header text
+ 
+     # Tool prefix: character for tool output lines (default: ┊)
+     tool_prefix: "┊"
+@@ -118,7 +118,7 @@ USAGE
+     from reign_cli.skin_engine import get_active_skin, list_skins, set_active_skin
+ 
+     skin = get_active_skin()
+-    print(skin.colors["banner_title"])    # "#FFD700"
++    print(skin.colors["banner_title"])    # "#FFFFFF"
+     print(skin.get_branding("agent_name"))  # "Reign"
+ 
+     set_active_skin("ares")               # Switch to built-in ares skin
+@@ -127,7 +127,7 @@ USAGE
+ BUILT-IN SKINS
+ ==============
+ 
+-- ``default`` — Classic Reign gold/kawaii (the current look)
++- ``default`` — Rook monochrome: white/silver on dark, black/charcoal on light (alias ``rook``)
+ - ``ares``    — Crimson/bronze war-god theme with custom spinner wings
+ - ``mono``    — Clean grayscale monochrome
+ - ``slate``   — Cool blue developer-focused theme
+@@ -174,7 +174,7 @@ class SkinConfig:
+     tool_prefix: str = "┊"
+     tool_emojis: Dict[str, str] = field(default_factory=dict)  # per-tool emoji overrides
+     banner_logo: str = ""    # Rich-markup ASCII art logo (replaces REIGN_AGENT_LOGO)
+-    banner_hero: str = ""    # Rich-markup hero art (replaces REIGN_CADUCEUS)
++    banner_hero: str = ""    # Rich-markup hero art (replaces REIGN_HERO)
+ 
+     def get_color(self, key: str, fallback: str = "") -> str:
+         """Get a color value with fallback."""
+@@ -201,77 +201,71 @@ class SkinConfig:
+ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
+     "default": {
+         "name": "default",
+-        "description": "Classic Reign — gold and kawaii",
+-        # Dark-authored. Values match the TUI's DARK_THEME so the classic CLI
+-        # and the TUI render the same Reign gold.
++        "description": "Rook — monochrome black and white (default)",
++        # Dark-authored. Monochrome Rook palette: white title, silver accent,
++        # grey rules. The TUI's DARK_THEME mirrors these values.
+         "colors": {
+-            "banner_border": "#CD7F32",
+-            "banner_title": "#FFD700",
+-            "banner_accent": "#FFBF00",
+-            "banner_dim": "#B8860B",
+-            "banner_text": "#FFF8DC",
+-            "ui_accent": "#FFBF00",
+-            "ui_label": "#DAA520",
++            "banner_border": "#5C5C5C",
++            "banner_title": "#FFFFFF",
++            "banner_accent": "#C0C0C0",
++            "banner_dim": "#8A8A8A",
++            "banner_text": "#E6E6E6",
++            "ui_accent": "#C0C0C0",
++            "ui_label": "#A8A8A8",
+             "ui_ok": "#4caf50",
+             "ui_error": "#ef5350",
+             "ui_warn": "#ffa726",
+-            "prompt": "#FFF8DC",
+-            "input_rule": "#CD7F32",
+-            "response_border": "#FFD700",
+-            "status_bar_bg": "#1a1a2e",
++            "prompt": "#FFFFFF",
++            "input_rule": "#5C5C5C",
++            "response_border": "#C0C0C0",
++            "status_bar_bg": "#111111",
+             "status_bar_text": "#C0C0C0",
+-            "status_bar_strong": "#FFD700",
+-            "status_bar_dim": "#8A7A4A",
++            "status_bar_strong": "#FFFFFF",
++            "status_bar_dim": "#6E6E6E",
+             "status_bar_good": "#8FBC8F",
+-            "status_bar_warn": "#FFD700",
++            "status_bar_warn": "#E0E0E0",
+             "status_bar_bad": "#FF8C00",
+             "status_bar_critical": "#FF6B6B",
+-            "session_label": "#DAA520",
+-            "session_border": "#8B8682",
+-            "completion_menu_bg": "#1a1a2e",
+-            "completion_menu_current_bg": "#333355",
+-            "selection_bg": "#3a3a55",
++            "session_label": "#A8A8A8",
++            "session_border": "#5C5C5C",
++            "completion_menu_bg": "#1A1A1A",
++            "completion_menu_current_bg": "#333333",
++            "selection_bg": "#3A3A3A",
+             "shell_dollar": "#4dabf7",
+-            "voice_status_bg": "#1a1a2e",
++            "voice_status_bg": "#111111",
+         },
+-        # Light overlay (merged onto `colors`; dark mode renders the vivid
+-        # block above untouched). The goldenrod ladder: on white, the vivid
+-        # #FFD700/#FFBF00 read as glare and WCAG-darkened mustard (#867000)
+-        # reads as mud — the sweet spot is the statusbar's goldenrod family
+-        # (#B8860B/#DAA520): hue kept, saturation tamed, mid luminance.
+-        # Hierarchy on white: ink body 8.9:1 > fade 5.2 > label 3.7 >
+-        # muted 3.3 > title 2.7 > headers 2.4 (accents recede last, like
+-        # slate's pastels — the raw-canon look, just not neon).
++        # Light overlay: black title, charcoal accents, grey rules on white.
+         "light_colors": {
+-            "banner_title": "#C8961E",
+-            "banner_accent": "#D89B04",
+-            "banner_dim": "#B8860B",
+-            "banner_text": "#5C4718",
+-            "ui_accent": "#D89B04",
+-            "ui_label": "#A97E10",
++            "banner_title": "#000000",
++            "banner_accent": "#333333",
++            "banner_dim": "#6B6B6B",
++            "banner_text": "#1A1A1A",
++            "ui_accent": "#333333",
++            "ui_label": "#4A4A4A",
+             "ui_ok": "#2E7D32",
+             "ui_error": "#C62828",
+             "ui_warn": "#D97706",
+-            "prompt": "#5C4718",
+-            "response_border": "#C8961E",
+-            "session_label": "#A97E10",
+-            "status_bar_text": "#6F6F6F",
+-            "status_bar_strong": "#C8961E",
+-            "status_bar_dim": "#9A8A5A",
++            "prompt": "#000000",
++            "response_border": "#333333",
++            "session_label": "#4A4A4A",
++            "status_bar_text": "#4A4A4A",
++            "status_bar_strong": "#000000",
++            "status_bar_dim": "#8A8A8A",
+             "status_bar_good": "#2E7D32",
+-            "status_bar_warn": "#C8961E",
++            "status_bar_warn": "#333333",
+             "status_bar_bad": "#C2410C",
+             "status_bar_critical": "#B91C1C",
+             "shell_dollar": "#1E6FC0",
+             # Fills: flip the dark navy surfaces to light polarity.
+             "completion_menu_bg": "#F5F5F5",
+-            "completion_menu_current_bg": "#E0D1BF",
++            "completion_menu_current_bg": "#DDDDDD",
+             "selection_bg": "#D4E4F7",
+             "status_bar_bg": "#F5F5F5",
+             "voice_status_bg": "#F5F5F5",
+         },
+         "spinner": {
+-            # Empty = use hardcoded defaults in display.py
++            "waiting_faces": ["(♜)", "(◌)", "(○)", "(◇)", "(·)"],
++            "thinking_faces": ["(♜)", "(◌)", "(●)", "(◆)", "(⌁)"],
+         },
+         "branding": {
+             "agent_name": "Reign",
+@@ -533,8 +527,8 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
+         "branding": {
+             "agent_name": "Reign",
+             "welcome": "Welcome to Reign! Type your message or /help for commands.",
+-            "goodbye": "Goodbye! \u2695",
+-            "response_label": " \u2695 Reign ",
++            "goodbye": "Goodbye! ♜",
++            "response_label": " ♜ Reign ",
+             "prompt_symbol": "\u276f",
+             "help_header": "[?] Available Commands",
+         },
+@@ -782,6 +776,10 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
+ # =============================================================================
+ 
+ _active_skin: Optional[SkinConfig] = None
++# ``rook`` is an alias for the default skin so ``/skin rook`` and
++# ``display.skin: rook`` both work.
++_BUILTIN_SKINS["rook"] = {**_BUILTIN_SKINS["default"], "name": "rook", "description": "Alias of default (Rook monochrome)"}
++
+ _active_skin_name: str = "default"
+ 
+ 
+diff --git a/reign_cli/web_server.py b/reign_cli/web_server.py
+index 985efaf8bd..4e6179ad8a 100644
+--- a/reign_cli/web_server.py
++++ b/reign_cli/web_server.py
+@@ -3993,7 +3993,7 @@ async def get_status(profile: Optional[str] = None):
+ 
+         # Dashboard auth gate (Phase 7): surface whether the gate is engaged
+         # and which providers are registered so ``reign status`` and the
+-        # SPA's StatusPage can show "OAuth gate ON via Rook" or
++        # SPA's StatusPage can show "OAuth gate ON via Nous Portal" or
+         # "loopback only — no auth gate" with no extra round trips.
+         auth_required = bool(getattr(app.state, "auth_required", False))
+         auth_providers: list[str] = []
+diff --git a/scripts/install.sh b/scripts/install.sh
+index b02f68b589..bd2c111fdb 100755
+--- a/scripts/install.sh
++++ b/scripts/install.sh
+@@ -2125,7 +2125,7 @@ exec "$REIGN_BIN" run_agent.py "\$@"
+ EOF
+     fi
+     chmod +x "$command_link_dir/reign-agent"
+-    log_success "Installed reign-agent launcher → $command_link_display_dir/reign"
++    log_success "Installed reign-agent launcher → $command_link_display_dir/reign-agent"
+ 
+     # Also expose `reign-acp`. ACP hosts (Zed, JetBrains, Buzz) resolve the
+     # agent by command name on the login-shell PATH, and the `reign-acp`
+diff --git a/skills/creative/ascii-video/README.md b/skills/creative/ascii-video/README.md
+index dfc57aeb1f..c117444d3b 100644
+--- a/skills/creative/ascii-video/README.md
++++ b/skills/creative/ascii-video/README.md
+@@ -1,4 +1,4 @@
+-# ♜ ASCII Video
++# ☤ ASCII Video
+ 
+ Renders any content as colored ASCII character video. Audio, video, images, text, or pure math in, MP4/GIF/PNG sequence out. Full RGB color per character cell, 1080p 24fps default. No GPU.
+ 
+diff --git a/tests/agent/test_system_prompt_restore.py b/tests/agent/test_system_prompt_restore.py
+index c10d4a1dc2..b20073d70f 100644
+--- a/tests/agent/test_system_prompt_restore.py
++++ b/tests/agent/test_system_prompt_restore.py
+@@ -64,7 +64,7 @@ class TestStoredPromptReuse:
+ 
+     def test_present_row_with_unicode_preserved(self):
+         """Non-ASCII bytes in the stored prompt are not mangled."""
+-        stored = "Stored prompt with unicode: ♜ ⚗ ◆ — and emoji 🦊"
++        stored = "Stored prompt with unicode: ☤ ⚗ ◆ — and emoji 🦊"
+         db = MagicMock()
+         db.get_session.return_value = {"system_prompt": stored}
+         agent = _make_agent(session_db=db)
+diff --git a/tests/gateway/test_slack.py b/tests/gateway/test_slack.py
+index 2dd14192e3..03774171c6 100644
+--- a/tests/gateway/test_slack.py
++++ b/tests/gateway/test_slack.py
+@@ -1200,7 +1200,7 @@ class TestStandaloneSendUserDmResolution:
+ 
+         assert result["success"] is True
+         payload = session.post.call_args.kwargs["json"]
+-        assert payload["text"] == "<https://example.com/hermes|Hermes>"
++        assert payload["text"] == "<https://example.com/hermes|Reign>"
+         assert payload["unfurl_links"] is False
+         assert payload["unfurl_media"] is False
+ 
+diff --git a/tests/gateway/test_slack_block_kit_adapter.py b/tests/gateway/test_slack_block_kit_adapter.py
+index cb70141461..ba42fd9a6a 100644
+--- a/tests/gateway/test_slack_block_kit_adapter.py
++++ b/tests/gateway/test_slack_block_kit_adapter.py
+@@ -76,7 +76,7 @@ class TestSendMessageBlocks:
+         await adapter.send("C1", content)
+ 
+         kwargs = client.chat_postMessage.await_args.kwargs
+-        assert kwargs["text"] == "<https://example.com/hermes|Hermes>"
++        assert kwargs["text"] == "<https://example.com/hermes|Reign>"
+         assert kwargs["unfurl_links"] is False
+         assert kwargs["unfurl_media"] is False
+ 
+diff --git a/tests/plugins/dashboard_auth/test_nous_provider.py b/tests/plugins/dashboard_auth/test_nous_provider.py
+index ea13064045..9aa211e557 100644
+--- a/tests/plugins/dashboard_auth/test_nous_provider.py
++++ b/tests/plugins/dashboard_auth/test_nous_provider.py
+@@ -142,7 +142,7 @@ class TestConstruction:
+             client_id="agent:inst1", portal_url="https://portal.example.com"
+         )
+         assert p.name == "nous"
+-        assert p.display_name == "Rook"
++        assert p.display_name == "Nous Portal"
+ 
+     def test_extracts_agent_instance_id(self):
+         p = nous_plugin.NousDashboardAuthProvider(
+diff --git a/tests/plugins/memory/test_hindsight_templates.py b/tests/plugins/memory/test_hindsight_templates.py
+index 0ec470c420..c15b1c2600 100644
+--- a/tests/plugins/memory/test_hindsight_templates.py
++++ b/tests/plugins/memory/test_hindsight_templates.py
+@@ -39,7 +39,7 @@ def test_fetch_manifest_resolves_relative_url(monkeypatch):
+         {"manifest_file": "templates/reign-gateway-bot.json"},
+         "https://raw.example/data/templates.json",
+     )
+-    assert seen["url"] == "https://raw.example/data/templates/hermes-gateway-bot.json"
++    assert seen["url"] == "https://raw.example/data/templates/reign-gateway-bot.json"
+ 
+ 
+ def test_apply_template_posts_to_import_endpoint(monkeypatch):
+@@ -61,7 +61,7 @@ def test_apply_template_posts_to_import_endpoint(monkeypatch):
+     monkeypatch.setattr(tpl, "open_credentialed_url", _fake_open)
+     tpl.apply_template("https://api.hindsight.vectorize.io/", "reign", "hsk_abc", {"version": "1"})
+ 
+-    assert captured["url"] == "https://api.hindsight.vectorize.io/v1/default/banks/hermes/import"
++    assert captured["url"] == "https://api.hindsight.vectorize.io/v1/default/banks/reign/import"
+     assert captured["method"] == "POST"
+     assert captured["auth"] == "Bearer hsk_abc"
+     assert captured["body"] == {"version": "1"}
+diff --git a/tests/plugins/platforms/photon/test_auth.py b/tests/plugins/platforms/photon/test_auth.py
+index 4fc6617bb5..c5a7d70e32 100644
+--- a/tests/plugins/platforms/photon/test_auth.py
++++ b/tests/plugins/platforms/photon/test_auth.py
+@@ -233,7 +233,7 @@ def test_find_project_by_name_case_insensitive(monkeypatch: pytest.MonkeyPatch)
+     def fake_get(url: str, **kwargs: Any) -> _FakeResponse:
+         return _FakeResponse(json_body={"data": [
+             {"id": "p1", "name": "Other"},
+-            {"id": "p2", "name": "reign agent"},
++            {"id": "p2", "name": "reign"},
+         ]})
+ 
+     monkeypatch.setattr(photon_auth.httpx, "get", fake_get)
+diff --git a/tests/plugins/test_google_meet_plugin.py b/tests/plugins/test_google_meet_plugin.py
+index b1feb7bc89..0f8ee9904d 100644
+--- a/tests/plugins/test_google_meet_plugin.py
++++ b/tests/plugins/test_google_meet_plugin.py
+@@ -254,7 +254,7 @@ def test_looks_like_human_speaker():
+     from plugins.google_meet.meet_bot import _looks_like_human_speaker
+ 
+     # Blank, "unknown", "you", and the bot's own name → not human (no barge-in)
+-    for s in ("", "   ", "Unknown", "unknown", "You", "you", "Reign", "reign agent"):
++    for s in ("", "   ", "Unknown", "unknown", "You", "you", "Reign", "reign"):
+         assert not _looks_like_human_speaker(s, "Reign"), f"{s!r} should NOT be human"
+     # Real names → human (barge-in)
+     for s in ("Alice", "Bob Lee", "@teknium"):
+diff --git a/tests/reign_cli/test_backup.py b/tests/reign_cli/test_backup.py
+index 0765a2d0c6..4e085973eb 100644
+--- a/tests/reign_cli/test_backup.py
++++ b/tests/reign_cli/test_backup.py
+@@ -230,7 +230,7 @@ class TestIterBackupFiles:
+         rel_nested = str(Path("skills/autonomous-ai-agents/reign/SKILL.md"))
+         assert rel_nested in selected
+         assert str(Path("models/big.gguf")) not in selected
+-        assert not any(s.startswith("reign") for s in selected)
++        assert not any(s.startswith("reign/") for s in selected)
+ 
+     def test_skipped_dirs_collected_for_summary(self, tmp_path):
+         from reign_cli.backup import _iter_backup_files
+diff --git a/tests/reign_cli/test_gateway_restart_loop.py b/tests/reign_cli/test_gateway_restart_loop.py
+index f762ae29d7..64ae18ef90 100644
+--- a/tests/reign_cli/test_gateway_restart_loop.py
++++ b/tests/reign_cli/test_gateway_restart_loop.py
+@@ -30,7 +30,7 @@ class TestGatewayLifecyclePattern:
+         "reign gateway stop",
+         "reign gateway uninstall",
+         "reign  gateway  restart",         # double spaces
+-        "Hermez Gateway Restart".lower().replace("z", "s"),  # case handled
++        "Reigz Gateway Restart".lower().replace("z", "n"),  # case handled
+         "REIGN GATEWAY RESTART",           # uppercase
+     ])
+     def test_reign_gateway_commands(self, text):
+diff --git a/tests/reign_cli/test_nous_reign_non_agentic.py b/tests/reign_cli/test_nous_reign_non_agentic.py
+index 180656ca3d..8345c29d98 100644
+--- a/tests/reign_cli/test_nous_reign_non_agentic.py
++++ b/tests/reign_cli/test_nous_reign_non_agentic.py
+@@ -2,7 +2,7 @@
+ 
+ Prior to this check, the warning fired on any model whose name contained
+ ``"reign"`` anywhere (case-insensitive). That false-positived on unrelated
+-local Modelfiles such as ``hermes-brain:qwen3-14b-ctx16k`` — a tool-capable
++local Modelfiles such as ``reign-brain:qwen3-14b-ctx16k`` — a tool-capable
+ Qwen3 wrapper that happens to live under the "reign" tag namespace.
+ 
+ ``is_nous_reign_non_agentic`` should only match the actual Rook
+diff --git a/tests/reign_cli/test_quarantine_noop_restore.py b/tests/reign_cli/test_quarantine_noop_restore.py
+index 7fd89ef6f1..f284fbcd04 100644
+--- a/tests/reign_cli/test_quarantine_noop_restore.py
++++ b/tests/reign_cli/test_quarantine_noop_restore.py
+@@ -29,7 +29,7 @@ from reign_cli import main as cli_main
+ def _make_scripts_dir(tmp_path: Path) -> Path:
+     scripts = tmp_path / "venv" / "Scripts"
+     scripts.mkdir(parents=True)
+-    for name in ("reign", "reign-agent", "reign-acp", "reign-gateway"):
++    for name in ("reign", "reign", "reign-acp", "reign-gateway"):
+         (scripts / f"{name}.exe").write_bytes(b"MZ-old-" + name.encode())
+     return scripts
+ 
+@@ -64,7 +64,7 @@ def test_main_rewriting_success_keeps_fresh_shims(tmp_path):
+     scripts = _make_scripts_dir(tmp_path)
+ 
+     def fake_install(cmd, env=None):
+-        for name in ("reign", "reign-agent", "reign-acp", "reign-gateway"):
++        for name in ("reign", "reign", "reign-acp", "reign-gateway"):
+             (scripts / f"{name}.exe").write_bytes(b"MZ-new-" + name.encode())
+ 
+     with patch.object(cli_main, "_is_windows", lambda: True), patch.object(
+diff --git a/tests/reign_cli/test_skin_engine.py b/tests/reign_cli/test_skin_engine.py
+index 3ffd526fcc..676b7a9563 100644
+--- a/tests/reign_cli/test_skin_engine.py
++++ b/tests/reign_cli/test_skin_engine.py
+@@ -115,7 +115,7 @@ class TestUserSkins:
+         assert skin.get_branding("agent_name") == "Custom Agent"
+         assert skin.tool_prefix == "▸"
+         # Should inherit defaults for unspecified colors
+-        assert skin.get_color("banner_border") == "#CD7F32"  # from default
++        assert skin.get_color("banner_border") == "#5C5C5C"  # from default
+ 
+     def test_load_user_skin_invalid_section_types_fall_back_to_defaults(self, tmp_path, monkeypatch):
+         from reign_cli.skin_engine import load_skin
+@@ -142,9 +142,11 @@ class TestUserSkins:
+         skin = load_skin("broken")
+ 
+         assert skin.name == "broken"
+-        assert skin.get_color("banner_title") == "#FFD700"
++        assert skin.get_color("banner_title") == "#FFFFFF"
+         assert skin.get_branding("agent_name") == "Reign"
+-        assert skin.spinner.get("waiting_faces", []) == []
++        from reign_cli.skin_engine import _BUILTIN_SKINS
++
++        assert skin.spinner.get("waiting_faces", []) == _BUILTIN_SKINS["default"]["spinner"]["waiting_faces"]
+         assert skin.tool_emojis == {}
+         assert skin.tool_prefix == "!"
+ 
+diff --git a/tests/reign_cli/test_verify_console_scripts.py b/tests/reign_cli/test_verify_console_scripts.py
+index 0feac23225..431d3c0be3 100644
+--- a/tests/reign_cli/test_verify_console_scripts.py
++++ b/tests/reign_cli/test_verify_console_scripts.py
+@@ -41,7 +41,7 @@ def fake_scripts_dir(tmp_path):
+ 
+ class TestVerifyConsoleScriptsInstalled:
+     def test_no_action_when_all_shims_present(self, temp_pyproject, fake_scripts_dir):
+-        for name in ("reign", "reign-agent", "reign-acp"):
++        for name in ("reign", "reign", "reign-acp"):
+             (fake_scripts_dir / f"{name}.exe").write_bytes(b"fake")
+ 
+         with patch("reign_cli.main._is_windows", return_value=True), \
+diff --git a/tests/reign_cli/test_web_server.py b/tests/reign_cli/test_web_server.py
+index cee2c30e52..7310966864 100644
+--- a/tests/reign_cli/test_web_server.py
++++ b/tests/reign_cli/test_web_server.py
+@@ -2945,7 +2945,7 @@ class TestNewEndpoints:
+         body = self.client.get("/api/tools/terminal/backends").json()
+         ssh = next(r for r in body["backends"] if r["name"] == "ssh")
+         assert ssh["status"] == "ready"
+-        assert "hermes@devbox.example.com" in ssh["detail"]
++        assert "reign@devbox.example.com" in ssh["detail"]
+ 
+ 
+ 
+diff --git a/tests/test_packaging_build_guard.py b/tests/test_packaging_build_guard.py
+index fc3870daf1..8d0d3eda2f 100644
+--- a/tests/test_packaging_build_guard.py
++++ b/tests/test_packaging_build_guard.py
+@@ -65,7 +65,7 @@ def test_artifact_build_rejects_nix_development_shell_environment(kind, tmp_path
+ 
+ @pytest.mark.parametrize(
+     ("kind", "artifact_glob"),
+-    [("sdist", "reign_agent-*.tar.gz"), ("wheel", "reign_agent-*.whl")],
++    [("sdist", "reign-*.tar.gz"), ("wheel", "reign-*.whl")],
+ )
+ def test_artifact_build_allows_explicit_nix_package_build_marker(kind, artifact_glob, tmp_path):
+     result = _build_artifact(kind, tmp_path, nix_build=True)
+diff --git a/tests/tools/test_wake_word.py b/tests/tools/test_wake_word.py
+index b7e9079896..ce08421120 100644
+--- a/tests/tools/test_wake_word.py
++++ b/tests/tools/test_wake_word.py
+@@ -23,8 +23,11 @@ import tools.wake_word as ww
+ 
+ 
+ def test_config_defaults_and_clamping():
+-    assert ww._provider({}) == "openwakeword"
++    # sherpa is the zero-training default: no wake-word model ships with Reign.
++    assert ww._provider({}) == "sherpa"
++    assert ww._provider({"provider": ""}) == "sherpa"
+     assert ww._provider({"provider": "Porcupine"}) == "porcupine"
++    assert ww._provider({"provider": "openwakeword"}) == "openwakeword"
+     assert ww._input_device({}) is None
+     assert ww._input_device({"input_device": 7}) == 7
+     assert ww._input_device({"input_device": " Microphone Array "}) == "Microphone Array"
+@@ -35,8 +38,10 @@ def test_config_defaults_and_clamping():
+     # Invalid input falls back to the configured default, not a hardcoded 0.5.
+     assert ww._sensitivity({"sensitivity": "nope"}) == ww._DEFAULTS["sensitivity"]
+     assert ww._sensitivity({}) == ww._DEFAULTS["sensitivity"]
+-    assert ww.wake_phrase({"phrase": "hey reign"}) == "hey reign"
++    assert ww.wake_phrase({"phrase": "hey coder"}) == "hey coder"
+     assert ww.wake_phrase({}) == "hey reign"
++    assert ww._DEFAULTS["provider"] == "sherpa"
++    assert ww._DEFAULTS["phrase"] == "hey reign"
+ 
+ 
+ def test_wake_surface_enabled_gate():
+@@ -55,7 +60,7 @@ def test_wake_surface_enabled_gate():
+ 
+ 
+ def test_looks_like_path():
+-    assert ww._looks_like_path("models/hey_reign.onnx")
++    assert ww._looks_like_path("models/custom.onnx")
+     assert ww._looks_like_path("custom.ppn")
+     assert not ww._looks_like_path("hey_jarvis")
+ 
+@@ -65,7 +70,10 @@ def test_load_wake_word_config_is_a_dict_with_defaults():
+     cfg = ww.load_wake_word_config()
+     assert isinstance(cfg, dict)
+     assert cfg.get("enabled") is False
+-    assert cfg.get("provider") == "openwakeword"
++    assert cfg.get("provider") == "sherpa"
++    assert cfg.get("phrase") == "hey reign"
++    # openWakeWord has no bundled model, so its model slot defaults to empty.
++    assert (cfg.get("openwakeword") or {}).get("model", "") == ""
+ 
+ 
+ def test_load_wake_word_config_guards_non_dict(monkeypatch):
+@@ -81,6 +89,10 @@ def test_load_wake_word_config_guards_non_dict(monkeypatch):
+ def test_build_engine_dispatch(monkeypatch):
+     monkeypatch.setattr(ww, "_OpenWakeWordEngine", lambda cfg: "oww")
+     monkeypatch.setattr(ww, "_PorcupineEngine", lambda cfg: "pv")
++    monkeypatch.setattr(ww, "_SherpaKwsEngine", lambda cfg: "sherpa")
++    # Empty config → the sherpa default.
++    assert ww._build_engine({}) == "sherpa"
++    assert ww._build_engine({"provider": "sherpa"}) == "sherpa"
+     assert ww._build_engine({"provider": "openwakeword"}) == "oww"
+     assert ww._build_engine({"provider": "porcupine"}) == "pv"
+     with pytest.raises(ValueError):
+@@ -102,13 +114,45 @@ def test_requirements_openwakeword_available(monkeypatch):
+     monkeypatch.setattr(ww, "_audio_available", lambda: True)
+     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
+     r = ww.check_wake_word_requirements(
+-        {"provider": "openwakeword", "phrase": "hey reign"}
++        {"provider": "openwakeword", "phrase": "hey reign",
++         "openwakeword": {"model": "hey_jarvis"}}
+     )
+     assert r["available"] is True
+     assert r["provider"] == "openwakeword"
+     assert r["phrase"] == "hey reign"
+ 
+ 
++def test_requirements_default_is_sherpa_hey_reign(monkeypatch):
++    # An empty wake_word section resolves to the zero-training default: the
++    # sherpa engine listening for "hey reign". No model file is involved.
++    _voice_loop_ready(monkeypatch)
++    monkeypatch.setattr(ww, "_audio_available", lambda: True)
++    seen = []
++    monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: seen.append(f) or True)
++    r = ww.check_wake_word_requirements({})
++    assert r["available"] is True
++    assert r["provider"] == "sherpa"
++    assert r["phrase"] == "hey reign"
++    assert r["hint"] == ""
++    assert "wake.sherpa" in seen
++
++
++def test_requirements_openwakeword_without_model_is_unavailable(monkeypatch):
++    # No bundled model ships with Reign: openwakeword with an empty model slot
++    # must be reported as unavailable with the pointer to sherpa, not armed.
++    _voice_loop_ready(monkeypatch)
++    monkeypatch.setattr(ww, "_audio_available", lambda: True)
++    monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
++    for cfg in ({"provider": "openwakeword"},
++                {"provider": "openwakeword", "openwakeword": {"model": ""}},
++                {"provider": "openwakeword", "openwakeword": {"model": None}}):
++        r = ww.check_wake_word_requirements(cfg)
++        assert r["available"] is False, cfg
++        assert r["hint"] == ww.NO_BUNDLED_MODEL_MESSAGE
++        assert "no bundled wake-word model ships with Reign" in r["hint"]
++        assert "provider: sherpa" in r["hint"]
++
++
+ def test_tts_ready_is_a_probe_never_an_installer(monkeypatch):
+     """_tts_ready must NOT trigger lazy pip installs from a status poll.
+ 
+@@ -162,7 +206,9 @@ def test_requirements_fresh_install_lazy_allowed(monkeypatch):
+     monkeypatch.setattr(ww, "_audio_available", _boom)
+     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: False)
+     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: True)
+-    r = ww.check_wake_word_requirements({"provider": "openwakeword"})
++    r = ww.check_wake_word_requirements(
++        {"provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
++    )
+     assert r["available"] is True
+     assert r["deps_available"] is False
+     assert r["hint"] == ""
+@@ -176,12 +222,14 @@ def test_requirements_deps_present_but_no_audio_hint(monkeypatch):
+     monkeypatch.setattr(ww, "_local_input_device_ready", lambda: False)
+     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
+     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: True)
+-    r = ww.check_wake_word_requirements({"provider": "openwakeword", "capture": "local"})
++    r = ww.check_wake_word_requirements(
++        {"provider": "openwakeword", "capture": "local", "openwakeword": {"model": "hey_jarvis"}}
++    )
+     assert r["available"] is False
+     assert "audio device" in r["hint"] or "microphone" in r["hint"].lower()
+ 
+ 
+-# ── openWakeWord engine (bundled model + base-model fetch) ───────────────
++# ── openWakeWord engine (explicit model required + base-model fetch) ─────
+ 
+ 
+ def _install_fake_openwakeword(monkeypatch):
+@@ -194,10 +242,11 @@ def _install_fake_openwakeword(monkeypatch):
+     class _FakeModel:
+         def __init__(self, wakeword_models, inference_framework="onnx"):
+             self.wakeword_models = list(wakeword_models)
+-            self.models = {"hey_reign": object()}
++            self.inference_framework = inference_framework
++            self.models = {"custom": object()}
+ 
+         def predict(self, frame):
+-            return {"hey_reign": 0.0}
++            return {"custom": 0.0}
+ 
+         def reset(self):
+             pass
+@@ -220,20 +269,53 @@ def test_openwakeword_ensures_base_models_for_custom_path(monkeypatch):
+     # so a fresh install crashed at load time on a missing melspectrogram.onnx.
+     # The base feature models must be ensured for a custom path too.
+     calls = _install_fake_openwakeword(monkeypatch)
++    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
+     eng = ww._OpenWakeWordEngine(
+-        {"provider": "openwakeword", "openwakeword": {"model": "/models/hey_reign.onnx"}}
++        {"provider": "openwakeword", "openwakeword": {"model": "/models/custom.onnx"}}
+     )
+-    assert calls["download"] == [["/models/hey_reign.onnx"]]
+-    assert eng._labels == ["hey_reign"]
++    assert calls["download"] == [["/models/custom.onnx"]]
++    assert eng._labels == ["custom"]
+ 
+ 
+-def test_bundled_hey_reign_model_ships_on_disk():
+-    # The "hey reign" wake word works out of the box only if the model is
+-    # actually bundled. Both framework artifacts must exist and be non-trivial.
+-    for framework in ("onnx", "tflite"):
+-        path = ww._bundled_wakeword_path(framework)
+-        assert os.path.exists(path), path
+-        assert os.path.getsize(path) > 1024, path
++def test_openwakeword_builtin_name_is_used_as_is(monkeypatch):
++    # A built-in openWakeWord name is passed straight through — there is no
++    # bundled model and no alias resolution in front of it any more.
++    calls = _install_fake_openwakeword(monkeypatch)
++    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
++    eng = ww._OpenWakeWordEngine(
++        {"provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
++    )
++    assert calls["download"] == [["hey_jarvis"]]
++    assert eng._model.wakeword_models == ["hey_jarvis"]
++
++
++def test_openwakeword_without_model_raises_clear_error(monkeypatch):
++    # Reign ships no wake-word model. The openwakeword engine must refuse to
++    # build without an explicit model, with a message that points at sherpa —
++    # and it must NOT touch the network/download path before doing so.
++    calls = _install_fake_openwakeword(monkeypatch)
++    monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
++    for cfg in ({"provider": "openwakeword"},
++                {"provider": "openwakeword", "openwakeword": {}},
++                {"provider": "openwakeword", "openwakeword": {"model": "  "}}):
++        with pytest.raises(RuntimeError) as exc:
++            ww._OpenWakeWordEngine(cfg)
++        msg = str(exc.value)
++        assert "no bundled wake-word model ships with Reign" in msg
++        assert "wake_word.openwakeword.model" in msg
++        assert ".onnx/.tflite" in msg
++        assert "provider: sherpa" in msg
++    assert calls["download"] == []
++
++
++def test_no_bundled_model_helpers_remain():
++    # The bundled hey_* model concept is gone for good: nothing in the module
++    # should resolve a model name to a file under the package tree.
++    for name in ("_BUNDLED_MODEL_NAME", "_BUNDLED_MODEL_ALIASES", "_bundled_wakeword_path"):
++        assert not hasattr(ww, name), name
++    assert not (Path(ww.__file__).parent / "wakewords").exists()
++    assert ww.openwakeword_model_ref({}) == ""
++    assert ww.openwakeword_model_ref({"openwakeword": {"model": " hey_jarvis "}}) == "hey_jarvis"
+ 
+ 
+ # ── platform-aware backend selection (openWakeWord onnx is broken on macOS ARM64,
+@@ -273,11 +355,13 @@ def test_explicit_framework_kept_where_onnx_works(monkeypatch):
+     # An operator who pins a backend keeps it everywhere ONNX actually works.
+     calls = _install_fake_openwakeword(monkeypatch)
+     monkeypatch.setattr(ww, "_is_macos_arm64", lambda: False)
+-    ww._OpenWakeWordEngine(
+-        {"provider": "openwakeword", "openwakeword": {"inference_framework": "onnx"}}
++    eng = ww._OpenWakeWordEngine(
++        {"provider": "openwakeword",
++         "openwakeword": {"model": "hey_jarvis", "inference_framework": "onnx"}}
+     )
+     (downloaded,) = calls["download"]
+-    assert downloaded == [ww._bundled_wakeword_path("onnx")]
++    assert downloaded == ["hey_jarvis"]
++    assert eng._model.inference_framework == "onnx"
+ 
+ 
+ def test_empty_framework_falls_back_to_platform_default(monkeypatch):
+@@ -303,10 +387,10 @@ def _openwakeword_engine_with_scores(monkeypatch, cfg_wake, scores):
+ 
+     class _ScriptedModel:
+         def __init__(self, wakeword_models, inference_framework="onnx"):
+-            self.models = {"hey_reign": object()}
++            self.models = {"custom": object()}
+ 
+         def predict(self, frame):
+-            return {"hey_reign": next(seq)}
++            return {"custom": next(seq)}
+ 
+         def reset(self):
+             pass
+@@ -319,6 +403,7 @@ def _openwakeword_engine_with_scores(monkeypatch, cfg_wake, scores):
+     monkeypatch.setitem(sys.modules, "openwakeword.model", model_mod)
+     monkeypatch.setattr("tools.lazy_deps.ensure", lambda *a, **k: None)
+     monkeypatch.setattr(ww, "ensure_tflite_runtime", lambda: True)
++    cfg_wake.setdefault("openwakeword", {"model": "hey_jarvis"})
+     return ww._OpenWakeWordEngine({"provider": "openwakeword", **cfg_wake})
+ 
+ 
+@@ -741,7 +826,9 @@ def test_requirements_client_capture_without_local_mic(monkeypatch):
+     monkeypatch.setattr("tools.lazy_deps.is_available", lambda f: True)
+     monkeypatch.setattr("tools.lazy_deps._allow_lazy_installs", lambda: False)
+ 
+-    reqs = ww.check_wake_word_requirements({"capture": "client", "provider": "openwakeword"})
++    reqs = ww.check_wake_word_requirements(
++        {"capture": "client", "provider": "openwakeword", "openwakeword": {"model": "hey_jarvis"}}
++    )
+     assert reqs["available"] is True
+     assert reqs["capture"] == "client"
+ 
+diff --git a/tools/blueprints.py b/tools/blueprints.py
+index d4e108a1ae..e72d39e02a 100644
+--- a/tools/blueprints.py
++++ b/tools/blueprints.py
+@@ -106,7 +106,7 @@ def parse_blueprint(skill_md_text: str) -> Optional[BlueprintSpec]:
+     name = str(fm.get("name", "")).strip()
+ 
+     meta = fm.get("metadata")
+-    reign = meta.get("hermes") if isinstance(meta, dict) else None
++    reign = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
+     blueprint = reign.get("blueprint") if isinstance(reign, dict) else None
+     if blueprint is None:
+         return None
+diff --git a/tools/skill_linter.py b/tools/skill_linter.py
+index 52d3c8dbd4..7eb78744c1 100644
+--- a/tools/skill_linter.py
++++ b/tools/skill_linter.py
+@@ -196,7 +196,7 @@ def _check_metadata_block(frontmatter: Dict[str, Any]) -> List[LintFinding]:
+                 )
+             )
+     meta = frontmatter.get("metadata")
+-    reign_meta = meta.get("hermes") if isinstance(meta, dict) else None
++    reign_meta = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
+     if not isinstance(reign_meta, dict):
+         findings.append(
+             LintFinding(
+diff --git a/tools/skills_hub.py b/tools/skills_hub.py
+index ba803bec18..6fe8d42217 100644
+--- a/tools/skills_hub.py
++++ b/tools/skills_hub.py
+@@ -890,7 +890,7 @@ class GitHubSource(SkillSource):
+         tags = []
+         metadata = fm.get("metadata", {})
+         if isinstance(metadata, dict):
+-            reign_meta = metadata.get("reign", {})
++            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
+             if isinstance(reign_meta, dict):
+                 tags = reign_meta.get("tags", [])
+         if not tags:
+@@ -1659,7 +1659,7 @@ class UrlSource(SkillSource):
+         tags: List[str] = []
+         metadata = fm.get("metadata", {})
+         if isinstance(metadata, dict):
+-            reign_meta = metadata.get("reign", {})
++            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
+             if isinstance(reign_meta, dict):
+                 raw_tags = reign_meta.get("tags", [])
+                 if isinstance(raw_tags, list):
+@@ -3834,7 +3834,7 @@ class OptionalSkillSource(SkillSource):
+         meta_block = fm.get("metadata")
+         if not isinstance(meta_block, dict):
+             return None
+-        reign_meta = meta_block.get("hermes")
++        reign_meta = (meta_block.get("reign") or meta_block.get("hermes"))
+         if not isinstance(reign_meta, dict):
+             return None
+         upstream = reign_meta.get("upstream")
+@@ -3919,7 +3919,7 @@ class OptionalSkillSource(SkillSource):
+             tags = []
+             meta_block = fm.get("metadata", {})
+             if isinstance(meta_block, dict):
+-                reign_meta = meta_block.get("reign", {})
++                reign_meta = (meta_block.get("reign") or meta_block.get("hermes") or {})
+                 if isinstance(reign_meta, dict):
+                     tags = reign_meta.get("tags", [])
+ 
+diff --git a/tools/skills_tool.py b/tools/skills_tool.py
+index 8bf4ae4087..dd0b80cd3a 100644
+--- a/tools/skills_tool.py
++++ b/tools/skills_tool.py
+@@ -1686,7 +1686,7 @@ def skill_view(
+         reign_meta = {}
+         metadata = frontmatter.get("metadata")
+         if isinstance(metadata, dict):
+-            reign_meta = metadata.get("reign", {}) or {}
++            reign_meta = metadata.get("reign") or metadata.get("hermes") or {}
+ 
+         tags = _parse_tags(reign_meta.get("tags") or frontmatter.get("tags", ""))
+         related_skills = _parse_tags(
+diff --git a/tools/wake_word.py b/tools/wake_word.py
+index 6e2b0ee519..186fb0f169 100644
+--- a/tools/wake_word.py
++++ b/tools/wake_word.py
+@@ -8,14 +8,16 @@ pipeline, then answers.
+ 
+ Three engines, all fully on-device (no audio leaves the machine for detection):
+ 
+-* **openwakeword** (default, free, no API key) — loads an ONNX model. Defaults
+-  to the bundled "hey reign" model (``tools/wakewords/``) so the wake word
+-  works out of the box; or point ``wake_word.openwakeword.model`` at a built-in
+-  name (``hey_jarvis``, ``alexa``, …) or a custom ``.onnx`` for another phrase.
+-* **sherpa** (free, no API key, open vocabulary) — sherpa-onnx keyword
+-  spotting. Detects ANY typed phrase with no training: set
+-  ``wake_word.phrase`` and the phrase is tokenized at runtime against a small
+-  streaming zipformer model (~13 MB English model, one-time download).
++* **sherpa** (default, free, no API key, open vocabulary) — sherpa-onnx
++  keyword spotting. Detects ANY typed phrase with no training: the default
++  ``wake_word.phrase`` is "hey reign", and whatever phrase is configured is
++  tokenized at runtime against a small streaming zipformer model (~13 MB
++  English model, one-time download). No wake-word model ships with Reign.
++* **openwakeword** (free, no API key, trained model) — loads an openWakeWord
++  ``.onnx``/``.tflite`` model. Reign bundles no model for this engine, so
++  ``wake_word.openwakeword.model`` MUST point at a built-in name
++  (``hey_jarvis``, ``alexa``, …) or a custom model file; the engine refuses to
++  start without one.
+ * **porcupine** (premium) — Picovoice's engine. Needs ``PORCUPINE_ACCESS_KEY``;
+   supports built-in keywords and custom ``.ppn`` files from the Picovoice
+   Console.
+@@ -81,23 +83,27 @@ _DEFAULTS: Dict[str, Any] = {
+     #   "client" — desktop/TUI streams int16 frames via wake.feed
+     #   "auto"   — local when a device exists, else client capture
+     "capture": "auto",
+-    "provider": "openwakeword",
++    "provider": "sherpa",
+     "phrase": "hey reign",
+     "sensitivity": 0.6,
+     "confirmation_frames": _DEFAULT_CONFIRMATION_FRAMES,
+     "start_new_session": True,
+ }
+ 
+-# Bundled "hey reign" model (tools/wakewords/) — the default, so the wake word
+-# works out of the box. Config names in _ALIASES resolve to it, not a built-in.
+-_BUNDLED_MODEL_NAME = "hey_reign"
+-_BUNDLED_MODEL_ALIASES = frozenset({"", "hey_reign", "hey reign", "reign"})
++# No wake-word model ships with Reign. The default engine (sherpa) needs none —
++# it tokenizes the configured phrase at runtime. The openwakeword engine must
++# be pointed at a model explicitly; this is the error it raises otherwise.
++NO_BUNDLED_MODEL_MESSAGE = (
++    "no bundled wake-word model ships with Reign; set wake_word.openwakeword.model "
++    "to an openWakeWord .onnx/.tflite path (or a built-in name such as "
++    "hey_jarvis) or use provider: sherpa"
++)
+ 
+ 
+-def _bundled_wakeword_path(framework: str = "onnx") -> str:
+-    """Path to the shipped hey_reign model (.onnx/.tflite) for ``framework``."""
+-    ext = "tflite" if str(framework).strip().lower() == "tflite" else "onnx"
+-    return os.path.join(os.path.dirname(__file__), "wakewords", f"{_BUNDLED_MODEL_NAME}.{ext}")
++def openwakeword_model_ref(cfg: Dict[str, Any]) -> str:
++    """The configured ``wake_word.openwakeword.model`` (built-in name or path), or ``""``."""
++    sub = cfg.get("openwakeword") if isinstance(cfg.get("openwakeword"), dict) else {}
++    return str(sub.get("model") or "").strip()
+ 
+ 
+ def _is_macos_arm64() -> bool:
+@@ -205,7 +211,7 @@ def _get(cfg: Dict[str, Any], key: str) -> Any:
+ 
+ 
+ def _provider(cfg: Dict[str, Any]) -> str:
+-    return str(_get(cfg, "provider")).strip().lower() or "openwakeword"
++    return str(_get(cfg, "provider")).strip().lower() or "sherpa"
+ 
+ 
+ def _input_device(cfg: Dict[str, Any]) -> int | str | None:
+@@ -527,7 +533,13 @@ def _looks_like_path(value: str) -> bool:
+ 
+ 
+ class _OpenWakeWordEngine(_Engine):
+-    """openWakeWord — free, local ONNX hotword detection."""
++    """openWakeWord — free, local ONNX hotword detection.
++
++    Needs an explicit ``wake_word.openwakeword.model`` (a built-in openWakeWord
++    name or a path to a custom ``.onnx``/``.tflite``): Reign ships no model of
++    its own, so an empty setting raises ``NO_BUNDLED_MODEL_MESSAGE`` instead of
++    arming a detector that can never fire.
++    """
+ 
+     # openWakeWord recommends 80 ms frames (1280 samples) for efficiency.
+     frame_length = 1280
+@@ -540,8 +552,9 @@ class _OpenWakeWordEngine(_Engine):
+         import openwakeword
+         from openwakeword.model import Model
+ 
+-        sub = cfg.get("openwakeword") if isinstance(cfg.get("openwakeword"), dict) else {}
+-        model_ref = str(sub.get("model") or _BUNDLED_MODEL_NAME).strip()
++        model_ref = openwakeword_model_ref(cfg)
++        if not model_ref:
++            raise RuntimeError(NO_BUNDLED_MODEL_MESSAGE)
+         framework = resolve_inference_framework(cfg)
+         # openWakeWord returns a 0..1 score per frame; sensitivity IS the raw
+         # threshold a score must clear. Higher = stricter (fewer false fires).
+@@ -572,11 +585,7 @@ class _OpenWakeWordEngine(_Engine):
+                 logger.warning("wake word: no tflite runtime available — falling back to onnx")
+                 framework = "onnx"
+ 
+-        # Default (or explicit "hey_reign") → the bundled model; a built-in name
+-        # or custom path is used as-is.
+-        if model_ref.lower() in _BUNDLED_MODEL_ALIASES:
+-            model_ref = _bundled_wakeword_path(framework)
+-
++        # A built-in name or custom path is used as-is — nothing is bundled.
+         # openWakeWord needs its shared feature models (melspectrogram + embedding)
+         # for ANY model — download_models() fetches those first on every call, so a
+         # custom path must call it too, else a fresh install crashes on a missing
+@@ -934,9 +943,17 @@ def check_wake_word_requirements(cfg: Optional[Dict[str, Any]] = None) -> Dict[s
+         if framework == "tflite":
+             tflite_ok = ensure_tflite_runtime() or lazy_deps.is_available("wake.openwakeword.tflite") or lazy_ok
+ 
++    # openWakeWord has no bundled model: without one the engine constructor
++    # raises, so report that up front rather than arming and failing.
++    model_ok = True
++    if provider not in ("porcupine", "sherpa", "sherpa-onnx", "kws", "open") and not openwakeword_model_ref(cfg):
++        model_ok = False
++
+     if provider == "porcupine" and not (os.getenv("PORCUPINE_ACCESS_KEY") or "").strip():
+         key_ok = False
+         hint = "Set PORCUPINE_ACCESS_KEY (free key at https://console.picovoice.ai)."
++    elif not model_ok:
++        hint = NO_BUNDLED_MODEL_MESSAGE
+     elif not deps_ok and not lazy_ok:
+         hint = lazy_deps.feature_install_command(feature) or ""
+     elif not tflite_ok:
+@@ -969,7 +986,7 @@ def check_wake_word_requirements(cfg: Optional[Dict[str, Any]] = None) -> Dict[s
+             )
+ 
+     return {
+-        "available": key_ok and stt_ok and tts_ok and tflite_ok and mic_ok,
++        "available": key_ok and model_ok and stt_ok and tts_ok and tflite_ok and mic_ok,
+         "provider": provider,
+         "deps_available": deps_ok,
+         "audio_available": audio_ok,
+diff --git a/ui-tui/src/__tests__/theme.test.ts b/ui-tui/src/__tests__/theme.test.ts
+index c31c285dcb..7051fa0c25 100644
+--- a/ui-tui/src/__tests__/theme.test.ts
++++ b/ui-tui/src/__tests__/theme.test.ts
+@@ -51,7 +51,7 @@ describe('DEFAULT_THEME', () => {
+   it('has color palette', async () => {
+     const { DEFAULT_THEME } = await importThemeWithCleanEnv()
+ 
+-    expect(DEFAULT_THEME.color.primary).toBe('#FFD700')
++    expect(DEFAULT_THEME.color.primary).toBe('#FFFFFF')
+     expect(DEFAULT_THEME.color.error).toBe('#ef5350')
+   })
+ })
+@@ -430,8 +430,60 @@ describe('derived tone ladder', () => {
+     // pre-refactor hand-tuned literals. Contract: every derived tone stays
+     // within a-few-RGB-units of the original (imperceptible), so knob edits
+     // that drift the classic look fail here instead of shipping as vibes.
+-    const dark = await importThemeWithCleanEnv()
+-    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })
++    //
++    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped
++    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the
++    // ladder knobs are still the ones fitted against these literals.
++    const { buildPalette } = await importThemeWithCleanEnv()
++    const dark = {
++      DARK_THEME: {
++        color: buildPalette(
++          {
++            accent: '#FFBF00',
++            activeRow: '#333355',
++            bg: '#101014',
++            border: '#CD7F32',
++            error: '#ef5350',
++            ok: '#4caf50',
++            primary: '#FFD700',
++            prompt: '#FFF8DC',
++            selection: '#3a3a55',
++            shellDollar: '#4dabf7',
++            statusBad: '#FF8C00',
++            statusCritical: '#FF6B6B',
++            statusGood: '#8FBC8F',
++            statusWarn: '#FFD700',
++            surface: '#1a1a2e',
++            text: '#FFF8DC',
++            warn: '#ffa726'
++          },
++          false
++        )
++      }
++    }
++    const light = {
++      LIGHT_THEME: {
++        color: buildPalette(
++          {
++            accent: '#956E00',
++            bg: '#ffffff',
++            border: '#A56628',
++            error: '#C14240',
++            ok: '#367E39',
++            primary: '#867000',
++            prompt: '#2B2014',
++            shellDollar: '#377BB3',
++            statusBad: '#A65A00',
++            statusCritical: '#B94D4D',
++            statusGood: '#5C7A5C',
++            statusWarn: '#867000',
++            text: '#3D2F13',
++            warn: '#956115'
++          },
++          true
++        )
++      }
++    }
+ 
+     const cases: Array<[string, string, string]> = [
+       [dark.DARK_THEME.color.muted, '#CC9B1F', 'dark muted'],
+diff --git a/ui-tui/src/app/createGatewayEventHandler.ts b/ui-tui/src/app/createGatewayEventHandler.ts
+index 9cec513714..4e9aec85da 100644
+--- a/ui-tui/src/app/createGatewayEventHandler.ts
++++ b/ui-tui/src/app/createGatewayEventHandler.ts
+@@ -79,7 +79,8 @@ let lastSkin: GatewaySkin | null = null
+ const themeForSkin = (s: GatewaySkin) => {
+   // Polarity overrides OVERLAY the base palette, they don't replace it: a skin
+   // can ship a fills-only `light_colors` (flip the dark navy menu/status fills
+-  // to light on a light terminal) while its vivid foreground golds keep coming
++  // to light on a light terminal) while its vivid foreground brand colors keep
++  // coming
+   // from `colors` and render raw through fromSkin's shim. A full paired block
+   // still works — it just overrides every key it lists. Polarity follows the
+   // skin's authored background when it has one (the skin paints the terminal
+@@ -104,7 +105,8 @@ const themeForSkin = (s: GatewaySkin) => {
+ // The force-redraw is load-bearing: a theme swap recolors EVERYTHING, but the
+ // renderer's diff/blit cache treats layout-unchanged regions as reusable, so
+ // incremental repaints after a swap can tear — stale cells keep the previous
+-// palette (observed live: gold headers from the boot theme composited with
++// palette (observed live: brand-colored headers from the boot theme composited
++// with
+ // slate chrome, dark status fills surviving on a light terminal, half-
+ // overwritten glyphs reading as "shadows"). One full clear+repaint after the
+ // new theme has rendered guarantees a coherent frame. Deferred ~2 frames so
+diff --git a/ui-tui/src/banner.ts b/ui-tui/src/banner.ts
+index 748e5a452b..288f71dcb2 100644
+--- a/ui-tui/src/banner.ts
++++ b/ui-tui/src/banner.ts
+@@ -44,34 +44,34 @@ export function parseRichMarkup(markup: string): Line[] {
+ }
+ 
+ const LOGO_ART = [
+-  '██╗  ██╗███████╗██████╗ ███╗   ███╗███████╗███████╗       █████╗  ██████╗ ███████╗███╗   ██╗████████╗',
+-  '██║  ██║██╔════╝██╔══██╗████╗ ████║██╔════╝██╔════╝      ██╔══██╗██╔════╝ ██╔════╝████╗  ██║╚══██╔══╝',
+-  '███████║█████╗  ██████╔╝██╔████╔██║█████╗  ███████╗█████╗███████║██║  ███╗█████╗  ██╔██╗ ██║   ██║   ',
+-  '██╔══██║██╔══╝  ██╔══██╗██║╚██╔╝██║██╔══╝  ╚════██║╚════╝██╔══██║██║   ██║██╔══╝  ██║╚██╗██║   ██║   ',
+-  '██║  ██║███████╗██║  ██║██║ ╚═╝ ██║███████╗███████║      ██║  ██║╚██████╔╝███████╗██║ ╚████║   ██║   ',
+-  '╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝╚══════╝      ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═══╝   ╚═╝   '
++  '██████╗ ███████╗██╗ ██████╗ ███╗   ██╗',
++  '██╔══██╗██╔════╝██║██╔════╝ ████╗  ██║',
++  '██████╔╝█████╗  ██║██║  ███╗██╔██╗ ██║',
++  '██╔══██╗██╔══╝  ██║██║   ██║██║╚██╗██║',
++  '██║  ██║███████╗██║╚██████╔╝██║ ╚████║',
++  '╚═╝  ╚═╝╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝'
+ ]
+ 
+-const CADUCEUS_ART = [
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⡀⠀⣀⣀⠀⢀⣀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⢀⣠⣴⣾⣿⣿⣇⠸⣿⣿⠇⣸⣿⣿⣷⣦⣄⡀⠀⠀⠀⠀⠀⠀',
+-  '⠀⢀⣠⣴⣶⠿⠋⣩⡿⣿⡿⠻⣿⡇⢠⡄⢸⣿⠟⢿⣿⢿⣍⠙⠿⣶⣦⣄⡀⠀',
+-  '⠀⠀⠉⠉⠁⠶⠟⠋⠀⠉⠀⢀⣈⣁⡈⢁⣈⣁⡀⠀⠉⠀⠙⠻⠶⠈⠉⠉⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣴⣿⡿⠛⢁⡈⠛⢿⣿⣦⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠿⣿⣦⣤⣈⠁⢠⣴⣿⠿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠻⢿⣿⣦⡉⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⢷⣦⣈⠛⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣴⠦⠈⠙⠿⣦⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠸⣿⣤⡈⠁⢤⣿⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣀⠑⢶⣄⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⠁⢰⡆⠈⡿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⠈⣡⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀',
+-  '⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀'
++const ROOK_ART = [
++  '⠀⠀⠀⠀⠀⠀⠀⠀⣀⣤⠶⠖⠛⠛⠛⠛⠛⠛⠲⠶⣤⣀⠀⠀⠀⠀⠀⠀⠀⠀',
++  '⠀⠀⠀⠀⠀⣠⡴⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠙⢦⣄⠀⠀⠀⠀⠀',
++  '⠀⠀⠀⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠳⣄⠀⠀⠀',
++  '⠀⠀⣴⠋⠀⠀⠀⠀⠀⠀⣿⣇⣸⣿⣿⣿⣿⣇⣸⣿⠀⠀⠀⠀⠀⠀⠙⣦⠀⠀',
++  '⠀⣼⠃⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠘⣧⠀',
++  '⢰⠇⠀⠀⠀⠀⠀⠀⠀⠀⠈⢻⣿⣿⣿⣿⣿⣿⠟⠁⠀⠀⠀⠀⠀⠀⠀⠀⢸⡆',
++  '⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿',
++  '⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿',
++  '⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿',
++  '⠸⣇⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⣿⣿⣿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⠇',
++  '⠀⢻⡄⠀⠀⠀⠀⠀⠀⠀⠀⣼⣿⣿⣿⣿⣿⣿⣇⠀⠀⠀⠀⠀⠀⠀⠀⢠⡟⠀',
++  '⠀⠀⠻⣆⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠀⠀⠀⠀⠀⠀⣰⠟⠀⠀',
++  '⠀⠀⠀⠙⢷⣄⠀⠀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⠀⣠⡾⠋⠀⠀⠀',
++  '⠀⠀⠀⠀⠀⠙⠳⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⠞⠋⠀⠀⠀⠀⠀',
++  '⠀⠀⠀⠀⠀⠀⠀⠀⠉⠛⠻⠿⣿⣿⣿⣿⣿⣿⠿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀'
+ ]
+ 
+ const LOGO_GRADIENT = [0, 0, 1, 1, 2, 2] as const
+-const CADUC_GRADIENT = [2, 2, 1, 1, 0, 0, 1, 1, 2, 2, 3, 3, 3, 3, 3] as const
++const ROOK_GRADIENT = [0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2] as const
+ 
+ const colorize = (art: string[], gradient: readonly number[], c: ThemeColors): Line[] => {
+   const p = [c.primary, c.accent, c.border, c.muted]
+@@ -80,13 +80,13 @@ const colorize = (art: string[], gradient: readonly number[], c: ThemeColors): L
+ }
+ 
+ export const LOGO_WIDTH = Math.max(...LOGO_ART.map(line => line.length))
+-export const CADUCEUS_WIDTH = Math.max(...CADUCEUS_ART.map(line => line.length))
++export const ROOK_WIDTH = Math.max(...ROOK_ART.map(line => line.length))
+ 
+ export const logo = (c: ThemeColors, customLogo?: string): Line[] =>
+   customLogo ? parseRichMarkup(customLogo) : colorize(LOGO_ART, LOGO_GRADIENT, c)
+ 
+-export const caduceus = (c: ThemeColors, customHero?: string): Line[] =>
+-  customHero ? parseRichMarkup(customHero) : colorize(CADUCEUS_ART, CADUC_GRADIENT, c)
++export const rook = (c: ThemeColors, customHero?: string): Line[] =>
++  customHero ? parseRichMarkup(customHero) : colorize(ROOK_ART, ROOK_GRADIENT, c)
+ 
+ export const artWidth = (lines: Line[]) => lines.reduce((m, [, t]) => Math.max(m, t.length), 0)
+ 
+diff --git a/ui-tui/src/components/appOverlays.tsx b/ui-tui/src/components/appOverlays.tsx
+index ac208ac0fa..9f6db95bc6 100644
+--- a/ui-tui/src/components/appOverlays.tsx
++++ b/ui-tui/src/components/appOverlays.tsx
+@@ -363,7 +363,7 @@ export function FloatingOverlays({
+                       </Text>
+                     </Box>
+                     {item.meta ? (
+-                      // Descriptions in the neutral gray, NOT a gold-family
++                      // Descriptions in the neutral gray, NOT a brand-family
+                       // tone — label vs muted are near-twins on some skins,
+                       // which made command and description read as one run.
+                       // Active row: meta rides the chip, so it uses row ink.
+diff --git a/ui-tui/src/components/branding.tsx b/ui-tui/src/components/branding.tsx
+index f579dbb81b..64d93ce072 100644
+--- a/ui-tui/src/components/branding.tsx
++++ b/ui-tui/src/components/branding.tsx
+@@ -2,7 +2,7 @@ import { Box, Text, useStdout } from '@reign/ink'
+ import { useEffect, useState } from 'react'
+ import unicodeSpinners from 'unicode-animations'
+ 
+-import { artWidth, caduceus, CADUCEUS_WIDTH, logo, LOGO_WIDTH } from '../banner.js'
++import { artWidth, logo, LOGO_WIDTH, rook, ROOK_WIDTH } from '../banner.js'
+ import { mix } from '../lib/color.js'
+ import { flat } from '../lib/text.js'
+ import type { Theme } from '../theme.js'
+@@ -212,8 +212,8 @@ const TOOLSETS_MAX = 8
+ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
+   const term = useStdout().stdout?.columns ?? 100
+   const cols = Math.max(20, Math.min(term, maxWidth ?? term))
+-  const heroLines = caduceus(t.color, t.bannerHero || undefined)
+-  const leftW = Math.min((artWidth(heroLines) || CADUCEUS_WIDTH) + 4, Math.floor(cols * 0.4))
++  const heroLines = rook(t.color, t.bannerHero || undefined)
++  const leftW = Math.min((artWidth(heroLines) || ROOK_WIDTH) + 4, Math.floor(cols * 0.4))
+   const wide = cols >= 90 && leftW + 40 < cols
+   const w = Math.max(20, wide ? cols - leftW - 14 : cols - 12)
+   const lineBudget = Math.max(12, w - 2)
+diff --git a/ui-tui/src/sdk/apps/weather.tsx b/ui-tui/src/sdk/apps/weather.tsx
+index 3a163fa8e3..852154af4d 100644
+--- a/ui-tui/src/sdk/apps/weather.tsx
++++ b/ui-tui/src/sdk/apps/weather.tsx
+@@ -65,7 +65,7 @@ const ART: Record<Art, readonly string[]> = {
+   thunder: ['     .-.     ', '    (   ).   ', '   (___(__)  ', '  ⚡‚ʻ⚡‚ʻ   ', '  ‚ʻ⚡‚ʻ⚡   ']
+ }
+ 
+-/** Art tint rides the theme family: sun in primary gold, rain in the shell
++/** Art tint rides the theme family: sun in primary, rain in the shell
+  *  blue, fog in muted — never hardcoded hexes. */
+ const artColor = (art: Art, t: Theme): string =>
+   ({
+diff --git a/ui-tui/src/theme.ts b/ui-tui/src/theme.ts
+index 3cef2530da..c2a414ba66 100644
+--- a/ui-tui/src/theme.ts
++++ b/ui-tui/src/theme.ts
+@@ -256,7 +256,7 @@ const BRAND: ThemeBrand = {
+   welcome: 'Type your message or /help for commands.',
+   goodbye: 'Goodbye! ♜',
+   tool: '┊',
+-  helpHeader: '(^_^)? Commands'
++  helpHeader: '♜ Commands'
+ }
+ 
+ const cleanPromptSymbol = (s: string | undefined, fallback: string) => {
+@@ -368,17 +368,18 @@ export function buildPalette(seeds: ThemeSeeds, isLight: boolean): ThemeColors {
+ }
+ 
+ export const DARK_SEEDS: ThemeSeeds = {
+-  accent: '#FFBF00',
+-  // The classic Reign navy surfaces are IDENTITY, not derivation drift —
+-  // keep them as explicit fill seeds (the ladder derives them for skins
+-  // that don't care).
++  accent: '#C0C0C0',
++  // Dark seeds: the Rook monochrome palette, white -> silver -> grey
++  // (#FFFFFF, #C0C0C0, #8A8A8A). The classic navy surfaces are IDENTITY,
++  // not derivation drift — keep them as explicit fill seeds (the ladder
++  // derives them for skins that don't care).
+   activeRow: '#333355',
+   bg: '#101014',
+-  border: '#CD7F32',
++  border: '#8A8A8A',
+   error: '#ef5350',
+   ok: '#4caf50',
+-  primary: '#FFD700',
+-  prompt: '#FFF8DC',
++  primary: '#FFFFFF',
++  prompt: '#FFFFFF',
+   selection: '#3a3a55',
+   shellDollar: '#4dabf7',
+   statusBad: '#FF8C00',
+@@ -386,32 +387,30 @@ export const DARK_SEEDS: ThemeSeeds = {
+   statusGood: '#8FBC8F',
+   statusWarn: '#FFD700',
+   surface: '#1a1a2e',
+-  text: '#FFF8DC',
++  text: '#FFFFFF',
+   warn: '#ffa726'
+ }
+ 
+-// Light-terminal seeds: darker golds/ambers that stay legible on white.
+-// The classic light-mode Reign look was never hand-authored: for years the
+-// TUI emitted the DARK golds and hosts with xterm's minimumContrastRatio
+-// (Cursor defaults to 4.5) lifted them against white — hue and saturation
+-// kept, luminance clamped. These seeds are those exact lifts
+-// (liftForContrast(dark, '#ffffff', 4.5)), so hosts WITHOUT a contrast pass
+-// render the same thing Cursor always showed. Text/prompt stay ink — body
+-// copy historically rendered in the terminal's default near-black fg.
++// Light-terminal seeds: the Rook monochrome palette flipped for white —
++// black -> charcoal -> grey (#000000, #333333, #6B6B6B, #9A9A9A). The brand
++// family (primary/accent/border, text/prompt) is authored ink so hosts
++// WITHOUT a contrast pass render it as-is. Semantic hues (ok/error/warn/
++// status) keep their liftForContrast(dark, white, 4.5) values — the exact
++// colors xterm's minimumContrastRatio rendered on light hosts for years.
+ export const LIGHT_SEEDS: ThemeSeeds = {
+-  accent: '#956E00',
++  accent: '#333333',
+   bg: '#ffffff',
+-  border: '#A56628',
++  border: '#6B6B6B',
+   error: '#C14240',
+   ok: '#367E39',
+-  primary: '#867000',
+-  prompt: '#2B2014',
++  primary: '#000000',
++  prompt: '#000000',
+   shellDollar: '#377BB3',
+   statusBad: '#A65A00',
+   statusCritical: '#B94D4D',
+   statusGood: '#5C7A5C',
+   statusWarn: '#867000',
+-  text: '#3D2F13',
++  text: '#000000',
+   warn: '#956115'
+ }
+ 
+@@ -857,8 +856,8 @@ export function fromSkin(
+   const hasSkinColors = Object.keys(colors).length > 0
+ 
+   // 1. Seeds: the skin's identity. Anything it doesn't define comes from the
+-  //    base seeds for this polarity. The base's IDENTITY FILLS (Reign navy
+-  //    surfaces, gold muted) only carry over for the skinless default — a
++  //    base seeds for this polarity. The base's IDENTITY FILLS (navy
++  //    surfaces, muted) only carry over for the skinless default — a
+   //    skin with its own identity derives its fills from its own seeds.
+   const identityFills: Partial<ThemeSeeds> = hasSkinColors
+     ? {}
+diff --git a/website/docs/index.mdx b/website/docs/index.mdx
+index 14f3a0237c..16011525c4 100644
+--- a/website/docs/index.mdx
++++ b/website/docs/index.mdx
+@@ -11,7 +11,7 @@ import Link from "@docusaurus/Link";
+ 
+ # Reign
+ 
+-The self-improving AI agent built by [Rook](https://nousresearch.com). The only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, and builds a deepening model of who you are across sessions.
++The self-improving AI agent built by Rook. The only agent with a built-in learning loop — it creates skills from experience, improves them during use, nudges itself to persist knowledge, and builds a deepening model of who you are across sessions.
+ 
+ <div
+   style={{
+@@ -26,7 +26,7 @@ The self-improving AI agent built by [Rook](https://nousresearch.com). The only
+     style={{
+       display: "inline-block",
+       padding: "0.6rem 1.2rem",
+-      backgroundColor: "#FFD700",
++      backgroundColor: "#FFFFFF",
+       color: "#07070d",
+       borderRadius: "8px",
+       fontWeight: 600,
+@@ -136,14 +136,14 @@ It's not a coding copilot tethered to an IDE or a chatbot wrapper around a singl
+ - **A closed learning loop** — Agent-curated memory with periodic nudges, autonomous skill creation, skill self-improvement during use, FTS5 cross-session recall with LLM summarization, and [Honcho](https://github.com/plastic-labs/honcho) dialectic user modeling
+ - **Runs anywhere, not just your laptop** — 6 terminal backends: local, Docker, SSH, Daytona, Singularity, Modal. Daytona and Modal offer serverless persistence — your environment hibernates when idle, costing nearly nothing
+ - **Lives where you do** — CLI, Telegram, Discord, Slack, WhatsApp, Signal, Matrix, Mattermost, Email, SMS, DingTalk, Feishu, WeCom, Weixin, QQ Bot, Yuanbao, BlueBubbles, Home Assistant, Microsoft Teams, Google Chat, and more — 20+ platforms from one gateway
+-- **Built by model trainers** — Created by [Rook](https://nousresearch.com), the lab behind Reign, Nomos, and Psyche. Works with [Nous Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai), OpenAI, or any endpoint
++- **Bring your own model** — Works with [Nous Portal](https://portal.nousresearch.com), [OpenRouter](https://openrouter.ai), OpenAI, or any endpoint
+ - **Scheduled automations** — Built-in cron with delivery to any platform
+ - **[Bot Mode](/user-guide/bot-mode)** — Build a durable team of specialist Bots that work together in group chats and through `@mentions`
+ - **Delegates & parallelizes** — Spawn isolated subagents for parallel workstreams. Programmatic Tool Calling via `execute_code` collapses multi-step pipelines into single inference calls
+ - **Open standard skills** — Compatible with [agentskills.io](https://agentskills.io). Skills are portable, shareable, and community-contributed via the Skills Hub
+ - **Full web control** — Search, extract, browse, vision, image generation, TTS — one subscription via [Nous Portal](/integrations/nous-portal) bundles all of them
+ - **MCP support** — Connect to any MCP server for extended tool capabilities
+-- **Research-ready** — Batch processing, trajectory export, RL training with Atropos. Built by [Rook](https://nousresearch.com) — the lab behind Reign, Nomos, and Psyche models
++- **Research-ready** — Batch processing, trajectory export, RL training with Atropos.
+ 
+ ## For LLMs and coding agents
+ 
+diff --git a/website/docs/reference/environment-variables.md b/website/docs/reference/environment-variables.md
+index dfc47975f5..685d95d3d5 100644
+--- a/website/docs/reference/environment-variables.md
++++ b/website/docs/reference/environment-variables.md
+@@ -173,7 +173,7 @@ For native Anthropic auth, Reign prefers Claude Code's own credential files when
+ | `KREA_API_KEY` | Krea API key for Krea 2 image generation ([krea.ai](https://krea.ai/)) |
+ | `GROQ_API_KEY` | Groq Whisper STT API key ([groq.com](https://groq.com/)) |
+ | `ELEVENLABS_API_KEY` | ElevenLabs premium TTS voices ([elevenlabs.io](https://elevenlabs.io/)) |
+-| `PORCUPINE_ACCESS_KEY` | Picovoice Porcupine wake-word engine ([console.picovoice.ai](https://console.picovoice.ai/)) — only for `wake_word.provider: porcupine`; the default openWakeWord and sherpa engines need no key |
++| `PORCUPINE_ACCESS_KEY` | Picovoice Porcupine wake-word engine ([console.picovoice.ai](https://console.picovoice.ai/)) — only for `wake_word.provider: porcupine`; the default sherpa engine and openWakeWord need no key |
+ | `STT_GROQ_MODEL` | Override the Groq STT model (default: `whisper-large-v3-turbo`) |
+ | `GROQ_BASE_URL` | Override the Groq OpenAI-compatible STT endpoint |
+ | `STT_OPENAI_MODEL` | Override the OpenAI STT model (default: `whisper-1`) |
+diff --git a/website/docs/user-guide/desktop.md b/website/docs/user-guide/desktop.md
+index 551b8bb752..b0fd2a7c76 100644
+--- a/website/docs/user-guide/desktop.md
++++ b/website/docs/user-guide/desktop.md
+@@ -345,7 +345,7 @@ The connection has two halves: on the backend you protect it with an **auth prov
+ - **OAuth (Nous Portal) — preferred for anything reachable beyond your own machine.** Logins are verified against your Nous account, so this is the option suitable for a VPS, a public host, or any remote backend. Register the dashboard with `reign dashboard register` (or the Portal [`/local-dashboards`](https://portal.nousresearch.com/local-dashboards) page) to provision its OAuth client, then sign in from the app with **Sign in with Rook**. A self-hosted OIDC provider works the same way if you run your own identity provider.
+ - **Username/password — local / trusted-network use only.** The simplest option when the backend is on the same trusted LAN or reachable only over a VPN (e.g. Tailscale). It protects a single shared credential with no external identity provider, so **do not use it for a dashboard exposed to the public internet** — reach for OAuth there instead.
+ 
+-The rest of this section shows the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Web Dashboard → Default provider: Rook](./features/web-dashboard.md#default-provider-nous-research).
++The rest of this section shows the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Web Dashboard → Default provider: Nous Portal](./features/web-dashboard.md#default-provider-nous-portal).
+ 
+ ### On the backend (the remote machine)
+ 
+diff --git a/website/docs/user-guide/features/skins.md b/website/docs/user-guide/features/skins.md
+index 6e1a856719..ce72784762 100644
+--- a/website/docs/user-guide/features/skins.md
++++ b/website/docs/user-guide/features/skins.md
+@@ -32,7 +32,7 @@ display:
+ 
+ | Skin | Description | Agent branding | Visual character |
+ |------|-------------|----------------|------------------|
+-| `default` | Classic Reign — gold and kawaii | `Reign` | Warm gold borders, cornsilk text, kawaii faces in spinners. The familiar caduceus banner. Clean and inviting. |
++| `default` | Rook — monochrome black and white (alias `rook`) | `Reign` | White title, silver accents and grey rules on dark terminals; black, charcoal and grey on light ones. Neutral spinner glyphs. The Rook mark hero beside the info panel. |
+ | `ares` | War-god theme — crimson and bronze | `Ares Agent` | Deep crimson borders with bronze accents. Aggressive spinner verbs ("forging", "marching", "tempering steel"). Custom sword-and-shield ASCII art banner. |
+ | `mono` | Monochrome — clean grayscale | `Reign` | All grays — no color. Borders are `#555555`, text is `#c9d1d9`. Ideal for minimal terminal setups or screen recordings. |
+ | `slate` | Cool blue — developer-focused | `Reign` | Royal blue borders (`#4169e1`), soft blue text. Calm and professional. No custom spinner — uses default faces. |
+@@ -50,13 +50,13 @@ Controls all color values throughout the CLI. Values are hex color strings.
+ 
+ | Key | Description | Default (`default` skin) |
+ |-----|-------------|--------------------------|
+-| `banner_border` | Panel border around the startup banner | `#CD7F32` (bronze) |
+-| `banner_title` | Title text color in the banner | `#FFD700` (gold) |
+-| `banner_accent` | Section headers in the banner (Available Tools, etc.) | `#FFBF00` (amber) |
+-| `banner_dim` | Muted text in the banner (separators, secondary labels) | `#B8860B` (dark goldenrod) |
+-| `banner_text` | Body text in the banner (tool names, skill names) | `#FFF8DC` (cornsilk) |
++| `banner_border` | Panel border around the startup banner | `#5C5C5C` (dark grey) |
++| `banner_title` | Title text color in the banner | `#FFFFFF` (white) |
++| `banner_accent` | Section headers in the banner (Available Tools, etc.) | `#C0C0C0` (silver) |
++| `banner_dim` | Muted text in the banner (separators, secondary labels) | `#8A8A8A` (grey) |
++| `banner_text` | Body text in the banner (tool names, skill names) | `#E6E6E6` (off-white) |
+ | `ui_accent` | General UI accent color (highlights, active elements) | `#FFBF00` |
+-| `ui_label` | UI labels and tags | `#DAA520` (goldenrod) |
++| `ui_label` | UI labels and tags | `#A8A8A8` (light grey) |
+ | `ui_ok` | Success indicators (checkmarks, completion) | `#4caf50` (green) |
+ | `ui_error` | Error indicators (failures, blocked) | `#ef5350` (red) |
+ | `ui_warn` | Warning indicators (caution, approval prompts) | `#ffa726` (orange) |
+@@ -106,7 +106,7 @@ Text strings used throughout the CLI interface.
+ | `tool_prefix` | string | Character prefixed to tool output lines in the CLI | `┊` |
+ | `tool_emojis` | dict | Per-tool emoji overrides for spinners and progress (`{tool_name: emoji}`) | `{}` |
+ | `banner_logo` | string | Rich-markup ASCII art logo (replaces the default REIGN_AGENT banner) | `""` |
+-| `banner_hero` | string | Rich-markup hero art (replaces the default caduceus art) | `""` |
++| `banner_hero` | string | Rich-markup hero art (replaces the default Rook mark art) | `""` |
+ 
+ ## Custom skins
+ 
+diff --git a/website/docs/user-guide/features/wake-word.md b/website/docs/user-guide/features/wake-word.md
+index 0bd5410521..b8a218f098 100644
+--- a/website/docs/user-guide/features/wake-word.md
++++ b/website/docs/user-guide/features/wake-word.md
+@@ -48,7 +48,7 @@ Reign supports **client capture** for that case:
+ 
+ 1. The desktop arms wake with `capture: client` (automatic for the GUI when the
+    backend has no local input device, or set explicitly below).
+-2. openWakeWord still runs **on the backend** (same engines, same models).
++2. The wake engine still runs **on the backend** (same engines, same models).
+ 3. The desktop opens the **local Mac/PC microphone**, resamples to 16 kHz mono
+    int16, and streams short frames via the `wake.feed` RPC.
+ 4. On detection the backend emits `wake.detected` as usual; the desktop starts
+@@ -76,15 +76,15 @@ backend process.
+ 
+ | Engine | Cost | API key | Notes |
+ |--------|------|---------|-------|
+-| **openWakeWord** (default) | Free | None | Local ONNX models. Ships a bundled **"hey reign"** model (default); also supports `hey_jarvis`, `alexa`, `hey_mycroft`, … and custom models |
+-| **sherpa** | Free | None | **Open vocabulary** — detects ANY typed phrase with zero training. Small English model auto-downloads on first use (~13 MB) |
++| **sherpa** (default) | Free | None | **Open vocabulary** — detects ANY typed phrase with zero training. Small English model auto-downloads on first use (~13 MB) |
++| **openWakeWord** | Free | None | Local ONNX/tflite models. Reign bundles **no** model for it: set `openwakeword.model` to a built-in name (`hey_jarvis`, `alexa`, `hey_mycroft`, …) or a custom model file |
+ | **Porcupine** | Free tier / paid | `PORCUPINE_ACCESS_KEY` | Picovoice engine; built-in keywords + custom `.ppn` files |
+ 
+-By default the phrase is **"hey reign"** — a model for it ships with Reign, so
+-it works out of the box with no training. (On first use, openWakeWord downloads
+-its shared feature-extraction models — a small one-time fetch.)
++By default the phrase is **"hey reign"**, detected by the sherpa engine — no
++trained model is needed, so it works out of the box. (On first use, sherpa
++downloads its small English keyword-spotting model — a ~13 MB one-time fetch.)
+ 
+-Both are lazy-installed the first time you enable the wake word (desktop
++All engines are lazy-installed the first time you enable the wake word (desktop
+ installs made with `--include-desktop` pre-install them, so the ear works
+ instantly). To install ahead of time:
+ 
+@@ -120,20 +120,25 @@ wake_word:
+   surface: auto               # eligible surface: "auto" | "cli" | "tui" | "gui"
+   input_device: null           # PortAudio input index or device-name substring; null = process default
+   capture: auto               # auto | local | client — where PCM is captured (see Remote desktop)
+-  provider: openwakeword      # "openwakeword" (free, local) | "sherpa" (free, any phrase) | "porcupine"
+-  phrase: "hey reign"        # cosmetic label only — detection is keyed by the model/keyword below
++  provider: sherpa            # "sherpa" (free, any phrase — default) | "openwakeword" (free, needs a model) | "porcupine"
++  phrase: "hey reign"        # sherpa: THE detected phrase (any text). Other engines: cosmetic label — detection is keyed by the model/keyword below
+   sensitivity: 0.6            # 0.0-1.0 — higher = stricter (fewer false triggers), consistent across all engines
+   confirmation_frames: 3      # openWakeWord only — consecutive over-threshold frames required to fire
+   start_new_session: true     # start a fresh session on wake vs. continue the current one
++  sherpa:
++    model_dir: ""             # optional path to a sherpa-onnx KWS model dir; "" = auto-download
+   openwakeword:
+-    model: hey_reign         # bundled default; OR a built-in name OR a path to a custom .onnx/.tflite
++    model: ""                 # REQUIRED for provider: openwakeword — a built-in name OR a path to a custom .onnx/.tflite (nothing is bundled)
+     inference_framework: ""   # "" (auto) | "onnx" | "tflite"
+   porcupine:
+     keyword: jarvis           # built-in keyword OR path to a custom .ppn
+ ```
+ 
+-`sensitivity`, `phrase`, and `start_new_session` apply to both engines. The
+-`openwakeword` and `porcupine` blocks select the actual detection model.
++`sensitivity`, `phrase`, and `start_new_session` apply to every engine. With
++sherpa, `phrase` is the detection key itself; the `openwakeword` and
++`porcupine` blocks select the actual detection model for those engines. If
++`provider: openwakeword` is set without a `model`, `/wake status` reports
++"no bundled wake-word model ships with Reign" and the listener refuses to arm.
+ 
+ `input_device` is passed directly to the wake listener's PortAudio
+ (`sounddevice`) stream. Use either a numeric device index or an unambiguous
+@@ -196,11 +201,11 @@ command records.
+ 
+ ## Using a different phrase
+ 
+-"Hey Reign" works out of the box — the bundled openWakeWord model
+-(`model: hey_reign`) is the default. To wake on something else, the easiest
+-path is the open-vocabulary engine:
++"Hey Reign" works out of the box — the default sherpa engine detects
++`phrase: "hey reign"` with no trained model. To wake on something else, just
++change the phrase:
+ 
+-### Option A — sherpa (any phrase, zero training)
++### Option A — sherpa (any phrase, zero training — the default)
+ 
+ Type the phrase you want; it's tokenized at runtime — "hey coder",
+ "computer", "wake up neo", anything:
+@@ -239,7 +244,9 @@ degrade accuracy — tune per-profile `sensitivity` if needed.
+ 
+ ### Option B — openWakeWord (free, trained model)
+ 
+-Name a built-in model (`hey_jarvis`, `alexa`, `hey_mycroft`, …), or train a
++A purpose-trained model gives the lowest false-trigger rate. Reign ships no
++openWakeWord model, so `openwakeword.model` is required with this engine:
++name a built-in model (`hey_jarvis`, `alexa`, `hey_mycroft`, …), or train a
+ custom model (≈75–90 min on a free/Colab GPU) for maximum robustness, drop
+ the `.onnx` file somewhere, and reference it:
+ 
+@@ -249,7 +256,7 @@ wake_word:
+   provider: openwakeword
+   phrase: "computer"
+   openwakeword:
+-    model: ~/.reign/wakewords/computer.onnx   # or a built-in name like hey_jarvis
++    model: ~/.reign/models/computer.onnx   # or a built-in name like hey_jarvis
+ ```
+ 
+ Training references:
+@@ -274,7 +281,7 @@ wake_word:
+   provider: porcupine
+   phrase: "hey reign"
+   porcupine:
+-    keyword: ~/.reign/wakewords/hey_reign.ppn
++    keyword: ~/.reign/models/hey-reign.ppn
+ ```
+ 
+ Set your access key in `~/.reign/.env`:
+diff --git a/website/docs/user-guide/features/web-dashboard.md b/website/docs/user-guide/features/web-dashboard.md
+index fcabb209fe..184f8a4c86 100644
+--- a/website/docs/user-guide/features/web-dashboard.md
++++ b/website/docs/user-guide/features/web-dashboard.md
+@@ -604,7 +604,7 @@ same auth gate as the rest of `/api/`.
+ When the dashboard is bound to a public or non-loopback address — anything other than `127.0.0.1` / `localhost` — Reign engages an auth gate. Every request must carry a verified session cookie or it's bounced to the login page. Three providers ship in the box:
+ 
+ - **[Username/password](#usernamepassword-provider-no-oauth-idp)** — the simplest way to put auth on a self-hosted / on-prem / homelab dashboard. No external identity provider. **Use it only on a trusted network or behind a VPN — not for public-internet exposure.**
+-- **[OAuth (Nous Portal)](#default-provider-nous-research)** — for hosted deployments and any dashboard reachable over the public internet, and the recommended path for a [remote Reign Desktop connection](#connecting-reign-desktop-to-a-remote-backend). Every login is verified against your Nous account, so this is the provider suitable for internet-facing use.
++- **[OAuth (Nous Portal)](#default-provider-nous-portal)** — for hosted deployments and any dashboard reachable over the public internet, and the recommended path for a [remote Reign Desktop connection](#connecting-reign-desktop-to-a-remote-backend). Every login is verified against your Nous account, so this is the provider suitable for internet-facing use.
+ - **[Self-hosted OIDC](#self-hosted-oidc-provider)** — for bringing your own identity provider via standard OpenID Connect (Keycloak, Auth0, Okta, Google, GitHub via an OIDC bridge, etc.). No Nous Portal involved; suitable for public-internet exposure when fronted by a conformant OIDC server.
+ 
+ Operator-owned dashboards bound to loopback are unaffected — no auth, no login page.
+@@ -628,7 +628,7 @@ If the gate would engage but **no** `DashboardAuthProvider` is registered (no No
+ 
+ When you run `reign dashboard --host 0.0.0.0` **interactively** (a real terminal) and no provider is configured yet, Reign doesn't just fail — it offers to set one up on the spot: pick **username & password** (writes `dashboard.basic_auth` to `config.yaml` and you're running in seconds) or **OAuth** (points you at `reign dashboard register`). Non-interactive callers — Docker/s6, CI, piped runs — skip the prompt and hit the fail-closed error above, so an unattended deploy still never starts without auth.
+ 
+-### Default provider: Rook
++### Default provider: Nous Portal
+ 
+ The bundled `plugins/dashboard_auth/nous` plugin is **always installed** and auto-loaded. It auto-registers a `DashboardAuthProvider` named `nous` when a client ID is configured.
+ 
+@@ -724,7 +724,7 @@ If you don't want to wire up an OAuth identity provider — a self-hosted "just
+ It plugs into the same gate as the OAuth provider: the gate engages on a non-loopback bind, the login page renders a credential form for this provider (instead of a "Log in with X" button), and everything downstream of login — session cookies, transparent refresh, WS tickets, logout, the audit log — is identical to the OAuth path. Sessions are stateless HMAC-signed tokens the provider mints itself, so there's **no database and no external IDP**. Password hashing uses stdlib `scrypt` (no third-party dependency).
+ 
+ :::warning Use this on trusted networks only — not the public internet
+-The username/password provider is intended for self-hosted / on-prem / homelab dashboards on a **trusted network**, or reachable only over a **VPN**. It protects a single shared credential with no external identity provider, MFA, or per-user accounts behind it, so it is **not suitable for exposing a dashboard directly to the public internet**. For an internet-facing dashboard, use the [Rook provider](#default-provider-nous-research) (or your own [self-hosted OIDC](#self-hosted-oidc-provider) / [custom OAuth](#custom-providers) provider) instead.
++The username/password provider is intended for self-hosted / on-prem / homelab dashboards on a **trusted network**, or reachable only over a **VPN**. It protects a single shared credential with no external identity provider, MFA, or per-user accounts behind it, so it is **not suitable for exposing a dashboard directly to the public internet**. For an internet-facing dashboard, use the [Nous Portal provider](#default-provider-nous-portal) (or your own [self-hosted OIDC](#self-hosted-oidc-provider) / [custom OAuth](#custom-providers) provider) instead.
+ :::
+ 
+ #### Configuration
+@@ -794,7 +794,7 @@ curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'
+ # ["basic"]
+ ```
+ 
+-`GET /api/auth/me` then returns the verified session (`provider: basic`). Keep this behind a VPN — see the warning above; for a public host use the [Rook](#default-provider-nous-research) or [self-hosted OIDC](#self-hosted-oidc-provider) provider instead.
++`GET /api/auth/me` then returns the verified session (`provider: basic`). Keep this behind a VPN — see the warning above; for a public host use the [Nous Portal](#default-provider-nous-portal) or [self-hosted OIDC](#self-hosted-oidc-provider) provider instead.
+ 
+ #### Writing your own password provider
+ 
+@@ -1090,7 +1090,7 @@ Reign Desktop can drive a Reign backend running on another machine (a VPS, a hom
+ 
+ You protect the remote dashboard with one of the bundled auth providers, and the desktop app signs in against whichever one the backend advertises. For a backend reachable beyond your own machine — a VPS, a public host, anything internet-facing — the recommended provider is **OAuth (Nous Portal)** (register it with [`reign dashboard register`](#registering-a-dashboard) and sign in with *Sign in with Rook*). The bundled [username/password provider](#usernamepassword-provider-no-oauth-idp) is the quickest option when the backend is on a trusted LAN or reachable only over a VPN, but is **not suitable for direct public-internet exposure**. Binding the dashboard to a non-loopback address engages its auth gate; once signed in, Desktop reuses the session for the chat WebSocket automatically — there is no token to copy or paste.
+ 
+-The recipe below uses the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Default provider: Rook](#default-provider-nous-research).
++The recipe below uses the username/password path because it's the quickest to stand up on a trusted network; for the OAuth path see [Default provider: Rook](#default-provider-nous-portal).
+ 
+ ### On the backend (the remote machine)
+ 
+diff --git a/website/docusaurus.config.ts b/website/docusaurus.config.ts
+index 3abe358211..9359131f71 100644
+--- a/website/docusaurus.config.ts
++++ b/website/docusaurus.config.ts
+@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
+ 
+ const config: Config = {
+   title: 'Reign',
+-  tagline: 'The self-improving AI agent',
++  tagline: 'In Your Corner',
+   favicon: 'img/favicon.ico',
+ 
+   url: 'https://hermes-agent.nousresearch.com',
+@@ -24,15 +24,11 @@ const config: Config = {
+ 
+   i18n: {
+     defaultLocale: 'en',
+-    locales: ['en', 'zh-Hans'],
++    locales: ['en'],
+     localeConfigs: {
+       en: {
+         label: 'English',
+       },
+-      'zh-Hans': {
+-        label: '简体中文',
+-        htmlLang: 'zh-Hans',
+-      },
+     },
+   },
+ 
+@@ -119,7 +115,7 @@ const config: Config = {
+     navbar: {
+       title: 'Reign',
+       logo: {
+-        alt: 'Reign',
++        alt: 'Rook',
+         src: 'img/logo.png',
+       },
+       items: [
+@@ -139,10 +135,6 @@ const config: Config = {
+           label: 'Download',
+           position: 'left',
+         },
+-        {
+-          type: 'localeDropdown',
+-          position: 'right',
+-        },
+         {
+           href: 'https://hermes-agent.nousresearch.com',
+           label: 'Home',
+@@ -185,11 +177,10 @@ const config: Config = {
+           items: [
+             { label: 'Desktop Download', href: 'https://hermes-agent.nousresearch.com/' },
+             { label: 'GitHub', href: 'https://github.com/NousResearch/hermes-agent' },
+-            { label: 'Rook', href: 'https://nousresearch.com' },
+           ],
+         },
+       ],
+-      copyright: `Built by <a href="https://nousresearch.com">Rook</a> · MIT License · ${new Date().getFullYear()}`,
++      copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
+     },
+     prism: {
+       theme: prismThemes.github,
+diff --git a/website/src/css/custom.css b/website/src/css/custom.css
+index 66a91b717d..ceffb6dc57 100644
+--- a/website/src/css/custom.css
++++ b/website/src/css/custom.css
+@@ -1,22 +1,20 @@
+ /**
+  * Reign — Custom Docusaurus Theme
+- * Matches the landing page branding: amber-on-dark, terminal aesthetic
+- * Colors from landingpage/style.css
++ * Rook branding: monochrome, black on white / white on near-black
+  */
+ 
+ /* Import fonts to match landing page */
+ @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+ 
+ :root {
+-  /* Dark amber palette for light mode — readable on white (WCAG AA compliant)
+-     Current gold #FFD700 has only 1.4:1 contrast on white; these tones pass 4.5:1+ */
+-  --ifm-color-primary: #8B6508;
+-  --ifm-color-primary-dark: #7A5800;
+-  --ifm-color-primary-darker: #6E4F00;
+-  --ifm-color-primary-darkest: #5A4100;
+-  --ifm-color-primary-light: #9E7410;
+-  --ifm-color-primary-lighter: #B38319;
+-  --ifm-color-primary-lightest: #C89222;
++  /* Light mode: near-black primary on white */
++  --ifm-color-primary: #1A1A1A;
++  --ifm-color-primary-dark: #111111;
++  --ifm-color-primary-darker: #0A0A0A;
++  --ifm-color-primary-darkest: #000000;
++  --ifm-color-primary-light: #333333;
++  --ifm-color-primary-lighter: #4A4A4A;
++  --ifm-color-primary-lightest: #666666;
+ 
+   --ifm-font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+   --ifm-font-family-monospace: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+@@ -24,51 +22,51 @@
+   --ifm-code-font-size: 90%;
+   --ifm-heading-font-weight: 600;
+ 
+-  --ifm-link-color: #7A5800;
+-  --ifm-link-hover-color: #5A4100;
++  --ifm-link-color: #111111;
++  --ifm-link-hover-color: #000000;
+ }
+ 
+ /* Dark mode — the PRIMARY mode, matches landing page */
+ [data-theme='dark'] {
+-  --ifm-color-primary: #FFD700;
+-  --ifm-color-primary-dark: #E6C200;
+-  --ifm-color-primary-darker: #D9B700;
+-  --ifm-color-primary-darkest: #B39600;
+-  --ifm-color-primary-light: #FFDD33;
+-  --ifm-color-primary-lighter: #FFE14D;
+-  --ifm-color-primary-lightest: #FFEB80;
++  --ifm-color-primary: #FFFFFF;
++  --ifm-color-primary-dark: #E6E6E6;
++  --ifm-color-primary-darker: #D9D9D9;
++  --ifm-color-primary-darkest: #C0C0C0;
++  --ifm-color-primary-light: #F2F2F2;
++  --ifm-color-primary-lighter: #F5F5F5;
++  --ifm-color-primary-lightest: #FAFAFA;
+ 
+-  --ifm-background-color: #07070d;
+-  --ifm-background-surface-color: #0f0f18;
+-  --ifm-navbar-background-color: #07070dEE;
+-  --ifm-footer-background-color: #050509;
+-  --ifm-color-emphasis-100: #14142a;
+-  --ifm-color-emphasis-200: #1a1a30;
++  --ifm-background-color: #0A0A0A;
++  --ifm-background-surface-color: #141414;
++  --ifm-navbar-background-color: #0A0A0AEE;
++  --ifm-footer-background-color: #050505;
++  --ifm-color-emphasis-100: #1A1A1A;
++  --ifm-color-emphasis-200: #222222;
+ 
+-  --ifm-font-color-base: #e8e4dc;
+-  --ifm-font-color-secondary: #9a968e;
++  --ifm-font-color-base: #E8E8E8;
++  --ifm-font-color-secondary: #9A9A9A;
+ 
+-  --ifm-link-color: #FFD700;
+-  --ifm-link-hover-color: #FFBF00;
++  --ifm-link-color: #FFFFFF;
++  --ifm-link-hover-color: #C0C0C0;
+ 
+-  --ifm-code-background: #0f0f18;
++  --ifm-code-background: #141414;
+ 
+-  --ifm-toc-border-color: rgba(255, 215, 0, 0.08);
+-  --ifm-hr-border-color: rgba(255, 215, 0, 0.08);
++  --ifm-toc-border-color: rgba(255, 255, 255, 0.08);
++  --ifm-hr-border-color: rgba(255, 255, 255, 0.08);
+ 
+-  --docusaurus-highlighted-code-line-bg: rgba(255, 215, 0, 0.08);
++  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
+ }
+ 
+ /* Subtle dot grid background matching landing page */
+ [data-theme='dark'] .main-wrapper {
+-  background-image: radial-gradient(rgba(255, 215, 0, 0.02) 1px, transparent 1px);
++  background-image: radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+   background-size: 32px 32px;
+ }
+ 
+ /* Navbar styling */
+ .navbar {
+   backdrop-filter: blur(12px);
+-  border-bottom: 1px solid rgba(255, 215, 0, 0.08);
++  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+ }
+ 
+ /* backdrop-filter creates a stacking context that hides
+@@ -90,22 +88,22 @@
+ }
+ 
+ [data-theme='dark'] .menu__link--active:not(.menu__link--sublist) {
+-  background-color: rgba(255, 215, 0, 0.08);
+-  border-left: 3px solid #FFD700;
++  background-color: rgba(255, 255, 255, 0.08);
++  border-left: 3px solid #FFFFFF;
+   padding-left: calc(var(--ifm-menu-link-padding-horizontal) - 3px);
+ }
+ 
+ /* Light mode sidebar active */
+ [data-theme='light'] .menu__link--active:not(.menu__link--sublist) {
+-  background-color: rgba(139, 101, 8, 0.08);
+-  border-left: 3px solid #8B6508;
++  background-color: rgba(0, 0, 0, 0.08);
++  border-left: 3px solid #1A1A1A;
+   padding-left: calc(var(--ifm-menu-link-padding-horizontal) - 3px);
+ }
+ 
+ /* Code blocks */
+ [data-theme='dark'] .prism-code {
+   background-color: #0a0a12 !important;
+-  border: 1px solid rgba(255, 215, 0, 0.06);
++  border: 1px solid rgba(255, 255, 255, 0.06);
+ }
+ 
+ /* Text diagrams: preserve spacing, disable ligatures, and prefer box-drawing-safe fonts */
+@@ -146,7 +144,7 @@ pre.prism-code.language-ascii code {
+   width: 100%;
+   max-width: 900px;
+   margin: 1.25rem auto 0.5rem;
+-  border: 1px solid rgba(255, 215, 0, 0.08);
++  border: 1px solid rgba(255, 255, 255, 0.08);
+   border-radius: 12px;
+   background: #0a0a12;
+ }
+@@ -158,10 +156,10 @@ pre.prism-code.language-ascii code {
+   font-size: 0.95rem;
+ }
+ 
+-/* Admonitions — gold-tinted */
++/* Admonitions — neutral-tinted */
+ [data-theme='dark'] .alert--info {
+-  --ifm-alert-background-color: rgba(255, 215, 0, 0.05);
+-  --ifm-alert-border-color: rgba(255, 215, 0, 0.15);
++  --ifm-alert-background-color: rgba(255, 255, 255, 0.05);
++  --ifm-alert-border-color: rgba(255, 255, 255, 0.15);
+ }
+ 
+ /* Table styling */
+@@ -170,41 +168,41 @@ pre.prism-code.language-ascii code {
+ }
+ 
+ [data-theme='dark'] table th {
+-  background-color: rgba(255, 215, 0, 0.06);
+-  border-color: rgba(255, 215, 0, 0.12);
++  background-color: rgba(255, 255, 255, 0.06);
++  border-color: rgba(255, 255, 255, 0.12);
+ }
+ 
+ [data-theme='dark'] table td {
+-  border-color: rgba(255, 215, 0, 0.06);
++  border-color: rgba(255, 255, 255, 0.06);
+ }
+ 
+ /* Light mode table styling */
+ [data-theme='light'] table th {
+-  background-color: rgba(139, 101, 8, 0.06);
+-  border-color: rgba(139, 101, 8, 0.15);
++  background-color: rgba(0, 0, 0, 0.06);
++  border-color: rgba(0, 0, 0, 0.15);
+ }
+ 
+ [data-theme='light'] table td {
+-  border-color: rgba(139, 101, 8, 0.10);
++  border-color: rgba(0, 0, 0, 0.10);
+ }
+ 
+ /* Footer */
+ .footer {
+-  border-top: 1px solid rgba(255, 215, 0, 0.08);
++  border-top: 1px solid rgba(255, 255, 255, 0.08);
+ }
+ 
+ .footer a {
+-  color: #9a968e;
++  color: #9A9A9A;
+   transition: color 0.2s;
+ }
+ 
+ [data-theme='dark'] .footer a:hover {
+-  color: #FFD700;
++  color: #FFFFFF;
+   text-decoration: none;
+ }
+ 
+ [data-theme='light'] .footer a:hover {
+-  color: #7A5800;
++  color: #111111;
+   text-decoration: none;
+ }
+ 
+@@ -215,11 +213,11 @@ pre.prism-code.language-ascii code {
+ }
+ 
+ [data-theme='dark'] ::-webkit-scrollbar-track {
+-  background: #07070d;
++  background: #0A0A0A;
+ }
+ 
+ [data-theme='dark'] ::-webkit-scrollbar-thumb {
+-  background: #1a1a30;
++  background: #222222;
+   border-radius: 4px;
+ }
+ 
+@@ -229,8 +227,8 @@ pre.prism-code.language-ascii code {
+ 
+ /* Search bar */
+ [data-theme='dark'] .DocSearch-Button {
+-  background-color: #0f0f18;
+-  border: 1px solid rgba(255, 215, 0, 0.08);
++  background-color: #141414;
++  border: 1px solid rgba(255, 255, 255, 0.08);
+ }
+ 
+ /* ─── Mobile sidebar improvements ─────────────────────────────────────────── */
+@@ -246,7 +244,7 @@ pre.prism-code.language-ascii code {
+     font-weight: 600;
+     font-size: 1rem;
+     padding: 0.75rem 0.75rem;
+-    border-bottom: 1px solid rgba(255, 215, 0, 0.06);
++    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+   }
+ 
+   /* Category caret — more visible */
+@@ -257,7 +255,7 @@ pre.prism-code.language-ascii code {
+   /* Indent subcategories clearly */
+   .menu__list .menu__list {
+     padding-left: 0.75rem;
+-    border-left: 1px solid rgba(255, 215, 0, 0.06);
++    border-left: 1px solid rgba(255, 255, 255, 0.06);
+     margin-left: 0.5rem;
+   }
+ 
+@@ -275,6 +273,6 @@ pre.prism-code.language-ascii code {
+ 
+ /* Hero banner for docs landing if needed */
+ .hero--reign {
+-  background: linear-gradient(135deg, #07070d 0%, #0f0f18 100%);
++  background: linear-gradient(135deg, #0A0A0A 0%, #141414 100%);
+   padding: 4rem 0;
+ }
+diff --git a/website/src/pages/skills/styles.module.css b/website/src/pages/skills/styles.module.css
+index e7fe409886..dcd86c6dd8 100644
+--- a/website/src/pages/skills/styles.module.css
++++ b/website/src/pages/skills/styles.module.css
+@@ -22,7 +22,7 @@
+   height: 400px;
+   background: radial-gradient(
+     ellipse at center,
+-    rgba(255, 215, 0, 0.07) 0%,
++    rgba(255, 255, 255, 0.07) 0%,
+     transparent 70%
+   );
+   pointer-events: none;
+@@ -40,7 +40,7 @@
+   font-size: 0.75rem;
+   letter-spacing: 0.15em;
+   text-transform: uppercase;
+-  color: rgba(255, 215, 0, 0.5);
++  color: rgba(255, 255, 255, 0.5);
+   margin-bottom: 0.75rem;
+ }
+ 
+@@ -58,13 +58,13 @@
+ 
+ .heroSub {
+   font-size: 1.05rem;
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+   line-height: 1.5;
+   margin: 0 0 2rem;
+ }
+ 
+ .heroAccent {
+-  color: #ffd700;
++  color: #FFFFFF;
+   font-weight: 700;
+   font-variant-numeric: tabular-nums;
+ }
+@@ -94,7 +94,7 @@
+   font-size: 0.72rem;
+   letter-spacing: 0.06em;
+   text-transform: uppercase;
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+ }
+ 
+ 
+@@ -108,7 +108,7 @@
+   align-items: center;
+   padding: 1rem 2rem;
+   backdrop-filter: blur(16px) saturate(1.4);
+-  border-bottom: 1px solid rgba(255, 215, 0, 0.06);
++  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+ }
+ 
+ [data-theme="dark"] .controlsBar {
+@@ -126,7 +126,7 @@
+   left: 0.85rem;
+   top: 50%;
+   transform: translateY(-50%);
+-  color: rgba(255, 215, 0, 0.35);
++  color: rgba(255, 255, 255, 0.35);
+   pointer-events: none;
+ }
+ 
+@@ -135,21 +135,21 @@
+   padding: 0.7rem 2.5rem 0.7rem 2.6rem;
+   font-size: 0.95rem;
+   font-family: "DM Sans", sans-serif;
+-  border: 1px solid rgba(255, 215, 0, 0.12);
++  border: 1px solid rgba(255, 255, 255, 0.12);
+   border-radius: 10px;
+   background: rgba(15, 15, 24, 0.6);
+-  color: var(--ifm-font-color-base, #e8e4dc);
++  color: var(--ifm-font-color-base, #E8E8E8);
+   outline: none;
+   transition: border-color 0.2s, box-shadow 0.2s;
+ }
+ 
+ .searchInput:focus {
+-  border-color: rgba(255, 215, 0, 0.4);
+-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.06);
++  border-color: rgba(255, 255, 255, 0.4);
++  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.06);
+ }
+ 
+ .searchInput::placeholder {
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+   opacity: 0.5;
+ }
+ 
+@@ -170,7 +170,7 @@
+ 
+ .clearBtn:hover {
+   opacity: 1;
+-  color: #ffd700;
++  color: #FFFFFF;
+ }
+ 
+ .sourcePills {
+@@ -188,7 +188,7 @@
+   border: 1px solid rgba(255, 255, 255, 0.07);
+   border-radius: 20px;
+   background: transparent;
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+   font-family: "DM Sans", sans-serif;
+   font-size: 0.8rem;
+   font-weight: 500;
+@@ -202,9 +202,9 @@
+ }
+ 
+ .srcPillActive {
+-  border-color: var(--pill-border, rgba(255, 215, 0, 0.3));
+-  background: var(--pill-bg, rgba(255, 215, 0, 0.06));
+-  color: var(--pill-color, #ffd700);
++  border-color: var(--pill-border, rgba(255, 255, 255, 0.3));
++  background: var(--pill-bg, rgba(255, 255, 255, 0.06));
++  color: var(--pill-color, #FFFFFF);
+ }
+ 
+ .srcCount {
+@@ -236,14 +236,14 @@
+   height: calc(100vh - 160px);
+   overflow-y: auto;
+   padding: 1.25rem 1rem 2rem 1.5rem;
+-  border-right: 1px solid rgba(255, 215, 0, 0.05);
++  border-right: 1px solid rgba(255, 255, 255, 0.05);
+ }
+ 
+ .sidebar::-webkit-scrollbar {
+   width: 4px;
+ }
+ .sidebar::-webkit-scrollbar-thumb {
+-  background: rgba(255, 215, 0, 0.1);
++  background: rgba(255, 255, 255, 0.1);
+   border-radius: 2px;
+ }
+ 
+@@ -266,7 +266,7 @@
+ .sidebarClear {
+   font-family: "DM Sans", sans-serif;
+   font-size: 0.72rem;
+-  color: rgba(255, 215, 0, 0.6);
++  color: rgba(255, 255, 255, 0.6);
+   background: none;
+   border: none;
+   cursor: pointer;
+@@ -275,7 +275,7 @@
+ }
+ 
+ .sidebarClear:hover {
+-  color: #ffd700;
++  color: #FFFFFF;
+ }
+ 
+ .catList {
+@@ -292,7 +292,7 @@
+   border: none;
+   border-radius: 6px;
+   background: transparent;
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+   font-family: "DM Sans", sans-serif;
+   font-size: 0.82rem;
+   cursor: pointer;
+@@ -302,13 +302,13 @@
+ }
+ 
+ .catItem:hover {
+-  background: rgba(255, 215, 0, 0.04);
++  background: rgba(255, 255, 255, 0.04);
+   color: var(--ifm-font-color-base);
+ }
+ 
+ .catItemActive {
+-  background: rgba(255, 215, 0, 0.08);
+-  color: #ffd700;
++  background: rgba(255, 255, 255, 0.08);
++  color: #FFFFFF;
+ }
+ 
+ .catItemIcon {
+@@ -328,13 +328,13 @@
+ .catItemCount {
+   font-family: "JetBrains Mono", monospace;
+   font-size: 0.68rem;
+-  color: rgba(255, 215, 0, 0.3);
++  color: rgba(255, 255, 255, 0.3);
+   min-width: 1.5rem;
+   text-align: right;
+ }
+ 
+ .catItemActive .catItemCount {
+-  color: rgba(255, 215, 0, 0.6);
++  color: rgba(255, 255, 255, 0.6);
+ }
+ 
+ .sidebarToggle {
+@@ -354,7 +354,7 @@
+   flex-wrap: wrap;
+   margin-bottom: 1rem;
+   padding-bottom: 0.75rem;
+-  border-bottom: 1px solid rgba(255, 215, 0, 0.05);
++  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+ }
+ 
+ .filterCount {
+@@ -369,10 +369,10 @@
+   align-items: center;
+   gap: 0.3rem;
+   padding: 0.2rem 0.5rem;
+-  border: 1px solid rgba(255, 215, 0, 0.15);
++  border: 1px solid rgba(255, 255, 255, 0.15);
+   border-radius: 4px;
+-  background: rgba(255, 215, 0, 0.04);
+-  color: rgba(255, 215, 0, 0.8);
++  background: rgba(255, 255, 255, 0.04);
++  color: rgba(255, 255, 255, 0.8);
+   font-size: 0.75rem;
+ }
+ 
+@@ -405,7 +405,7 @@
+ }
+ 
+ .clearAllBtn:hover {
+-  color: #ffd700;
++  color: #FFFFFF;
+ }
+ 
+ 
+@@ -442,14 +442,14 @@
+ }
+ 
+ .card:hover {
+-  border-color: rgba(255, 215, 0, 0.15);
+-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.05);
++  border-color: rgba(255, 255, 255, 0.15);
++  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.05);
+   transform: translateY(-1px);
+ }
+ 
+ .cardExpanded {
+-  border-color: rgba(255, 215, 0, 0.2);
+-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 215, 0, 0.08);
++  border-color: rgba(255, 255, 255, 0.2);
++  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.08);
+ }
+ 
+ .cardAccent {
+@@ -521,7 +521,7 @@
+ .cardDesc {
+   font-size: 0.82rem;
+   line-height: 1.55;
+-  color: var(--ifm-font-color-secondary, #9a968e);
++  color: var(--ifm-font-color-secondary, #9A9A9A);
+   margin: 0 0 0.6rem;
+   display: -webkit-box;
+   -webkit-line-clamp: 2;
+@@ -544,18 +544,18 @@
+   font-family: "JetBrains Mono", monospace;
+   font-size: 0.66rem;
+   padding: 0.15rem 0.45rem;
+-  border: 1px solid rgba(255, 215, 0, 0.12);
++  border: 1px solid rgba(255, 255, 255, 0.12);
+   border-radius: 3px;
+-  background: rgba(255, 215, 0, 0.04);
+-  color: rgba(255, 215, 0, 0.7);
++  background: rgba(255, 255, 255, 0.04);
++  color: rgba(255, 255, 255, 0.7);
+   cursor: pointer;
+   transition: all 0.15s;
+ }
+ 
+ .catButton:hover {
+-  background: rgba(255, 215, 0, 0.1);
+-  color: #ffd700;
+-  border-color: rgba(255, 215, 0, 0.25);
++  background: rgba(255, 255, 255, 0.1);
++  color: #FFFFFF;
++  border-color: rgba(255, 255, 255, 0.25);
+ }
+ 
+ .platformPill {
+@@ -595,9 +595,9 @@
+ }
+ 
+ .tagPill:hover {
+-  background: rgba(255, 215, 0, 0.06);
+-  color: rgba(255, 215, 0, 0.8);
+-  border-color: rgba(255, 215, 0, 0.15);
++  background: rgba(255, 255, 255, 0.06);
++  color: rgba(255, 255, 255, 0.8);
++  border-color: rgba(255, 255, 255, 0.15);
+ }
+ 
+ .authorRow {
+@@ -626,7 +626,7 @@
+   margin-top: 0.65rem;
+   padding: 0.45rem 0.65rem;
+   background: rgba(0, 0, 0, 0.25);
+-  border: 1px solid rgba(255, 215, 0, 0.06);
++  border: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 5px;
+   display: flex;
+   align-items: center;
+@@ -636,7 +636,7 @@
+ .installHint code {
+   font-family: "JetBrains Mono", monospace;
+   font-size: 0.72rem;
+-  color: rgba(255, 215, 0, 0.7);
++  color: rgba(255, 255, 255, 0.7);
+   background: none;
+   padding: 0;
+   flex: 1;
+@@ -655,10 +655,10 @@
+   gap: 0.25rem;
+   flex-shrink: 0;
+   padding: 0.2rem 0.45rem;
+-  border: 1px solid rgba(255, 215, 0, 0.18);
++  border: 1px solid rgba(255, 255, 255, 0.18);
+   border-radius: 4px;
+-  background: rgba(255, 215, 0, 0.06);
+-  color: rgba(255, 215, 0, 0.85);
++  background: rgba(255, 255, 255, 0.06);
++  color: rgba(255, 255, 255, 0.85);
+   font-size: 0.68rem;
+   font-weight: 600;
+   cursor: pointer;
+@@ -666,8 +666,8 @@
+ }
+ 
+ .copyBtn:hover {
+-  background: rgba(255, 215, 0, 0.14);
+-  color: rgba(255, 215, 0, 1);
++  background: rgba(255, 255, 255, 0.14);
++  color: rgba(255, 255, 255, 1);
+ }
+ 
+ .copyBtnLabel {
+@@ -687,8 +687,8 @@
+   width: 2.25rem;
+   height: 2.25rem;
+   margin: 0 auto 1rem;
+-  border: 3px solid rgba(255, 215, 0, 0.15);
+-  border-top-color: rgba(255, 215, 0, 0.7);
++  border: 3px solid rgba(255, 255, 255, 0.15);
++  border-top-color: rgba(255, 255, 255, 0.7);
+   border-radius: 50%;
+   animation: skillsSpin 0.8s linear infinite;
+ }
+@@ -766,7 +766,7 @@
+   border: 1px solid rgba(255, 255, 255, 0.06);
+   border-radius: 3px;
+   background: rgba(255, 255, 255, 0.02);
+-  color: rgba(255, 215, 0, 0.6);
++  color: rgba(255, 255, 255, 0.6);
+ }
+ 
+ .docsLink {
+@@ -791,8 +791,8 @@
+ }
+ 
+ .highlight {
+-  background: rgba(255, 215, 0, 0.2);
+-  color: #ffd700;
++  background: rgba(255, 255, 255, 0.2);
++  color: #FFFFFF;
+   border-radius: 2px;
+   padding: 0 1px;
+ }
+@@ -809,18 +809,18 @@
+   font-size: 0.85rem;
+   font-weight: 500;
+   padding: 0.6rem 1.5rem;
+-  border: 1px solid rgba(255, 215, 0, 0.2);
++  border: 1px solid rgba(255, 255, 255, 0.2);
+   border-radius: 8px;
+-  background: rgba(255, 215, 0, 0.04);
+-  color: rgba(255, 215, 0, 0.8);
++  background: rgba(255, 255, 255, 0.04);
++  color: rgba(255, 255, 255, 0.8);
+   cursor: pointer;
+   transition: all 0.2s;
+ }
+ 
+ .loadMoreBtn:hover {
+-  background: rgba(255, 215, 0, 0.08);
+-  border-color: rgba(255, 215, 0, 0.35);
+-  color: #ffd700;
++  background: rgba(255, 255, 255, 0.08);
++  border-color: rgba(255, 255, 255, 0.35);
++  color: #FFFFFF;
+ }
+ 
+ 
+@@ -856,16 +856,16 @@
+   font-family: "DM Sans", sans-serif;
+   font-size: 0.85rem;
+   padding: 0.5rem 1.25rem;
+-  border: 1px solid rgba(255, 215, 0, 0.25);
++  border: 1px solid rgba(255, 255, 255, 0.25);
+   border-radius: 6px;
+   background: transparent;
+-  color: #ffd700;
++  color: #FFFFFF;
+   cursor: pointer;
+   transition: all 0.2s;
+ }
+ 
+ .emptyReset:hover {
+-  background: rgba(255, 215, 0, 0.08);
++  background: rgba(255, 255, 255, 0.08);
+ }
+ 
+ 
+@@ -877,8 +877,8 @@
+   font-size: 0.72rem;
+   padding: 0.1rem 0.4rem;
+   border-radius: 3px;
+-  background: rgba(255, 215, 0, 0.1);
+-  color: rgba(255, 215, 0, 0.8);
++  background: rgba(255, 255, 255, 0.1);
++  color: rgba(255, 255, 255, 0.8);
+ }
+ 
+ 
+@@ -896,7 +896,7 @@
+     width: 280px;
+     z-index: 200;
+     background: #0a0a14;
+-    border-right: 1px solid rgba(255, 215, 0, 0.1);
++    border-right: 1px solid rgba(255, 255, 255, 0.1);
+     padding-top: 1.5rem;
+     height: 100vh;
+   }
+@@ -920,9 +920,9 @@
+     gap: 0.4rem;
+     padding: 0.5rem 0.85rem;
+     margin: 0 1rem 0.75rem;
+-    border: 1px solid rgba(255, 215, 0, 0.1);
++    border: 1px solid rgba(255, 255, 255, 0.1);
+     border-radius: 6px;
+-    background: rgba(255, 215, 0, 0.03);
++    background: rgba(255, 255, 255, 0.03);
+     color: var(--ifm-font-color-secondary);
+     font-family: "DM Sans", sans-serif;
+     font-size: 0.82rem;
+@@ -931,7 +931,7 @@
+   }
+ 
+   .sidebarToggle:hover {
+-    border-color: rgba(255, 215, 0, 0.2);
++    border-color: rgba(255, 255, 255, 0.2);
+     color: var(--ifm-font-color-base);
+   }
+ 

@@ -41,6 +41,8 @@ def globs_match(path: str, patterns: list[str]) -> bool:
     for pat in patterns:
         if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(path, pat.rstrip("/**")) or path.startswith(pat.rstrip("*").rstrip("/") + "/"):
             return True
+        if pat.startswith("**/") and fnmatch.fnmatch(path, pat[3:]):  # "**/x.py" also means root-level x.py
+            return True
     return False
 
 
@@ -52,6 +54,7 @@ class Rebrander:
     def __init__(self, mapping: dict):
         self.m = mapping
         self.exclude = mapping.get("exclude_files", [])
+        self.rename_exclude = mapping.get("rename_exclude", self.exclude)
         self.protect = [re.compile(p) for p in mapping.get("protect", [])]
         self.replace = []
         for r in mapping.get("replace", []):
@@ -61,6 +64,10 @@ class Rebrander:
                 self.replace.append((re.compile(r["regex"]), r["with"]))
         self.rename = [(re.compile(re.escape(r["plain"])), r["with"]) for r in mapping.get("rename_paths", [])]
         self.check_allow = [re.compile(p) for p in mapping.get("check_allow", [])]
+        self.post = []
+        for grp in mapping.get("post_replace", []):
+            rules = [(re.compile(re.escape(x["plain"])) if "plain" in x else re.compile(x["regex"]), x["with"]) for x in grp["replace"]]
+            self.post.append((grp["files"], rules))
         self.stats = Counter()
         self.rule_hits = Counter()
 
@@ -78,8 +85,9 @@ class Rebrander:
             text, n = rx.subn(repl, text)
             if n:
                 self.rule_hits[rx.pattern[:40]] += n
-        if store:
-            text = re.sub(f"{SENT_L}(\\d+){SENT_R}", lambda m: store[int(m.group(1))], text)
+        sent = re.compile(f"{SENT_L}(\\d+){SENT_R}")
+        while store and sent.search(text):  # loop: a protected span may itself contain a sentinel
+            text = sent.sub(lambda m: store[int(m.group(1))], text)
         return text
 
     def rewrite_files(self, files: list[str], apply: bool) -> list[str]:
@@ -108,9 +116,35 @@ class Rebrander:
         self.stats["files_rewritten"] = len(changed)
         return changed
 
+    def post_replace_files(self, files: list[str], apply: bool) -> list[str]:
+        """Stage 5: scoped replacements applied after protection is lifted."""
+        changed = []
+        for rel in files:
+            rules = [r for globs, rs in self.post if globs_match(rel, globs) for r in rs]
+            if not rules:
+                continue
+            p = ROOT / rel
+            if not p.is_file():
+                continue
+            try:
+                text = p.read_bytes().decode("utf-8")  # bytes round-trip keeps CRLF (install.ps1)
+            except (UnicodeDecodeError, OSError):
+                continue
+            new = text
+            for rx, repl in rules:
+                new, n = rx.subn(repl, new)
+                if n:
+                    self.rule_hits["post:" + rx.pattern[:34]] += n
+            if new != text:
+                changed.append(rel)
+                if apply:
+                    p.write_bytes(new.encode("utf-8"))
+        self.stats["files_post_replaced"] = len(changed)
+        return changed
+
     # ---------- paths ----------
     def new_path(self, rel: str) -> str:
-        if globs_match(rel, self.exclude):
+        if globs_match(rel, self.rename_exclude):
             return rel
         parts = []
         for comp in rel.split("/"):
@@ -131,22 +165,17 @@ class Rebrander:
             if b in existing and b not in {x for x, _ in moves}:
                 sys.exit(f"rename target already exists: {a} -> {b}")
         if apply:
+            # Filesystem moves + one `git add -A` at the end: `git mv` per file rewrites
+            # the whole index each time (O(n^2) on a 40k-entry tree, >10 min for 2k moves).
             for a, b in moves:
                 (ROOT / b).parent.mkdir(parents=True, exist_ok=True)
-                for attempt in range(6):
-                    r = subprocess.run(["git", "mv", "-k", a, b], cwd=ROOT, capture_output=True, text=True)
-                    if r.returncode == 0:
-                        break
-                    if "index.lock" in r.stderr and attempt < 5:
-                        import time; time.sleep(0.5 * (attempt + 1))
-                        continue
-                    sys.exit(f"git mv failed: {a} -> {b}\n{r.stderr}")
-            # prune emptied directories
+                os.replace(ROOT / a, ROOT / b)
             for a, _ in moves:
                 d = (ROOT / a).parent
                 while d != ROOT and d.exists() and not any(d.iterdir()):
                     d.rmdir()
                     d = d.parent
+            subprocess.run(["git", "add", "-A", "--", "."], cwd=ROOT, check=True)
         self.stats["files_renamed"] = len(moves)
         return moves
 
@@ -205,6 +234,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--post-only", action="store_true", help="run only the post_replace stage on the current tree")
     args = ap.parse_args()
     mapping = yaml.safe_load(MAPPING.read_text())
     rb = Rebrander(mapping)
@@ -214,6 +244,12 @@ def main() -> None:
         sys.exit(1 if rb.check(files) else 0)
 
     apply = not args.dry_run
+    if args.post_only:
+        changed = rb.post_replace_files(files, apply)
+        print(f"post_replace files: {len(changed)}")
+        for c in changed:
+            print(f"   - {c}")
+        return
     gone = rb.delete_paths(apply)
     if apply:
         files = tracked_files()
@@ -221,12 +257,16 @@ def main() -> None:
         files = [f for f in files if not any(f == g or f.startswith(g.rstrip("/") + "/") for g in gone)]
     changed = rb.rewrite_files(files, apply)
     moves = rb.rename_files(files, apply)
+    if apply:
+        files = tracked_files()
+    post = rb.post_replace_files([rb.new_path(f) if not apply else f for f in files], apply)
 
     print(f"deleted paths:   {len(gone)}")
     for g in gone:
         print(f"   - {g}")
     print(f"files rewritten: {len(changed)}")
     print(f"files renamed:   {len(moves)}")
+    print(f"post_replace:    {len(post)} files")
     top_dirs = Counter(m[0].split('/')[0] for m in moves)
     for d, n in top_dirs.most_common(12):
         print(f"   {n:4d}  {d}")
