@@ -29,6 +29,8 @@ delete:
   - website/i18n/zh-Hans            # decision D3
   - "apps/desktop/'"                # upstream junk: tracked /var/folders mutex paths
   - tools/wakewords                 # decision D2: hey_hermes models dropped
+  - hermes_agent.egg-info           # stale build metadata tracked upstream
+  - MagicMock                       # test pollution if it ever lands upstream
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
   # emails first, so the domain rule below cannot shield half of an address
