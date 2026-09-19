@@ -133,3 +133,52 @@ check_allow:
 # Post-run manual fixes that are NOT codemod-able (see REIGN-REBRAND-PLAN.md Phase 4):
 #  - skill frontmatter key: code reads metadata.reign OR metadata.hermes (hub skills publish `hermes:`)
 #  - nested LICENSE files keep their upstream copyright holders (excluded above)
+
+# Stage 5: post_replace — applied AFTER the protected spans are restored, only
+# to the listed files. Repoints the code-fetch paths (install, update, zip
+# fallback, official-repo detection, release links, user agents) at the Rook
+# distribution repo. Documentation links stay on upstream (decision 8).
+post_replace:
+  - files:
+      - "scripts/install.sh"
+      - "scripts/install.ps1"
+      - "scripts/dev-sandbox.sh"
+      - "scripts/release.py"
+      - "tests/install/*"
+      - "reign_cli/update_cmd.py"
+      - "reign_cli/banner.py"
+      - "apps/desktop/electron/update-remote*"
+      - "apps/desktop/electron/bootstrap-runner.ts"
+      - "apps/desktop/src/app/settings/about-settings.tsx"
+      - "apps/desktop/src/components/onboarding/index.tsx"
+      - "apps/desktop/package.json"
+      - "nix/*.nix"
+      - "tools/discord_tool.py"
+      - "gateway/relay/media.py"
+      - "plugins/image_gen/openrouter/__init__.py"
+      - "optional-skills/research/osint-investigation/scripts/_http.py"
+      - "tests/reign_cli/test_update*.py"
+      - "tests/reign_cli/test_banner_git_state.py"
+      - "tests/reign_cli/test_lazy_refresh_venv_repair.py"
+      - "tests/reign_cli/test_cmd_update.py"
+    replace:
+      - plain: "https://github.com/NousResearch/hermes-agent.git"
+        with:  "https://github.com/asxi9832/reign.git"
+      - plain: "git@github.com:NousResearch/hermes-agent.git"
+        with:  "git@github.com:asxi9832/reign.git"
+      - plain: "https://github.com/NousResearch/hermes-agent"
+        with:  "https://github.com/asxi9832/reign"
+      - plain: "git@github.com:NousResearch/hermes-agent"
+        with:  "git@github.com:asxi9832/reign"
+      - plain: "https://raw.githubusercontent.com/NousResearch/hermes-agent"
+        with:  "https://raw.githubusercontent.com/asxi9832/reign"
+      - plain: "ssh://git@github.com/NousResearch/hermes-agent"
+        with:  "ssh://git@github.com/asxi9832/reign"
+      - plain: "git@github.com:nousresearch/hermes-agent"
+        with:  "git@github.com:asxi9832/reign"
+      - plain: "github.com/nousresearch/hermes-agent"
+        with:  "github.com/asxi9832/reign"
+      - plain: "updates from NousResearch/hermes-agent"
+        with:  "updates from asxi9832/reign"
+      - plain: "canonical NousResearch/hermes-agent repo"
+        with:  "canonical asxi9832/reign repo"

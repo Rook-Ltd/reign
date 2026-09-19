@@ -214,7 +214,17 @@ Original Phase 4 checklist:
 - Full test suite green.
 - Fresh-install smoke test in Docker: `reign setup`, `reign model`, `reign gateway`. Never against the local `~/.hermes`.
 
-### Phase 5 — Handoff
+### Phase 5 — Handoff and distribution model (decided 2026-09-19)
+
+**Distribution: Rook is the distributor.** Clients install from and `reign update` against `asxi9832/reign`. Rook re-cuts Reign from upstream on a cadence with a test gate (weekly or biweekly), never by `git merge upstream/main`: upstream moves ~600 commits/day and touched 8,111 files in the 18 days after the fork, 1,557 of them under renamed paths and 5,801 containing Hermes/Nous text, so a merge is not viable.
+
+**Sync mechanics (to build next):** `rebrand/sync_upstream.py` takes a fresh `upstream/main` checkout, runs `rebrand.py` (all five stages), replays the hand-edit overlay (Phase 3/4 changes as a patch set plus `place_images.py`), runs the residual and image-hash gates, then records the result as a merge commit whose parents are the previous Reign head and the upstream commit (`git commit-tree`). Client installs fast-forward on every sync; mechanical branding cannot come back because the codemod runs every time; new *kinds* of branding surface on the residual list for review.
+
+**Code-fetch paths repointed to the Rook repo** (codemod stage 5 `post_replace` in `mapping.yaml`, so re-syncs keep them): `scripts/install.sh` / `install.ps1` clone and zip URLs, `reign update` zip fallback and official-repo detection, desktop passive update check and bootstrap script download, nix/desktop homepage, release links, user-agent strings. Documentation links stay on upstream (decision 8). Left on Nous deliberately: the skills hub "official optional skills" source (`tools/skills_hub.py`), the local-runtime catalog JSON, the model catalog JSON, the Telegram security-advisory link, and the GitHub workflow `github.repository` gates (Docker Hub / Vercel / skills-index publishing need Nous credentials; they stay dormant in the Rook repo).
+
+**Open: repo visibility.** `asxi9832/reign` is private. Every client install and update needs a GitHub credential until it is public or a deploy key / token scheme exists.
+
+Original Phase 5 checklist:
 - Push to the Rook GitHub repo (link to be provided). Tag `v0.1.0`.
 - `rebrand/UPSTREAM.md` documents the upstream SHA and the exact command to re-run the codemod for a future sync.
 

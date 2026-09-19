@@ -15,7 +15,7 @@ RATE_LIMIT_STDERR = (
     "fatal: expected flush after ref listing"
 )
 CURL_429_STDERR = (
-    "fatal: unable to access 'https://github.com/NousResearch/hermes-agent.git/':"
+    "fatal: unable to access 'https://github.com/asxi9832/reign.git/':"
     " The requested URL returned error: 429"
 )
 

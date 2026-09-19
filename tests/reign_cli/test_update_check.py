@@ -75,7 +75,7 @@ def test_check_via_local_git_fetch_failure_returns_none(tmp_path, monkeypatch):
     # Simulate a non-shallow, non-SSH-remote checkout
     def mock_git_stdout(args, *, cwd, timeout=5):
         if args[:2] == ["remote", "get-url"]:
-            return "https://github.com/NousResearch/hermes-agent.git"
+            return "https://github.com/asxi9832/reign.git"
         if args[:2] == ["rev-parse", "--is-shallow-repository"]:
             return "false"
         return None
@@ -118,7 +118,7 @@ def test_check_via_local_git_fetch_failure_keeps_positive_stale_count(tmp_path, 
 
     def mock_git_stdout(args, *, cwd, timeout=5):
         if args[:2] == ["remote", "get-url"]:
-            return "https://github.com/NousResearch/hermes-agent.git"
+            return "https://github.com/asxi9832/reign.git"
         if args[:2] == ["rev-parse", "--is-shallow-repository"]:
             return "false"
         return None
@@ -156,7 +156,7 @@ def test_check_via_local_git_fetch_failure_rev_list_error_returns_none(tmp_path,
 
     def mock_git_stdout(args, *, cwd, timeout=5):
         if args[:2] == ["remote", "get-url"]:
-            return "https://github.com/NousResearch/hermes-agent.git"
+            return "https://github.com/asxi9832/reign.git"
         if args[:2] == ["rev-parse", "--is-shallow-repository"]:
             return "false"
         return None

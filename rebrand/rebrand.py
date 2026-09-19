@@ -61,6 +61,10 @@ class Rebrander:
                 self.replace.append((re.compile(r["regex"]), r["with"]))
         self.rename = [(re.compile(re.escape(r["plain"])), r["with"]) for r in mapping.get("rename_paths", [])]
         self.check_allow = [re.compile(p) for p in mapping.get("check_allow", [])]
+        self.post = []
+        for grp in mapping.get("post_replace", []):
+            rules = [(re.compile(re.escape(x["plain"])) if "plain" in x else re.compile(x["regex"]), x["with"]) for x in grp["replace"]]
+            self.post.append((grp["files"], rules))
         self.stats = Counter()
         self.rule_hits = Counter()
 
@@ -106,6 +110,32 @@ class Rebrander:
                 if apply:
                     p.write_bytes(new.encode("utf-8"))
         self.stats["files_rewritten"] = len(changed)
+        return changed
+
+    def post_replace_files(self, files: list[str], apply: bool) -> list[str]:
+        """Stage 5: scoped replacements applied after protection is lifted."""
+        changed = []
+        for rel in files:
+            rules = [r for globs, rs in self.post if globs_match(rel, globs) for r in rs]
+            if not rules:
+                continue
+            p = ROOT / rel
+            if not p.is_file():
+                continue
+            try:
+                text = p.read_bytes().decode("utf-8")  # bytes round-trip keeps CRLF (install.ps1)
+            except (UnicodeDecodeError, OSError):
+                continue
+            new = text
+            for rx, repl in rules:
+                new, n = rx.subn(repl, new)
+                if n:
+                    self.rule_hits["post:" + rx.pattern[:34]] += n
+            if new != text:
+                changed.append(rel)
+                if apply:
+                    p.write_bytes(new.encode("utf-8"))
+        self.stats["files_post_replaced"] = len(changed)
         return changed
 
     # ---------- paths ----------
@@ -205,6 +235,7 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--check", action="store_true")
+    ap.add_argument("--post-only", action="store_true", help="run only the post_replace stage on the current tree")
     args = ap.parse_args()
     mapping = yaml.safe_load(MAPPING.read_text())
     rb = Rebrander(mapping)
@@ -214,6 +245,12 @@ def main() -> None:
         sys.exit(1 if rb.check(files) else 0)
 
     apply = not args.dry_run
+    if args.post_only:
+        changed = rb.post_replace_files(files, apply)
+        print(f"post_replace files: {len(changed)}")
+        for c in changed:
+            print(f"   - {c}")
+        return
     gone = rb.delete_paths(apply)
     if apply:
         files = tracked_files()
@@ -221,12 +258,16 @@ def main() -> None:
         files = [f for f in files if not any(f == g or f.startswith(g.rstrip("/") + "/") for g in gone)]
     changed = rb.rewrite_files(files, apply)
     moves = rb.rename_files(files, apply)
+    if apply:
+        files = tracked_files()
+    post = rb.post_replace_files([rb.new_path(f) if not apply else f for f in files], apply)
 
     print(f"deleted paths:   {len(gone)}")
     for g in gone:
         print(f"   - {g}")
     print(f"files rewritten: {len(changed)}")
     print(f"files renamed:   {len(moves)}")
+    print(f"post_replace:    {len(post)} files")
     top_dirs = Counter(m[0].split('/')[0] for m in moves)
     for d, n in top_dirs.most_common(12):
         print(f"   {n:4d}  {d}")
