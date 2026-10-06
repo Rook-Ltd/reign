@@ -71,6 +71,8 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - 'metadata\.hermes\b'
   - 'maintainer[=:] *"?Nous Research"?'   # third-party plugin maintainers in the catalog and its tests
   - 'metadata\[\"hermes\"\]'
+  - '\["metadata"\](?:\["hermes"\]|\.get\("hermes")'                       # fm["metadata"]["hermes"] / fm["metadata"].get("hermes")
+  - 'get\("metadata"\)[^)\n]*\)\.get\("hermes"'                                # (fm.get("metadata") or {}).get("hermes")
   - '"  hermes:"'                      # yaml line writer (tools/skills_hub.py)
   # Nous API server message matched by the error classifier (wire text, both cases)
   - '(?i)anonymous hermes agent accounts only'
@@ -160,6 +162,8 @@ check_allow:
   - '(?m)^\s+hermes:\s*$'
   - 'metadata\.hermes\b'
   - 'metadata:\\n *hermes:'
+  - '\["metadata"\]'
+  - 'get\("metadata"\)'
   - '\.get\("hermes"'
   - '\["hermes"\]'
   - '"hermes":'
