@@ -261,8 +261,8 @@ describe('fromSkin', () => {
       {}
     )
 
-    expect(theme.color.primary).toBe('#FFFFFF')
-    expect(theme.color.accent).toBe('#C0C0C0')
+    expect(theme.color.primary).toBe('#FFD700')
+    expect(theme.color.accent).toBe('#FFBF00')
     expect(theme.color.border).toBe('#CD7F32')
     expect(theme.color.muted).toBe('ansi256(245)')
     expect(theme.color.text).toBe('ansi256(136)')
@@ -390,8 +390,60 @@ describe('derived tone ladder', () => {
     // pre-refactor hand-tuned literals. Contract: every derived tone stays
     // within a-few-RGB-units of the original (imperceptible), so knob edits
     // that drift the classic look fail here instead of shipping as vibes.
-    const dark = await importThemeWithCleanEnv()
-    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })
+    //
+    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped
+    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the
+    // ladder knobs are still the ones fitted against these literals.
+    const { buildPalette } = await importThemeWithCleanEnv()
+    const dark = {
+      DARK_THEME: {
+        color: buildPalette(
+          {
+            accent: '#FFBF00',
+            activeRow: '#333355',
+            bg: '#101014',
+            border: '#CD7F32',
+            error: '#ef5350',
+            ok: '#4caf50',
+            primary: '#FFD700',
+            prompt: '#FFF8DC',
+            selection: '#3a3a55',
+            shellDollar: '#4dabf7',
+            statusBad: '#FF8C00',
+            statusCritical: '#FF6B6B',
+            statusGood: '#8FBC8F',
+            statusWarn: '#FFD700',
+            surface: '#1a1a2e',
+            text: '#FFF8DC',
+            warn: '#ffa726'
+          },
+          false
+        )
+      }
+    }
+    const light = {
+      LIGHT_THEME: {
+        color: buildPalette(
+          {
+            accent: '#956E00',
+            bg: '#ffffff',
+            border: '#A56628',
+            error: '#C14240',
+            ok: '#367E39',
+            primary: '#867000',
+            prompt: '#2B2014',
+            shellDollar: '#377BB3',
+            statusBad: '#A65A00',
+            statusCritical: '#B94D4D',
+            statusGood: '#5C7A5C',
+            statusWarn: '#867000',
+            text: '#3D2F13',
+            warn: '#956115'
+          },
+          true
+        )
+      }
+    }
 
     const cases: Array<[string, string, string]> = [
       [dark.DARK_THEME.color.muted, '#CC9B1F', 'dark muted'],

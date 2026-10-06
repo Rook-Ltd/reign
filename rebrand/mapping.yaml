@@ -407,10 +407,6 @@ post_replace:
     replace:
     - plain: assert ww._provider({}) == "openwakeword"
       with: assert ww._provider({}) == "sherpa"
-  - files:
-    - ui-tui/src/__tests__/theme.test.ts
-    replace:
-    - plain: expect(theme.color.primary).toBe('#FFD700')
       with: expect(theme.color.primary).toBe('#FFFFFF')
     - plain: expect(theme.color.accent).toBe('#FFBF00')
       with: expect(theme.color.accent).toBe('#C0C0C0')
@@ -527,7 +523,6 @@ overlay_exclude:
   - "reign_cli/config_defaults.py"
   - "cli-config.yaml.example"
   - "tests/tools/test_wake_word.py"
-  - "ui-tui/src/__tests__/theme.test.ts"
   - "website/src/css/custom.css"
   - "website/src/pages/skills/styles.module.css"
   - "website/docs/index.mdx"
