@@ -228,6 +228,13 @@ Original Phase 4 checklist:
 
 **Inherited automation switched off (2026-09-22).** Upstream's scheduled workflows failed on every run in the Rook repo (the Install & Update E2E job needs release tags, which do not exist here; OSV-Scanner needs code scanning enabled; the two skills-index jobs are gated to the Nous repo). Disabled via GitHub: `Install & Update E2E`, `OSV-Scanner`, `Build Skills Index`, `Skills Index Freshness Check`. `.github/dependabot.yml` removed and its open action-bump PRs closed. Re-enable the E2E workflow once Rook pushes its first `v`-tag; re-add Dependabot when there is a policy for action pins.
 
+**Release cadence and promotion flow (decided 2026-10-06).**
+- Target: the newest upstream `v*` release tag, not `main` tip (upstream tags weekly; a tag has passed upstream's own gates). First real sync: `v2026.9.24`.
+- `.github/workflows/upstream-sync.yml` runs Mondays 06:17 UTC (and on demand with a ref). Clean sync → pushes `sync/upstream-<tag>`, force-updates **`dev`**, opens a PR to `main`. Blocked sync (overlay conflicts) → opens/updates an issue with the conflict report; a human runs `python rebrand/sync_upstream.py --ref <tag> --keep-worktree` locally, resolves, tests, pushes the branch.
+- **Dev environment = any Reign install whose checkout tracks `origin/dev`** (`git checkout dev` in the install dir, then `reign update` pulls each sync). Production installs track `main`.
+- **Approval = merging the PR.** Nothing reaches `main` without a human merge. CI runs on the PR only if the `UPSTREAM_SYNC_TOKEN` secret (fine-grained PAT, contents + pull-requests write) exists; PRs opened with the default Actions token do not trigger `pull_request` workflows.
+- Skill metadata key reverted to `metadata.hermes` (hub-skill and upstream-reader compatibility beat the cosmetic rename; the key is only visible to skill authors).
+
 **Open: repo visibility.** `asxi9832/reign` is private. Every client install and update needs a GitHub credential until it is public or a deploy key / token scheme exists.
 
 Original Phase 5 checklist:
