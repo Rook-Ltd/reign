@@ -53,6 +53,8 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-lockfiles", dest="lockfiles", action="store_false", help="skip regenerating uv.lock and npm lockfiles")
     ap.add_argument("--keep-worktree", action="store_true")
+    ap.add_argument("--ci", action="store_true", help="exit 2 when blocked, 3 when nothing to sync; write report to $GITHUB_STEP_SUMMARY-style file rebrand/audit/sync-report.md")
+    ap.add_argument("--branch", default=None, help="name for the sync branch (default sync/upstream-<date>)")
     args = ap.parse_args()
 
     if not PY.exists():
@@ -67,6 +69,10 @@ def main() -> None:
     sh("git", "fetch", "-q", "upstream", quiet=True)
     upstream_sha = sh("git", "rev-parse", args.ref, quiet=True).strip()
     reign_head = sh("git", "rev-parse", "HEAD", quiet=True).strip()
+    synced_line = next((l for l in (REBRAND / "UPSTREAM.md").read_text().splitlines() if l.startswith("- Synced at:")), "")
+    if upstream_sha in synced_line:
+        print(f"  already synced at {upstream_sha[:10]}; nothing to do")
+        sys.exit(3 if args.ci else 0)
     sh("git", "worktree", "add", "-q", "--detach", str(wt), upstream_sha, quiet=True)
     print(f"  upstream {upstream_sha[:10]}  reign HEAD {reign_head[:10]}  worktree {wt}")
 
@@ -110,6 +116,12 @@ def main() -> None:
         subprocess.run(["npx", "-y", "npm@12", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
                        cwd=wt / "website", env=env, check=True)
 
+    up = wt / "rebrand" / "UPSTREAM.md"
+    txt = [l for l in up.read_text().splitlines() if not l.startswith("- Synced at:")]
+    idx = next(i for i, l in enumerate(txt) if l.startswith("- Forked at:")) + 1
+    txt.insert(idx, f"- Synced at: {upstream_sha} ({args.ref}, {date})")
+    up.write_text("\n".join(txt) + "\n")
+
     print("→ gates")
     sh("git", "add", "-A", cwd=wt, quiet=True)
     res = subprocess.run([str(PY), "rebrand/rebrand.py", "--check"], cwd=wt, text=True, capture_output=True).stdout
@@ -141,13 +153,20 @@ def main() -> None:
     print(f"  conflict markers: {len(markers)} file(s)")
 
     blocked = conflicts or failed or survivors or markers
+    report = [f"# Upstream sync report — {args.ref} ({upstream_sha[:10]}) on {date}", "",
+              f"- overlay: {len(patch_files)} files, {len(conflicts)} with conflicts, {len(failed)} failed to apply",
+              f"- residual: {res.strip().splitlines()[-1]}; {len(new_lines)} new line(s)",
+              f"- images surviving: {len(survivors)}; conflict-marker files: {len(markers)}", ""]
+    report += [f"- conflict: `{c}`" for c in conflicts] + [f"- failed: `{f}`" for f in failed]
+    report += [f"- residual: `{f}`: `{l[:120]}`" for f, l in new_lines[:40]]
+    (REBRAND / "audit" / "sync-report.md").write_text("\n".join(report) + "\n")
     if args.dry_run or blocked:
         print("\nDRY RUN — no commit." if args.dry_run else "\nBLOCKED — resolve the items above in the worktree, then re-run gates by hand.")
         if not args.keep_worktree and args.dry_run and not blocked:
             sh("git", "worktree", "remove", "--force", str(wt), quiet=True)
         else:
             print(f"worktree kept at {wt}")
-        return
+        sys.exit(2 if (blocked and args.ci) else 0)
 
     print("→ recording merge commit")
     tree = sh("git", "write-tree", cwd=wt, quiet=True).strip()
@@ -157,7 +176,7 @@ def main() -> None:
            f"{reign_head} and the upstream commit.\n\nCo-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>\n")
     commit = subprocess.run(["git", "commit-tree", tree, "-p", reign_head, "-p", upstream_sha, "-m", msg],
                             cwd=wt, text=True, capture_output=True, check=True).stdout.strip()
-    branch = f"sync/upstream-{date}"
+    branch = args.branch or f"sync/upstream-{date}"
     sh("git", "branch", "-f", branch, commit, quiet=True)
     print(f"  {branch} -> {commit[:10]}  (review, run scripts/run_tests.sh, then open a PR)")
     if not args.keep_worktree:

@@ -1,3 +1,710 @@
+diff --git a/.github/dependabot.yml b/.github/dependabot.yml
+deleted file mode 100644
+index 82de675e30..0000000000
+--- a/.github/dependabot.yml
++++ /dev/null
+@@ -1,44 +0,0 @@
+-# Dependabot configuration for reign.
+-#
+-# Deliberately scoped to github-actions only.
+-#
+-# We do NOT enable Dependabot for pip / npm / any source-dependency ecosystem
+-# because we pin source dependencies exactly (uv.lock, package-lock.json) as
+-# part of our supply-chain posture. Automatic version-bump PRs against those
+-# pins would undermine the strategy — pins are moved deliberately, after
+-# review, not on a schedule.
+-#
+-# github-actions is the exception: action pins (we use full commit SHAs per
+-# supply-chain policy) must be updated when upstream actions publish
+-# patches — usually themselves security fixes. Dependabot opens a PR with
+-# the new SHA and release notes; we review and merge like any other PR.
+-#
+-# Security-update PRs for source dependencies (opened ONLY when a CVE is
+-# published affecting a currently-pinned version) are enabled separately
+-# via the repo's Dependabot security updates setting
+-# (Settings → Code security → Dependabot → Dependabot security updates).
+-# Those are CVE-only, not schedule-driven, and do not conflict with our
+-# pinning strategy — they fire when a pinned version becomes known-bad,
+-# which is exactly when we want to move the pin.
+-
+-version: 2
+-updates:
+-  - package-ecosystem: "github-actions"
+-    directory: "/"
+-    schedule:
+-      interval: "weekly"
+-      day: "monday"
+-    open-pull-requests-limit: 5
+-    labels:
+-      - "dependencies"
+-      - "github-actions"
+-    commit-message:
+-      prefix: "chore(actions)"
+-      include: "scope"
+-    groups:
+-      # Batch routine action bumps into one PR per week to reduce noise.
+-      # Security updates still open individually and bypass grouping.
+-      actions-minor-patch:
+-        update-types:
+-          - "minor"
+-          - "patch"
+diff --git a/.github/workflows/case-collision-check.yml b/.github/workflows/case-collision-check.yml
+index 946feb0a34..af4d4c29b1 100644
+--- a/.github/workflows/case-collision-check.yml
++++ b/.github/workflows/case-collision-check.yml
+@@ -27,7 +27,7 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Run case-collision checker
+         run: python3 scripts/check-case-collisions.py
+diff --git a/.github/workflows/ci-review-comment.yml b/.github/workflows/ci-review-comment.yml
+index 216d0c05db..1f02e5254c 100644
+--- a/.github/workflows/ci-review-comment.yml
++++ b/.github/workflows/ci-review-comment.yml
+@@ -50,7 +50,7 @@ jobs:
+     timeout-minutes: 60
+     steps:
+       - name: Checkout trusted default branch
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           ref: ${{ github.event.repository.default_branch }}
+           persist-credentials: false
+diff --git a/.github/workflows/ci.yaml b/.github/workflows/ci.yaml
+index f12ba12a92..f22a2da3b0 100644
+--- a/.github/workflows/ci.yaml
++++ b/.github/workflows/ci.yaml
+@@ -56,7 +56,7 @@ jobs:
+       ci_review_files: ${{ steps.classify.outputs.ci_review_files }}
+       event_name: ${{ github.event_name }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - name: Detect affected areas
+         id: classify
+         uses: ./.github/actions/detect-changes
+@@ -291,11 +291,11 @@ jobs:
+     timeout-minutes: 10
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Restore baseline cache (PR only)
+         if: github.event_name == 'pull_request'
+-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
++        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+         with:
+           path: ci-timings-baseline.json
+           # Prefix-match: exact key will never hit (run_id differs), so
+diff --git a/.github/workflows/contributor-check.yml b/.github/workflows/contributor-check.yml
+index b532d35512..1ecca2a5ca 100644
+--- a/.github/workflows/contributor-check.yml
++++ b/.github/workflows/contributor-check.yml
+@@ -17,7 +17,7 @@ jobs:
+     outputs:
+       review_status: ${{ steps.check-emails.outputs.review_status }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+         with:
+           fetch-depth: 0  # Full history needed for git log
+ 
+diff --git a/.github/workflows/deploy-site.yml b/.github/workflows/deploy-site.yml
+index 26e11ee9fb..bc1cf6ef55 100644
+--- a/.github/workflows/deploy-site.yml
++++ b/.github/workflows/deploy-site.yml
+@@ -54,7 +54,7 @@ jobs:
+       name: github-pages
+       url: ${{ steps.deploy.outputs.page_url }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+ 
+       - name: Get GitHub App token
+         id: app-token
+@@ -73,7 +73,7 @@ jobs:
+         run: |
+           npm i -g npm@12
+ 
+-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
++      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+         with:
+           python-version: '3.11'
+ 
+@@ -201,7 +201,7 @@ jobs:
+       # collision is by definition the identical file — the merge never
+       # overwrites current-build output (cp --update=none).
+       - name: Restore asset retention pool
+-        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
++        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+         with:
+           path: _asset_retention
+           key: docs-asset-retention-${{ github.run_id }}
+diff --git a/.github/workflows/docker-lint.yml b/.github/workflows/docker-lint.yml
+index 89b80fa10e..c43aa1c391 100644
+--- a/.github/workflows/docker-lint.yml
++++ b/.github/workflows/docker-lint.yml
+@@ -27,10 +27,10 @@ jobs:
+     timeout-minutes: 5
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: hadolint
+-        uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
++        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+         with:
+           dockerfile: Dockerfile
+           config: .hadolint.yaml
+@@ -42,7 +42,7 @@ jobs:
+     timeout-minutes: 5
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: shellcheck
+         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # v2.0.0
+diff --git a/.github/workflows/docker.yml b/.github/workflows/docker.yml
+index 2e2b4094fc..f860b10af5 100644
+--- a/.github/workflows/docker.yml
++++ b/.github/workflows/docker.yml
+@@ -41,7 +41,7 @@ jobs:
+     outputs:
+       build: ${{ steps.gate.outputs.build }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Detect affected areas
+         id: classify
+@@ -92,7 +92,7 @@ jobs:
+     timeout-minutes: 45
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Reject profile exports in the build context
+         run: python3 scripts/ci/check_profile_archive_boundary.py
+@@ -115,7 +115,7 @@ jobs:
+       # Build once, load into the local daemon for testing.  Cached
+       # per-arch; the push step below reuses every layer from this build.
+       - name: Build image (${{ matrix.arch }})
+-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
++        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+         with:
+           context: .
+           file: Dockerfile
+@@ -143,7 +143,7 @@ jobs:
+       # cheapest path to coverage on every PR that touches docker code.
+       # ---------------------------------------------------------------------
+       - name: Install uv (for docker tests)
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned: unpinned setup-uv fetches a 'latest' manifest from
+           # raw.githubusercontent.com every job; transient fetch failures
+@@ -207,7 +207,7 @@ jobs:
+     timeout-minutes: 30
+     steps:
+       - name: Checkout trusted source
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Reject profile exports in the build context
+         run: python3 scripts/ci/check_profile_archive_boundary.py
+@@ -224,7 +224,7 @@ jobs:
+         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+ 
+       - name: Log in to Docker Hub
+-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
++        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+         with:
+           username: ${{ secrets.DOCKERHUB_USERNAME }}
+           password: ${{ secrets.DOCKERHUB_TOKEN }}
+@@ -233,7 +233,7 @@ jobs:
+       # manifest list after both architecture publishers complete.
+       - name: Push ${{ matrix.arch }} by digest
+         id: push
+-        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
++        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+         with:
+           context: .
+           file: Dockerfile
+@@ -294,7 +294,7 @@ jobs:
+         uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+ 
+       - name: Log in to Docker Hub
+-        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
++        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+         with:
+           username: ${{ secrets.DOCKERHUB_USERNAME }}
+           password: ${{ secrets.DOCKERHUB_TOKEN }}
+diff --git a/.github/workflows/docs-site-checks.yml b/.github/workflows/docs-site-checks.yml
+index 1e82698218..50c81cd6f3 100644
+--- a/.github/workflows/docs-site-checks.yml
++++ b/.github/workflows/docs-site-checks.yml
+@@ -11,7 +11,7 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 20
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+         with:
+@@ -29,7 +29,7 @@ jobs:
+           command: npm ci
+           working-directory: website
+ 
+-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
++      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+         with:
+           python-version: "3.11"
+ 
+diff --git a/.github/workflows/e2e-desktop.yml b/.github/workflows/e2e-desktop.yml
+index 6373df5cc9..781991e031 100644
+--- a/.github/workflows/e2e-desktop.yml
++++ b/.github/workflows/e2e-desktop.yml
+@@ -25,7 +25,7 @@ jobs:
+     outputs:
+       review_status: ${{ steps.review-status.outputs.review_status }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       # ── System deps for Electron on headless Ubuntu ───────────────────
+       # Electron needs GTK, NSS,atk, etc. even under xvfb. Playwright's
+@@ -58,7 +58,7 @@ jobs:
+ 
+       # ── Python (for the reign serve backend) ──────────────────────────
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pin the uv version: unpinned, setup-uv resolves "latest" by
+           # fetching a manifest from raw.githubusercontent.com on EVERY job —
+diff --git a/.github/workflows/history-check.yml b/.github/workflows/history-check.yml
+index f679007810..bc4f5c60e3 100644
+--- a/.github/workflows/history-check.yml
++++ b/.github/workflows/history-check.yml
+@@ -30,7 +30,7 @@ jobs:
+     outputs:
+       review_status: ${{ steps.merge-base-check.outputs.review_status }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0 # full history both sides for merge-base
+ 
+diff --git a/.github/workflows/infographic-check.yml b/.github/workflows/infographic-check.yml
+index 288f6f493a..3ac73b1100 100644
+--- a/.github/workflows/infographic-check.yml
++++ b/.github/workflows/infographic-check.yml
+@@ -33,7 +33,7 @@ jobs:
+     outputs:
+       review_status: ${{ steps.infographic-check.outputs.review_status }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - id: infographic-check
+         name: Reject committed PR-infographic images
+diff --git a/.github/workflows/install-e2e-run.yml b/.github/workflows/install-e2e-run.yml
+index e04adb7ee7..6b95666379 100644
+--- a/.github/workflows/install-e2e-run.yml
++++ b/.github/workflows/install-e2e-run.yml
+@@ -52,7 +52,7 @@ jobs:
+     steps:
+       # Full history: the sandbox fetches the starting commit and the test
+       # compares against this commit, so a shallow clone is not enough.
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0
+ 
+diff --git a/.github/workflows/install-e2e.yml b/.github/workflows/install-e2e.yml
+index 371c0de898..a9cd63312a 100644
+--- a/.github/workflows/install-e2e.yml
++++ b/.github/workflows/install-e2e.yml
+@@ -66,7 +66,7 @@ jobs:
+       # This job only reads tag names and runs one script, so take the cheap
+       # checkout: no blobs (filter), no other files (sparse), but DO fetch tags
+       # -- they are the whole input, and the default shallow checkout has none.
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           filter: blob:none
+           fetch-tags: true
+diff --git a/.github/workflows/installer-tests.yml b/.github/workflows/installer-tests.yml
+index 109db526ff..8c2297eebd 100644
+--- a/.github/workflows/installer-tests.yml
++++ b/.github/workflows/installer-tests.yml
+@@ -23,7 +23,7 @@ jobs:
+     timeout-minutes: 15
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       # Windows PowerShell 5.1 as well as pwsh 7: install.ps1 is delivered via
+       # `irm | iex` into whatever shell the user already has, and 5.1 is what
+diff --git a/.github/workflows/js-autofix.yml b/.github/workflows/js-autofix.yml
+index bd4ee6d1c9..3e7601b503 100644
+--- a/.github/workflows/js-autofix.yml
++++ b/.github/workflows/js-autofix.yml
+@@ -63,7 +63,7 @@ jobs:
+       has-fixes: ${{ steps.produce-patch.outputs.has-fixes }}
+     # No permissions override → inherits workflow-level contents: read.
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+         with:
+@@ -144,7 +144,7 @@ jobs:
+       contents: write # needed to push to bot/js-autofix
+       pull-requests: write # needed for PR creation + auto-merge
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Get GitHub App token
+         id: app-token
+diff --git a/.github/workflows/js-tests.yml b/.github/workflows/js-tests.yml
+index 956908293c..44f39ced3b 100644
+--- a/.github/workflows/js-tests.yml
++++ b/.github/workflows/js-tests.yml
+@@ -17,7 +17,7 @@ jobs:
+     runs-on: ubuntu-latest-32-core
+     timeout-minutes: 30
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+         with:
+           node-version: 26
+diff --git a/.github/workflows/lint.yml b/.github/workflows/lint.yml
+index 7a49a62203..f5190b05e7 100644
+--- a/.github/workflows/lint.yml
++++ b/.github/workflows/lint.yml
+@@ -34,12 +34,12 @@ jobs:
+     timeout-minutes: 10
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0 # need full history for merge-base + worktree
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned: unpinned setup-uv fetches a 'latest' manifest from
+           # raw.githubusercontent.com every job; transient fetch failures
+@@ -130,10 +130,10 @@ jobs:
+     timeout-minutes: 5
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned: unpinned setup-uv fetches a 'latest' manifest from
+           # raw.githubusercontent.com every job; transient fetch failures
+@@ -161,10 +161,10 @@ jobs:
+     timeout-minutes: 5
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned: unpinned setup-uv fetches a 'latest' manifest from
+           # raw.githubusercontent.com every job; transient fetch failures
+diff --git a/.github/workflows/lockfile-diff.yml b/.github/workflows/lockfile-diff.yml
+index aa72e31904..7aedb1bbd2 100644
+--- a/.github/workflows/lockfile-diff.yml
++++ b/.github/workflows/lockfile-diff.yml
+@@ -41,7 +41,7 @@ jobs:
+       review_status: ${{ steps.emit-status.outputs.review_status }}
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0 # need history for the merge base
+ 
+diff --git a/.github/workflows/nix.yml b/.github/workflows/nix.yml
+index 8abd85a4b6..c09ae24c61 100644
+--- a/.github/workflows/nix.yml
++++ b/.github/workflows/nix.yml
+@@ -38,7 +38,7 @@ jobs:
+     outputs:
+       nix: ${{ steps.classify.outputs.nix }}
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Detect affected areas
+         id: classify
+@@ -58,10 +58,10 @@ jobs:
+     timeout-minutes: 60
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install Nix
+-        uses: cachix/install-nix-action@630ae543ea3a38a9a4166f03376c02c50f408342 # v31.11.0
++        uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31.11.1
+         with:
+           extra_nix_config: |
+             experimental-features = nix-command flakes
+diff --git a/.github/workflows/osv-scanner.yml b/.github/workflows/osv-scanner.yml
+index 671eecb947..3bef167e14 100644
+--- a/.github/workflows/osv-scanner.yml
++++ b/.github/workflows/osv-scanner.yml
+@@ -40,7 +40,7 @@ permissions:
+ jobs:
+   scan:
+     name: Scan lockfiles
+-    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@9a498708959aeaef5ef730655706c5a1df1edbc2 # v2.3.8
++    uses: google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@a345acffa64b0eaede81a3d9aae6141214d9c8fc # v2.6.0
+     with:
+       # Scan explicit lockfiles rather than recursing, so we only look at
+       # the five sources of truth and skip vendored / test / worktree dirs.
+@@ -64,7 +64,7 @@ jobs:
+       review_status: ${{ steps.emit.outputs.review_status }}
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Download SARIF result
+         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+diff --git a/.github/workflows/profile-artifact-check.yml b/.github/workflows/profile-artifact-check.yml
+index 0e3ff286e9..135ecf6987 100644
+--- a/.github/workflows/profile-artifact-check.yml
++++ b/.github/workflows/profile-artifact-check.yml
+@@ -16,6 +16,6 @@ jobs:
+     runs-on: ubuntu-latest
+     timeout-minutes: 5
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+       - name: Reject profile exports in the checkout
+         run: python3 scripts/ci/check_profile_archive_boundary.py
+diff --git a/.github/workflows/publish-e2e-evidence.yml b/.github/workflows/publish-e2e-evidence.yml
+index c4f22c21d4..95bdd1347e 100644
+--- a/.github/workflows/publish-e2e-evidence.yml
++++ b/.github/workflows/publish-e2e-evidence.yml
+@@ -26,7 +26,7 @@ jobs:
+     environment: gh-image
+     steps:
+       - name: Check out trusted publisher
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           ref: ${{ github.event.repository.default_branch }}
+           persist-credentials: false
+diff --git a/.github/workflows/review-labels.yml b/.github/workflows/review-labels.yml
+index 8b40fcaad2..ae3cd7092a 100644
+--- a/.github/workflows/review-labels.yml
++++ b/.github/workflows/review-labels.yml
+@@ -58,7 +58,7 @@ jobs:
+       review_status: ${{ steps.build-status.outputs.review_status }}
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Check ci-reviewed label
+         id: label-check
+diff --git a/.github/workflows/rust-tests.yml b/.github/workflows/rust-tests.yml
+index f8d1e456f0..71c85bff01 100644
+--- a/.github/workflows/rust-tests.yml
++++ b/.github/workflows/rust-tests.yml
+@@ -36,7 +36,7 @@ jobs:
+       run:
+         working-directory: apps/bootstrap-installer/src-tauri
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       # Tauri links against the system webkit2gtk on Linux, so the crate does
+       # not compile without these even for `cargo test --lib`.
+diff --git a/.github/workflows/skills-index-freshness.yml b/.github/workflows/skills-index-freshness.yml
+index ff2bc393aa..b05420259c 100644
+--- a/.github/workflows/skills-index-freshness.yml
++++ b/.github/workflows/skills-index-freshness.yml
+@@ -29,7 +29,7 @@ jobs:
+       # "Can't find 'action.yml' ... under .github/actions/get-app-token"
+       # every time the probe is non-ok — i.e. exactly when the watchdog is
+       # supposed to file its issue.
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Probe live index
+         id: probe
+diff --git a/.github/workflows/skills-index.yml b/.github/workflows/skills-index.yml
+index cf6812630e..12ca76e877 100644
+--- a/.github/workflows/skills-index.yml
++++ b/.github/workflows/skills-index.yml
+@@ -23,7 +23,7 @@ jobs:
+     timeout-minutes: 15
+     environment: trusted-automation
+     steps:
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Get GitHub App token
+         id: app-token
+@@ -32,7 +32,7 @@ jobs:
+           client-id: ${{ vars.APP_CLIENT_ID }}
+           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+ 
+-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
++      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+         with:
+           python-version: "3.11"
+ 
+@@ -67,7 +67,7 @@ jobs:
+       # (./.github/actions/get-app-token) and cannot resolve without the repo
+       # checked out. `build-index` above already does this; this job did not,
+       # so the scheduled deploy re-trigger never fired.
+-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Get GitHub App token
+         id: app-token
+diff --git a/.github/workflows/supply-chain-audit.yml b/.github/workflows/supply-chain-audit.yml
+index 5549b58b94..fc6b80a7aa 100644
+--- a/.github/workflows/supply-chain-audit.yml
++++ b/.github/workflows/supply-chain-audit.yml
+@@ -61,7 +61,7 @@ jobs:
+       critical_findings: ${{ steps.scan.outputs.found }}
+     steps:
+       - name: Checkout
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0
+ 
+@@ -186,7 +186,7 @@ jobs:
+       review_status: ${{ steps.emit-status.outputs.review_status }}
+     steps:
+       - name: Checkout
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+         with:
+           fetch-depth: 0
+ 
+diff --git a/.github/workflows/tests-os.yml b/.github/workflows/tests-os.yml
+index 12719a853c..109bdfd908 100644
+--- a/.github/workflows/tests-os.yml
++++ b/.github/workflows/tests-os.yml
+@@ -52,10 +52,10 @@ jobs:
+             marker: windows_only
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned for the same reason as the Linux lane: unpinned, setup-uv
+           # resolves "latest" by fetching a manifest on every job and a
+diff --git a/.github/workflows/tests.yml b/.github/workflows/tests.yml
+index a055750e9e..fabaeb831b 100644
+--- a/.github/workflows/tests.yml
++++ b/.github/workflows/tests.yml
+@@ -25,7 +25,7 @@ jobs:
+     timeout-minutes: 30
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install ripgrep (prebuilt binary)
+         run: |
+@@ -42,7 +42,7 @@ jobs:
+           rg --version
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pin the uv version: unpinned, setup-uv resolves "latest" by
+           # fetching a manifest from raw.githubusercontent.com on EVERY job —
+@@ -130,7 +130,7 @@ jobs:
+     timeout-minutes: 15
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install ripgrep (prebuilt binary)
+         run: |
+@@ -147,7 +147,7 @@ jobs:
+           rg --version
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pin the uv version: unpinned, setup-uv resolves "latest" by
+           # fetching a manifest from raw.githubusercontent.com on EVERY job —
+diff --git a/.github/workflows/uv-lockfile-check.yml b/.github/workflows/uv-lockfile-check.yml
+index d258ad731d..81fd85cb92 100644
+--- a/.github/workflows/uv-lockfile-check.yml
++++ b/.github/workflows/uv-lockfile-check.yml
+@@ -66,10 +66,10 @@ jobs:
+       review_status: ${{ steps.verify.outputs.review_status }}
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           # Pinned: unpinned setup-uv fetches a 'latest' manifest from
+           # raw.githubusercontent.com every job; transient fetch failures
+diff --git a/.github/workflows/windows-venv-e2e.yml b/.github/workflows/windows-venv-e2e.yml
+index 3747805521..7c32de8360 100644
+--- a/.github/workflows/windows-venv-e2e.yml
++++ b/.github/workflows/windows-venv-e2e.yml
+@@ -31,10 +31,10 @@ jobs:
+     timeout-minutes: 25
+     steps:
+       - name: Checkout code
+-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
++        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+ 
+       - name: Install uv
+-        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
++        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # 10.1.0
+         with:
+           version: "0.9.28"
+           enable-cache: true
 diff --git a/.gitignore b/.gitignore
 index 87778a4c97..1429daccfd 100644
 --- a/.gitignore
@@ -11,7 +718,7 @@ index 87778a4c97..1429daccfd 100644
 +MagicMock/
 +*.egg-info/
 diff --git a/AGENTS.md b/AGENTS.md
-index f3d89ed6db..266af39745 100644
+index ee180f1303..ea544853eb 100644
 --- a/AGENTS.md
 +++ b/AGENTS.md
 @@ -722,7 +722,7 @@ reign_cli/skin_engine.py    # SkinConfig dataclass, built-in skins, YAML loader
@@ -23,6 +730,54 @@ index f3d89ed6db..266af39745 100644
  - `ares` — Crimson/bronze war-god theme with custom spinner wings
  - `mono` — Clean grayscale monochrome
  - `slate` — Cool blue developer-focused theme
+diff --git a/CONTRIBUTING.md b/CONTRIBUTING.md
+index d75953abbd..c77a774fae 100644
+--- a/CONTRIBUTING.md
++++ b/CONTRIBUTING.md
+@@ -441,7 +441,7 @@ prerequisites:                     # Optional legacy runtime requirements
+   env_vars: [MY_API_KEY]           #   Backward-compatible alias for required env vars
+   commands: [curl, jq]             #   Advisory only; does not hide the skill
+ metadata:
+-  hermes:
++  reign:
+     tags: [Category, Subcategory, Keywords]
+     related_skills: [other-skill-name]
+     fallback_for_toolsets: [web]       # Optional — show only when toolset is unavailable
+@@ -490,11 +490,11 @@ If the field is omitted or empty, the skill loads on all platforms (backward com
+ 
+ Skills can declare conditions that control when they appear in the system prompt, based on which tools and toolsets are available in the current session. This is primarily used for **fallback skills** — alternatives that should only be shown when a primary tool is unavailable.
+ 
+-Four fields are supported under `metadata.hermes`:
++Four fields are supported under `metadata.reign`:
+ 
+ ```yaml
+ metadata:
+-  hermes:
++  reign:
+     fallback_for_toolsets: [web]      # Show ONLY when these toolsets are unavailable
+     requires_toolsets: [terminal]     # Show ONLY when these toolsets are available
+     fallback_for_tools: [web_search]  # Show ONLY when these specific tools are unavailable
+@@ -512,17 +512,17 @@ metadata:
+ ```yaml
+ # DuckDuckGo search — shown when Firecrawl (web toolset) is unavailable
+ metadata:
+-  hermes:
++  reign:
+     fallback_for_toolsets: [web]
+ 
+ # Smart home skill — only useful when terminal is available
+ metadata:
+-  hermes:
++  reign:
+     requires_toolsets: [terminal]
+ 
+ # Local browser fallback — shown when Browserbase is unavailable
+ metadata:
+-  hermes:
++  reign:
+     fallback_for_toolsets: [browser]
+ ```
+ 
 diff --git a/LICENSE b/LICENSE
 index 75410e7331..ab94f92788 100644
 --- a/LICENSE
@@ -113,41 +868,6 @@ index 6b8c95c59e..a8f7f7906d 100644
      ]
  
      THINKING_VERBS = [
-diff --git a/agent/learning_graph.py b/agent/learning_graph.py
-index d7d89c7899..8abafa8a08 100644
---- a/agent/learning_graph.py
-+++ b/agent/learning_graph.py
-@@ -52,7 +52,7 @@ def _reign_meta(fm: dict[str, Any]) -> dict[str, Any]:
-     """``metadata.reign`` as a dict, tolerant of the string-valued frontmatter
-     that ``parse_frontmatter``'s malformed-YAML fallback produces."""
-     meta = fm.get("metadata")
--    reign = meta.get("hermes") if isinstance(meta, dict) else None
-+    reign = meta.get("reign") if isinstance(meta, dict) else None
-     return reign if isinstance(reign, dict) else {}
- 
- 
-diff --git a/agent/skill_utils.py b/agent/skill_utils.py
-index 8524d06577..293499cfc4 100644
---- a/agent/skill_utils.py
-+++ b/agent/skill_utils.py
-@@ -1079,7 +1079,7 @@ def extract_skill_conditions(frontmatter: Dict[str, Any]) -> Dict[str, List]:
-     # Handle cases where metadata is not a dict (e.g., a string from malformed YAML)
-     if not isinstance(metadata, dict):
-         metadata = {}
--    reign = metadata.get("hermes") or {}
-+    reign = metadata.get("reign") or {}
-     if not isinstance(reign, dict):
-         reign = {}
-     return {
-@@ -1119,7 +1119,7 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
-     metadata = frontmatter.get("metadata")
-     if not isinstance(metadata, dict):
-         return []
--    reign = metadata.get("hermes")
-+    reign = metadata.get("reign")
-     if not isinstance(reign, dict):
-         return []
-     raw = reign.get("config")
 diff --git a/apps/bootstrap-installer/src/components/brand-mark.tsx b/apps/bootstrap-installer/src/components/brand-mark.tsx
 index b6a20e47cd..eefc0bd855 100644
 --- a/apps/bootstrap-installer/src/components/brand-mark.tsx
@@ -180,16 +900,6 @@ index cfa8ed889c..b52dc4eff0 100644
    It replaced scattered Sparkles glyphs in updates / onboarding / about. Use it
    for hero/brand moments; don't reintroduce decorative star/sparkle icons.
  
-diff --git a/apps/desktop/README.md b/apps/desktop/README.md
-index 3c59033b8d..75874a75da 100644
---- a/apps/desktop/README.md
-+++ b/apps/desktop/README.md
-@@ -1,4 +1,4 @@
--# Reign Desktop ♜
-+# Reign Desktop ☤
- 
- <p align="center">
-   <a href="https://github.com/NousResearch/hermes-agent/releases"><img src="https://img.shields.io/badge/Download-macOS%20%C2%B7%20Windows%20%C2%B7%20Linux-FFD700?style=for-the-badge" alt="Download"></a>
 diff --git a/apps/desktop/package.json b/apps/desktop/package.json
 index 25c5e23f82..e316a4e5ba 100644
 --- a/apps/desktop/package.json
@@ -358,6 +1068,63 @@ index f82cad9c7e..5c6c30db79 100644
          _cli_visible_print("+" + "-" * 50 + "+")
  
          for msg in self.conversation_history:
+diff --git a/gateway/platforms/api_server.py b/gateway/platforms/api_server.py
+index 095847b1c6..7a8a7835f6 100644
+--- a/gateway/platforms/api_server.py
++++ b/gateway/platforms/api_server.py
+@@ -5487,7 +5487,7 @@ class APIServerAdapter(BasePlatformAdapter):
+                 err_type="server_error",
+                 code="agent_incomplete",
+             )
+-            err_body["error"]["hermes"] = {
++            err_body["error"]["reign"] = {
+                 "completed": completed,
+                 "partial": is_partial,
+                 "failed": is_failed,
+@@ -5521,7 +5521,7 @@ class APIServerAdapter(BasePlatformAdapter):
+             },
+         }
+         if is_partial or is_failed or not completed:
+-            response_data["hermes"] = {
++            response_data["reign"] = {
+                 "completed": completed,
+                 "partial": is_partial,
+                 "failed": is_failed,
+@@ -5683,7 +5683,7 @@ class APIServerAdapter(BasePlatformAdapter):
+                         "message": err_msg,
+                         "type": type(agent_error).__name__ if agent_error else "agent_error",
+                     }
+-                finish_chunk["hermes"] = {
++                finish_chunk["reign"] = {
+                     "completed": completed,
+                     "partial": is_partial,
+                     "failed": is_failed,
+diff --git a/mcp_serve.py b/mcp_serve.py
+index 4c7c81c992..c7d9fe09e2 100644
+--- a/mcp_serve.py
++++ b/mcp_serve.py
+@@ -19,7 +19,7 @@ Usage:
+ MCP client config (e.g. claude_desktop_config.json):
+     {
+         "mcpServers": {
+-            "hermes": {
++            "reign": {
+                 "command": "reign",
+                 "args": ["mcp", "serve"]
+             }
+diff --git a/optional-skills/security/godmode/scripts/auto_jailbreak.py b/optional-skills/security/godmode/scripts/auto_jailbreak.py
+index 4c052f0c76..8ecbca1690 100644
+--- a/optional-skills/security/godmode/scripts/auto_jailbreak.py
++++ b/optional-skills/security/godmode/scripts/auto_jailbreak.py
+@@ -179,7 +179,7 @@ MODEL_STRATEGIES = {
+         },
+     },
+     # Nous/Reign models — already uncensored, just needs clean prompt
+-    "hermes": {
++    "reign": {
+         "order": ["prefill_only"],
+         "system_templates": {},
+     },
 diff --git a/plugins/dashboard_auth/nous/__init__.py b/plugins/dashboard_auth/nous/__init__.py
 index 87a1266d72..fae8d60be9 100644
 --- a/plugins/dashboard_auth/nous/__init__.py
@@ -371,6 +1138,54 @@ index 87a1266d72..fae8d60be9 100644
  
      def __init__(self, *, client_id: str, portal_url: str) -> None:
          if not client_id.startswith("agent:"):
+diff --git a/plugins/google_meet/SKILL.md b/plugins/google_meet/SKILL.md
+index 84806e9a10..73779a933c 100644
+--- a/plugins/google_meet/SKILL.md
++++ b/plugins/google_meet/SKILL.md
+@@ -6,7 +6,7 @@ platforms:
+   - linux
+   - macos
+ metadata:
+-  hermes:
++  reign:
+     tags: [meetings, google-meet, transcription, realtime-voice]
+ ---
+ 
+diff --git a/plugins/memory/hindsight/__init__.py b/plugins/memory/hindsight/__init__.py
+index 7483995dc1..13da53b2cd 100644
+--- a/plugins/memory/hindsight/__init__.py
++++ b/plugins/memory/hindsight/__init__.py
+@@ -454,7 +454,7 @@ def _load_config() -> dict:
+         "retain_user_prefix": os.environ.get("HINDSIGHT_RETAIN_USER_PREFIX", "User"),
+         "retain_assistant_prefix": os.environ.get("HINDSIGHT_RETAIN_ASSISTANT_PREFIX", "Assistant"),
+         "banks": {
+-            "hermes": {
++            "reign": {
+                 "bankId": os.environ.get("HINDSIGHT_BANK_ID", "reign"),
+                 "budget": os.environ.get("HINDSIGHT_BUDGET", "mid"),
+                 "enabled": True,
+diff --git a/plugins/memory/honcho/README.md b/plugins/memory/honcho/README.md
+index be6957d825..96c127abdc 100644
+--- a/plugins/memory/honcho/README.md
++++ b/plugins/memory/honcho/README.md
+@@ -260,7 +260,7 @@ Multiple Reign profiles can share one workspace while maintaining separate AI id
+   "workspace": "reign",
+   "peerName": "yourname",
+   "hosts": {
+-    "hermes": {
++    "reign": {
+       "aiPeer": "reign",
+       "recallMode": "hybrid",
+       "sessionStrategy": "per-directory"
+@@ -380,7 +380,7 @@ Presets:
+   "dialecticCadence": 3,
+   "dialecticDepth": 2,
+   "hosts": {
+-    "hermes": {
++    "reign": {
+       "enabled": true,
+       "aiPeer": "reign",
+       "recallMode": "hybrid",
 diff --git a/plugins/platforms/irc/adapter.py b/plugins/platforms/irc/adapter.py
 index 6fd1853b4d..90cb147ef2 100644
 --- a/plugins/platforms/irc/adapter.py
@@ -384,19 +1199,6 @@ index 6fd1853b4d..90cb147ef2 100644
              base = self.nickname.rstrip("_0123456789")
              suffix_match = re.search(r"_(\d+)$", self._current_nick)
              if suffix_match:
-diff --git a/plugins/reign-achievements/dashboard/dist/index.js b/plugins/reign-achievements/dashboard/dist/index.js
-index 7cf82fc129..754190fa3b 100644
---- a/plugins/reign-achievements/dashboard/dist/index.js
-+++ b/plugins/reign-achievements/dashboard/dist/index.js
-@@ -335,7 +335,7 @@
-     // paste in the same flow.
-     function tweetText() {
-       const tierPart = achievement.tier ? (achievement.tier + " tier ") : "";
--      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Reign ♜", {
-+      const tmpl = tx(t, "share.tweet_text", "Just unlocked {tier_part}\"{name}\" in Reign ☤", {
-         tier_part: tierPart,
-         name: achievement.name,
-       });
 diff --git a/plugins/security-guidance/NOTICE b/plugins/security-guidance/NOTICE
 index cb5067c3d0..6ace73a8a4 100644
 --- a/plugins/security-guidance/NOTICE
@@ -598,19 +1400,6 @@ index eeaa51d10e..29279f1f31 100644
  # The previous substring check (`"hermes" in name.lower()`) false-positived on
  # unrelated local Modelfiles like ``hermes-brain:qwen3-14b-ctx16k`` that just
  # happen to carry "hermes" in their tag but are fully tool-capable.
-diff --git a/reign_cli/pets.py b/reign_cli/pets.py
-index ed04d47105..1e58f52f9d 100644
---- a/reign_cli/pets.py
-+++ b/reign_cli/pets.py
-@@ -396,7 +396,7 @@ def print_pet_gallery(*, limit: int = 20) -> None:
- 
-     installed = {p.slug for p in store.installed_pets()}
-     shown = entries[:limit] if limit > 0 else entries
--    print(f"♜ petdex gallery — first {len(shown)} of {len(entries)}:")
-+    print(f"(^o^)/ petdex gallery — first {len(shown)} of {len(entries)}:")
-     for entry in shown:
-         mark = "●" if entry.slug in installed else "○"
-         print(f"  {mark} {entry.slug:<24} {entry.display_name}")
 diff --git a/reign_cli/session_export_html.py b/reign_cli/session_export_html.py
 index 4c1e955987..b160095175 100644
 --- a/reign_cli/session_export_html.py
@@ -830,16 +1619,18 @@ index b02f68b589..bd2c111fdb 100755
  
      # Also expose `reign-acp`. ACP hosts (Zed, JetBrains, Buzz) resolve the
      # agent by command name on the login-shell PATH, and the `reign-acp`
-diff --git a/skills/creative/ascii-video/README.md b/skills/creative/ascii-video/README.md
-index dfc57aeb1f..c117444d3b 100644
---- a/skills/creative/ascii-video/README.md
-+++ b/skills/creative/ascii-video/README.md
-@@ -1,4 +1,4 @@
--# ♜ ASCII Video
-+# ☤ ASCII Video
+diff --git a/tests/agent/test_phantom_tool_references.py b/tests/agent/test_phantom_tool_references.py
+index 1bab6425f6..d7a3fee518 100644
+--- a/tests/agent/test_phantom_tool_references.py
++++ b/tests/agent/test_phantom_tool_references.py
+@@ -143,6 +143,6 @@ class TestEssentialOnlySync:
+         result = ss.sync_skills(quiet=True)
  
- Renders any content as colored ASCII character video. Audio, video, images, text, or pure math in, MP4/GIF/PNG sequence out. Full RGB color per character cell, 1080p 24fps default. No GPU.
- 
+         assert result["skipped_opt_out"] is True
+-        assert result["copied"] == ["reign"]
++        assert result["copied"] == ["hermes"]
+         assert (home / "skills" / "autonomous-ai-agents" / "reign" / "SKILL.md").exists()
+         assert not (home / "skills" / "media").exists()
 diff --git a/tests/agent/test_system_prompt_restore.py b/tests/agent/test_system_prompt_restore.py
 index c10d4a1dc2..b20073d70f 100644
 --- a/tests/agent/test_system_prompt_restore.py
@@ -879,6 +1670,79 @@ index cb70141461..ba42fd9a6a 100644
          assert kwargs["unfurl_links"] is False
          assert kwargs["unfurl_media"] is False
  
+diff --git a/tests/gateway/test_sse_agent_cancel.py b/tests/gateway/test_sse_agent_cancel.py
+index 4052917419..17370ac61f 100644
+--- a/tests/gateway/test_sse_agent_cancel.py
++++ b/tests/gateway/test_sse_agent_cancel.py
+@@ -367,7 +367,7 @@ class TestSSEAgentFailureFinishReason:
+ 
+         reason, finish, _ = self._run(failed)
+         assert reason == "error"
+-        assert finish.get("hermes", {}).get("failed") is True
++        assert finish.get("reign", {}).get("failed") is True
+ 
+     def test_truncated_result_reports_length(self):
+         async def trunc():
+diff --git a/tests/honcho_plugin/test_cli.py b/tests/honcho_plugin/test_cli.py
+index 228f87ad1e..a85aa9ad9c 100644
+--- a/tests/honcho_plugin/test_cli.py
++++ b/tests/honcho_plugin/test_cli.py
+@@ -184,7 +184,7 @@ class TestCmdStatus:
+             reasoning_heuristic = True
+             raw = {
+                 "hosts": {
+-                    "hermes": {
++                    "reign": {
+                         "apiKey": "hch-at-deadbeef",
+                         "oauth": {
+                             "refreshToken": "hch-rt-x",
+@@ -245,7 +245,7 @@ class TestCloneHonchoForProfile:
+         cfg = {
+             "apiKey": "***",
+             "hosts": {
+-                "hermes": {
++                "reign": {
+                     "userPeerAliases": {"7654321": "eri", "discord-491827364": "eri"},
+                     "peerName": "eri",
+                 },
+@@ -261,7 +261,7 @@ class TestCloneHonchoForProfile:
+         cfg = {
+             "apiKey": "***",
+             "hosts": {
+-                "hermes": {
++                "reign": {
+                     "runtimePeerPrefix": "telegram_",
+                     "peerName": "eri",
+                 },
+@@ -277,7 +277,7 @@ class TestCloneHonchoForProfile:
+         cfg = {
+             "apiKey": "***",
+             "hosts": {
+-                "hermes": {
++                "reign": {
+                     "pinPeerName": True,
+                     "peerName": "eri",
+                 },
+@@ -742,5 +742,5 @@ class TestCmdSetupDeviceFlow:
+             device_error=AccessDenied("access_denied", "user denied"),
+         )
+         assert len(calls) == 1
+-        assert "apiKey" not in cfg.get("hosts", {}).get("hermes", {})
++        assert "apiKey" not in cfg.get("hosts", {}).get("reign", {})
+ 
+diff --git a/tests/honcho_plugin/test_client.py b/tests/honcho_plugin/test_client.py
+index 1ada0c4203..7e827e4a4a 100644
+--- a/tests/honcho_plugin/test_client.py
++++ b/tests/honcho_plugin/test_client.py
+@@ -162,7 +162,7 @@ class TestFromGlobalConfig:
+             "workspace": "root-ws",
+             "aiPeer": "root-ai",
+             "hosts": {
+-                "hermes": {
++                "reign": {
+                     "workspace": "host-ws",
+                     "aiPeer": "host-ai",
+                 }
 diff --git a/tests/plugins/dashboard_auth/test_nous_provider.py b/tests/plugins/dashboard_auth/test_nous_provider.py
 index ea13064045..9aa211e557 100644
 --- a/tests/plugins/dashboard_auth/test_nous_provider.py
@@ -893,7 +1757,7 @@ index ea13064045..9aa211e557 100644
      def test_extracts_agent_instance_id(self):
          p = nous_plugin.NousDashboardAuthProvider(
 diff --git a/tests/plugins/memory/test_hindsight_templates.py b/tests/plugins/memory/test_hindsight_templates.py
-index 0ec470c420..c15b1c2600 100644
+index ec9a9d755b..799c628e8f 100644
 --- a/tests/plugins/memory/test_hindsight_templates.py
 +++ b/tests/plugins/memory/test_hindsight_templates.py
 @@ -39,7 +39,7 @@ def test_fetch_manifest_resolves_relative_url(monkeypatch):
@@ -979,6 +1843,28 @@ index 180656ca3d..8345c29d98 100644
  Qwen3 wrapper that happens to live under the "reign" tag namespace.
  
  ``is_nous_reign_non_agentic`` should only match the actual Rook
+diff --git a/tests/reign_cli/test_profiles.py b/tests/reign_cli/test_profiles.py
+index a4d628eb05..8bf9fb5505 100644
+--- a/tests/reign_cli/test_profiles.py
++++ b/tests/reign_cli/test_profiles.py
+@@ -237,7 +237,7 @@ class TestNoSkillsOptOut:
+         # happens inside sync_skills) and its skipped_opt_out flag surfaces.
+         called = []
+         stdout_by_call = [
+-            '{"copied": ["reign"], "skipped_opt_out": true}',
++            '{"copied": ["hermes"], "skipped_opt_out": true}',
+             '{"copied": []}',
+         ]
+         monkeypatch.setattr(
+@@ -249,7 +249,7 @@ class TestNoSkillsOptOut:
+         )
+         r1 = seed_profile_skills(profile_dir, quiet=True)
+         assert r1.get("skipped_opt_out") is True
+-        assert r1.get("copied") == ["reign"]
++        assert r1.get("copied") == ["hermes"]
+         assert len(called) == 1
+ 
+         # Delete marker → next call is a normal full sync.
 diff --git a/tests/reign_cli/test_quarantine_noop_restore.py b/tests/reign_cli/test_quarantine_noop_restore.py
 index 7fd89ef6f1..f284fbcd04 100644
 --- a/tests/reign_cli/test_quarantine_noop_restore.py
@@ -1042,7 +1928,7 @@ index 0feac23225..431d3c0be3 100644
  
          with patch("reign_cli.main._is_windows", return_value=True), \
 diff --git a/tests/reign_cli/test_web_server.py b/tests/reign_cli/test_web_server.py
-index cee2c30e52..7310966864 100644
+index e8c939556f..d13e0c91da 100644
 --- a/tests/reign_cli/test_web_server.py
 +++ b/tests/reign_cli/test_web_server.py
 @@ -2945,7 +2945,7 @@ class TestNewEndpoints:
@@ -1330,82 +2216,16 @@ index b7e9079896..ce08421120 100644
      assert reqs["available"] is True
      assert reqs["capture"] == "client"
  
-diff --git a/tools/blueprints.py b/tools/blueprints.py
-index d4e108a1ae..e72d39e02a 100644
---- a/tools/blueprints.py
-+++ b/tools/blueprints.py
-@@ -106,7 +106,7 @@ def parse_blueprint(skill_md_text: str) -> Optional[BlueprintSpec]:
-     name = str(fm.get("name", "")).strip()
- 
-     meta = fm.get("metadata")
--    reign = meta.get("hermes") if isinstance(meta, dict) else None
-+    reign = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
-     blueprint = reign.get("blueprint") if isinstance(reign, dict) else None
-     if blueprint is None:
-         return None
-diff --git a/tools/skill_linter.py b/tools/skill_linter.py
-index 52d3c8dbd4..7eb78744c1 100644
---- a/tools/skill_linter.py
-+++ b/tools/skill_linter.py
-@@ -196,7 +196,7 @@ def _check_metadata_block(frontmatter: Dict[str, Any]) -> List[LintFinding]:
-                 )
-             )
-     meta = frontmatter.get("metadata")
--    reign_meta = meta.get("hermes") if isinstance(meta, dict) else None
-+    reign_meta = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
-     if not isinstance(reign_meta, dict):
-         findings.append(
-             LintFinding(
-diff --git a/tools/skills_hub.py b/tools/skills_hub.py
-index ba803bec18..6fe8d42217 100644
---- a/tools/skills_hub.py
-+++ b/tools/skills_hub.py
-@@ -890,7 +890,7 @@ class GitHubSource(SkillSource):
-         tags = []
-         metadata = fm.get("metadata", {})
-         if isinstance(metadata, dict):
--            reign_meta = metadata.get("reign", {})
-+            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
-             if isinstance(reign_meta, dict):
-                 tags = reign_meta.get("tags", [])
-         if not tags:
-@@ -1659,7 +1659,7 @@ class UrlSource(SkillSource):
-         tags: List[str] = []
-         metadata = fm.get("metadata", {})
-         if isinstance(metadata, dict):
--            reign_meta = metadata.get("reign", {})
-+            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
-             if isinstance(reign_meta, dict):
-                 raw_tags = reign_meta.get("tags", [])
-                 if isinstance(raw_tags, list):
-@@ -3834,7 +3834,7 @@ class OptionalSkillSource(SkillSource):
-         meta_block = fm.get("metadata")
-         if not isinstance(meta_block, dict):
-             return None
--        reign_meta = meta_block.get("hermes")
-+        reign_meta = (meta_block.get("reign") or meta_block.get("hermes"))
-         if not isinstance(reign_meta, dict):
-             return None
-         upstream = reign_meta.get("upstream")
-@@ -3919,7 +3919,7 @@ class OptionalSkillSource(SkillSource):
-             tags = []
-             meta_block = fm.get("metadata", {})
-             if isinstance(meta_block, dict):
--                reign_meta = meta_block.get("reign", {})
-+                reign_meta = (meta_block.get("reign") or meta_block.get("hermes") or {})
-                 if isinstance(reign_meta, dict):
-                     tags = reign_meta.get("tags", [])
- 
 diff --git a/tools/skills_tool.py b/tools/skills_tool.py
-index 8bf4ae4087..dd0b80cd3a 100644
+index 69c8c390da..5a5812087f 100644
 --- a/tools/skills_tool.py
 +++ b/tools/skills_tool.py
 @@ -1686,7 +1686,7 @@ def skill_view(
          reign_meta = {}
          metadata = frontmatter.get("metadata")
          if isinstance(metadata, dict):
--            reign_meta = metadata.get("reign", {}) or {}
-+            reign_meta = metadata.get("reign") or metadata.get("hermes") or {}
+-            reign_meta = metadata.get("hermes", {}) or {}
++            reign_meta = metadata.get("hermes", {})
  
          tags = _parse_tags(reign_meta.get("tags") or frontmatter.get("tags", ""))
          related_skills = _parse_tags(
@@ -1940,6 +2760,59 @@ index 551b8bb752..b0fd2a7c76 100644
  
  ### On the backend (the remote machine)
  
+diff --git a/website/docs/user-guide/features/mcp.md b/website/docs/user-guide/features/mcp.md
+index c3a631f699..4fc336add1 100644
+--- a/website/docs/user-guide/features/mcp.md
++++ b/website/docs/user-guide/features/mcp.md
+@@ -854,7 +854,7 @@ Add Reign to your MCP client config. For example, in Claude Code's `~/.claude/cl
+ ```json
+ {
+   "mcpServers": {
+-    "hermes": {
++    "reign": {
+       "command": "reign",
+       "args": ["mcp", "serve"]
+     }
+@@ -867,7 +867,7 @@ Or if you installed Reign in a specific location:
+ ```json
+ {
+   "mcpServers": {
+-    "hermes": {
++    "reign": {
+       "command": "/home/user/.reign/reign/venv/bin/reign",
+       "args": ["mcp", "serve"]
+     }
+diff --git a/website/docs/user-guide/features/memory-providers.md b/website/docs/user-guide/features/memory-providers.md
+index a24f7b418c..d8a4d6679e 100644
+--- a/website/docs/user-guide/features/memory-providers.md
++++ b/website/docs/user-guide/features/memory-providers.md
+@@ -112,7 +112,7 @@ The legacy `reign honcho setup` command still works (it now redirects to `reign
+ {
+   "apiKey": "your-key-from-app.honcho.dev",
+   "hosts": {
+-    "hermes": {
++    "reign": {
+       "enabled": true,
+       "aiPeer": "reign",
+       "peerName": "your-name",
+@@ -131,7 +131,7 @@ The legacy `reign honcho setup` command still works (it now redirects to `reign
+ {
+   "baseUrl": "http://localhost:8000",
+   "hosts": {
+-    "hermes": {
++    "reign": {
+       "enabled": true,
+       "aiPeer": "reign",
+       "peerName": "your-name",
+@@ -227,7 +227,7 @@ Off-gateway these keys do nothing. `reign memory setup` only prompts for them wh
+   "workspace": "reign",
+   "peerName": "eri",
+   "hosts": {
+-    "hermes": {
++    "reign": {
+       "enabled": true,
+       "aiPeer": "reign",
+       "workspace": "reign",
 diff --git a/website/docs/user-guide/features/skins.md b/website/docs/user-guide/features/skins.md
 index 6e1a856719..ce72784762 100644
 --- a/website/docs/user-guide/features/skins.md
@@ -2205,6 +3078,32 @@ index 3abe358211..9359131f71 100644
      },
      prism: {
        theme: prismThemes.github,
+diff --git a/website/scripts/extract-skills.py b/website/scripts/extract-skills.py
+index e9201a3e8e..0d0dc93da7 100644
+--- a/website/scripts/extract-skills.py
++++ b/website/scripts/extract-skills.py
+@@ -288,7 +288,7 @@ def extract_local_skills():
+             tags = []
+             metadata = fm.get("metadata")
+             if isinstance(metadata, dict):
+-                reign_meta = metadata.get("hermes", {})
++                reign_meta = metadata.get("reign", {})
+                 if isinstance(reign_meta, dict):
+                     tags = reign_meta.get("tags", [])
+             if not tags:
+diff --git a/website/scripts/generate-skill-docs.py b/website/scripts/generate-skill-docs.py
+index dba2040d98..ca47308e46 100755
+--- a/website/scripts/generate-skill-docs.py
++++ b/website/scripts/generate-skill-docs.py
+@@ -341,7 +341,7 @@ def render_skill_page(
+     # Heuristic nicer title from name
+     display_name = name.replace("-", " ").replace("_", " ").title()
+ 
+-    reign_meta = (fm.get("metadata") or {}).get("hermes") or {}
++    reign_meta = (fm.get("metadata") or {}).get("reign") or {}
+     tags = reign_meta.get("tags") or []
+     related = reign_meta.get("related_skills") or []
+     platforms = fm.get("platforms")
 diff --git a/website/src/css/custom.css b/website/src/css/custom.css
 index 66a91b717d..ceffb6dc57 100644
 --- a/website/src/css/custom.css
