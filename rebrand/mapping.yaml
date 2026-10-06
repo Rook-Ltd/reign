@@ -52,7 +52,7 @@ protect:                  # regex; matches are restored verbatim after replaceme
   # GitHub org/repo slugs and Docker Hub images under the Nous org
   - '[Nn]ous[Rr]esearch/[\w.\-]+'
   # Nous model family identifiers: Hermes 2/3/4(.x) ..., "Nous Hermes"
-  - '\b[Hh]ermes[-_ ]?[2-4](?:\.\d+)?(?:[-_][A-Za-z0-9.]+)*'   # also hermes_4_70b
+  - '\b[Hh]ermes[-_ ]?[2-4](?!\d)(?:\.\d+)?(?:[-_][A-Za-z0-9.]+)*'   # also hermes_4_70b; not hermes_2026-...
   # Model-family detection needles: a bare lowercase "hermes" compared against a
   # model id (agent/coding_context.py, reign_cli/auth.py, model_switch.py regex,
   # godmode auto_jailbreak.py). These must keep matching Nous model names.
@@ -63,13 +63,19 @@ protect:                  # regex; matches are restored verbatim after replaceme
   # and read by a changing set of upstream files; keep it `hermes` everywhere (decided 2026-10-06).
   - '(?m)^(\s+)hermes:\s*$'
   - 'metadata:\\n *hermes:\\n'           # inline yaml in test strings (literal backslash-n)
-  - '\.get\("hermes"'
-  - '\["hermes"\]'
+  - '(?:metadata|meta|meta_block|fm|frontmatter|block)\.get\("hermes"'
+  - '(?:metadata|meta_block|fm|frontmatter)\["hermes"\]'
+  - '(?m)^\s*"\s+hermes:\\n"'          # split string-literal yaml line in test fixtures
+  - '"metadata":\s*\{\s*"hermes":'    # dict-literal writer of a skill metadata block
   - '"hermes" (?:not )?in (?:meta|metadata|fm|frontmatter|block)\b'
   - 'metadata\.hermes\b'
+  - 'maintainer[=:] *"?Nous Research"?'   # third-party plugin maintainers in the catalog and its tests
   - 'metadata\[\"hermes\"\]'
-  - '(?m)^\s*"hermes": \{\s*$'      # dict literal writer (tools/blueprints.py)
   - '"  hermes:"'                      # yaml line writer (tools/skills_hub.py)
+  # Nous API server message matched by the error classifier (wire text, both cases)
+  - '(?i)anonymous hermes agent accounts only'
+  # legacy-cli test resolves the agent console script by name
+  - '\["scripts"\]\["hermes-agent"\]'
   # The `hermes-agent` console script / launcher must not collapse into `hermes`->`reign`
   # (it would overwrite the CLI launcher). Kept here, mapped to reign-agent in post_replace.
   - 'command_link_dir/hermes-agent'
@@ -78,6 +84,8 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - 'expose `hermes-agent`\. The `hermes-agent` console script'
   - 'hermes-agent must dispatch'
   - '"hermes-agent", "hermes-acp"'
+  - '"hermes-acp", "hermes-agent"'
+  - 'prog="hermes-agent"'
   - '"bin" / "hermes-agent"'
   - '/usr/local/bin/hermes-agent"'
   - '(?m)^hermes-agent = "'
@@ -147,13 +155,14 @@ rename_paths:             # applied to each path component, in order
 
 # Residual-check allowlist: lines matching these after the run are expected.
 check_allow:
+  - '(?i)anonymous hermes agent accounts only'
   # skill metadata key kept as `hermes` (decision 2026-10-06)
   - '(?m)^\s+hermes:\s*$'
   - 'metadata\.hermes\b'
   - 'metadata:\\n *hermes:'
   - '\.get\("hermes"'
   - '\["hermes"\]'
-  - '"hermes": \{'
+  - '"hermes":'
   - '"  hermes:"'
   # intentional survivors after the manual model-needle / skill-key fixes
   - 'get\("hermes"\)'
@@ -201,8 +210,9 @@ post_replace:
       - "scripts/release.py"
       - "tests/install/*"
       - ".github/actions/**"        # plugin-validate installs the agent from the repo
-      - "reign_cli/update_cmd.py"
-      - "reign_cli/banner.py"
+      - "reign_cli/**"
+      - "tests/reign_cli/**"
+      - "tests/scripts/**"
       - "apps/desktop/electron/update-remote*"
       - "apps/desktop/electron/bootstrap-runner.ts"
       - "apps/desktop/src/app/settings/about-settings.tsx"
@@ -240,6 +250,8 @@ post_replace:
         with:  "canonical asxi9832/reign repo"
       - plain: "_HERMES_REF"
         with:  "_REIGN_REF"
+      - plain: '"nousresearch/hermes-agent"'
+        with:  '"asxi9832/reign"'
   - files:
       - "scripts/install.sh"
       - "**/test_install_sh_acp_launcher.py"
@@ -269,6 +281,12 @@ post_replace:
     replace:
       - plain: '"hermes-agent", "hermes-acp"'
         with:  '"reign-agent", "reign-acp"'
+      - plain: '"hermes-acp", "hermes-agent"'
+        with:  '"reign-acp", "reign-agent"'
+      - plain: 'prog="hermes-agent"'
+        with:  'prog="reign-agent"'
+      - plain: '["scripts"]["hermes-agent"]'
+        with:  '["scripts"]["reign-agent"]'
       - plain: '"bin" / "hermes-agent"'
         with:  '"bin" / "reign-agent"'
       - plain: '/usr/local/bin/hermes-agent"'
@@ -407,9 +425,7 @@ post_replace:
     replace:
     - plain: assert ww._provider({}) == "openwakeword"
       with: assert ww._provider({}) == "sherpa"
-      with: expect(theme.color.primary).toBe('#FFFFFF')
-    - plain: expect(theme.color.accent).toBe('#FFBF00')
-      with: expect(theme.color.accent).toBe('#C0C0C0')
+      with: 'assert ww._provider({}) == "sherpa"'
   - files:
     - website/src/**/*.css
     - website/docs/index.mdx
@@ -510,9 +526,28 @@ post_replace:
     - plain: hermes_2...
       with: reign_2...
 
+  - files:
+      - "tests/tools/test_wake_word.py"
+    replace:
+      - regex: '(?m)(?<=\n\n)def test_bundled_hey_reign_model_ships_on_disk'   # blank line before = not yet decorated
+        with:  '@pytest.mark.skip(reason="Reign ships no bundled wake-word model")\ndef test_bundled_hey_reign_model_ships_on_disk'
+
+  - files:
+      - "tests/reign_cli/test_config.py"
+    replace:
+      - regex: 'created by Nous "\n(\s+)"Research\. '
+        with:  'created by Rook. "\n\1"'
+
+  - files:
+      - "reign_cli/skin_engine.py"
+    replace:
+      - regex: '(?s)(_REIGN_BRANDING: Dict\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
+        with:  '\1\n_REIGN_BRANDING["agent_name"] = "Reign"\n_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."'
+
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
 overlay_exclude:
+  - "tests/reign_cli/test_skin_engine.py"
   - "reign_cli/banner.py"
   - "cli.py"
   - "ui-tui/src/banner.ts"

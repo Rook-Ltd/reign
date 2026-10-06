@@ -31,7 +31,7 @@ def test_cli_keeps_discovered_home_when_launch_selection_changes(tmp_path, monke
 
     def run(argv, env, report_path, timeout):
         # Exercise the actual startup resolver with the production child env/flags.
-        code = ('import json,sys; sys.argv=["hermes"]+json.loads(sys.argv[1]); '
+        code = ('import json,sys; sys.argv=["reign"]+json.loads(sys.argv[1]); '
                 'import reign_cli.main; from reign_constants import get_reign_home; '
                 'print(json.dumps(str(get_reign_home())))')
         # Everything after the launcher (binary or ``python -m reign_cli.main``) is the CLI argv.

@@ -22,7 +22,7 @@ def cli_lane(tmp_path, monkeypatch):
     monkeypatch.setenv("REIGN_HOME", str(tmp_path))
     monkeypatch.setattr(
         delivery, "_run_bot_chat_turn",
-        Mock(side_effect=subprocess.TimeoutExpired(["hermes"], 600)))
+        Mock(side_effect=subprocess.TimeoutExpired(["reign"], 600)))
     return tmp_path
 
 
@@ -111,6 +111,6 @@ def test_late_turn_report_books_delivery(tmp_path, monkeypatch):
     monkeypatch.setattr(_FakeProc, "kill", kill_and_flag)
     monkeypatch.setattr(qsq, "read_turn_report", fake_read)
 
-    result = delivery._run_bot_chat_turn(["hermes"], {}, str(tmp_path / "r.json"), 0.4)
+    result = delivery._run_bot_chat_turn(["reign"], {}, str(tmp_path / "r.json"), 0.4)
     assert isinstance(result, subprocess.CompletedProcess)
     assert result.returncode == 0

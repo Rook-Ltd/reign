@@ -30,7 +30,7 @@ def _build_parser() -> argparse.ArgumentParser:
     from reign_cli import __release_date__, __version__
 
     parser = argparse.ArgumentParser(
-        prog="reign",
+        prog="reign-agent",
         description="Legacy single-query Reign runner. For the full CLI use `reign`.",
     )
     parser.add_argument("--version", action="version", version=f"Reign v{__version__} ({__release_date__})")

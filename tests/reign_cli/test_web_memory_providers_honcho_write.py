@@ -29,4 +29,4 @@ def test_web_save_never_replaces_an_unparseable_honcho_json(tmp_path, monkeypatc
     mp._write_provider_honcho(CONFIG_SCHEMA, {"recallMode": "tools"})
     data = json.loads(path.read_text(encoding="utf-8"))
     assert data["hosts"]["other"]["apiKey"] == "keep-me"
-    assert data["hosts"]["hermes"]["recallMode"] == "tools"
+    assert data["hosts"]["reign"]["recallMode"] == "tools"

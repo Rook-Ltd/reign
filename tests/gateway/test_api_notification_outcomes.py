@@ -126,12 +126,12 @@ async def test_http_diagnostic_projection_keeps_source_and_terminal_flags(tmp_pa
                   if line.startswith("data: ") and line != "data: [DONE]"]
         terminal = frames[-1]
         assert terminal["choices"][0]["finish_reason"] == "error"
-        assert terminal["hermes"]["partial"] is True
+        assert terminal["reign"]["partial"] is True
         assert terminal["usage"]["total_tokens"] == 7
     else:
         body = json.loads(wire)
         assert body["choices"][0]["finish_reason"] == "error"
-        assert body["hermes"]["partial"] is True
+        assert body["reign"]["partial"] is True
         assert body["usage"]["total_tokens"] == 7
 
 
@@ -163,7 +163,7 @@ async def test_http_unhandled_diagnostic_error_is_quiet_but_failed(tmp_path, mon
         frames = [json.loads(line[6:]) for line in wire.splitlines()
                   if line.startswith("data: ") and line != "data: [DONE]"]
         assert frames[-1]["choices"][0]["finish_reason"] == "error"
-        assert frames[-1]["hermes"]["failed"] is True
+        assert frames[-1]["reign"]["failed"] is True
     assert adapter._inflight_agent_runs == 0
 
 

@@ -744,7 +744,7 @@ class OpenAICompatRoutesMixin:
             err_body = _openai_error(
                 "" if presentation_muted else (err_msg or "Agent run did not produce a response."), err_type="server_error",
                 code="agent_incomplete")
-            err_body["error"]["hermes"] = {
+            err_body["error"]["reign"] = {
                 "completed": completed, "partial": is_partial, "failed": is_failed}
             response_headers["X-Reign-Completed"] = "false"
             response_headers["X-Reign-Partial"] = "true" if is_partial else "false"
@@ -761,7 +761,7 @@ class OpenAICompatRoutesMixin:
         if reasoning_text and not presentation_muted:
             response_data["choices"][0]["message"]["reasoning_content"] = reasoning_text
         if is_partial or is_failed or not completed:
-            response_data["hermes"] = _reign_extras(
+            response_data["reign"] = _reign_extras(
                 completed, is_partial, is_failed, "" if presentation_muted else err_msg, finish_reason)
             response_headers["X-Reign-Completed"] = "false"
             response_headers["X-Reign-Partial"] = "true" if is_partial else "false"
@@ -871,7 +871,7 @@ class OpenAICompatRoutesMixin:
                     finish_chunk["error"] = {
                         "message": err_msg,
                         "type": type(agent_error).__name__ if agent_error else "agent_error"}
-                finish_chunk["hermes"] = _reign_extras(
+                finish_chunk["reign"] = _reign_extras(
                     completed, is_partial, is_failed, "" if presentation_muted else err_msg, finish_reason)
             await response.write(_sse_frame(finish_chunk))
             await response.write(b"data: [DONE]\n\n")

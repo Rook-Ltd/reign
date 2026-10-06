@@ -180,7 +180,7 @@ def export_blueprint(job: Dict[str, Any], body: str, *, blueprint_name: Optional
     frontmatter = {
         "name": name, "description": body.splitlines()[0][:200] if body else "Shared automation blueprint.",
         "version": "1.0.0", "license": "MIT",
-        "metadata": {"reign": {"tags": ["blueprint", "automation"], "blueprint": block}},
+        "metadata": {"hermes": {"tags": ["blueprint", "automation"], "blueprint": block}},
     }
     fm_yaml = yaml.safe_dump(frontmatter, sort_keys=False, allow_unicode=True).strip()
     body_text = body or f"# {name}\n\nShared automation blueprint."

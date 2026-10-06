@@ -134,7 +134,7 @@ class TestCmdPeersMap:
     ], ids=["account-number", "typed-runtime-id", "picked-from-peers-table", "pinned-but-accepted"])
     def test_writes_alias_to_host_block(self, monkeypatch, tmp_path, cfg, answers, kwargs):
         written = _run_map(monkeypatch, tmp_path, answers=answers, cfg=cfg, **kwargs)
-        assert written["cfg"]["hosts"]["hermes"]["userPeerAliases"] == {"111": "eri"}
+        assert written["cfg"]["hosts"]["reign"]["userPeerAliases"] == {"111": "eri"}
 
     @pytest.mark.parametrize("aliases, expected_host", [
         ({"111": "eri", "222": "tek"}, {"userPeerAliases": {"222": "tek"}}),
@@ -142,7 +142,7 @@ class TestCmdPeersMap:
     ], ids=["one-of-two", "last-alias-keeps-empty-map"])
     def test_dash_clears_alias(self, monkeypatch, tmp_path, aliases, expected_host):
         written = _run_map(monkeypatch, tmp_path, answers=["111", "-", ""], cfg=_cfg(userPeerAliases=aliases))
-        assert written["cfg"]["hosts"]["hermes"] == expected_host
+        assert written["cfg"]["hosts"]["reign"] == expected_host
 
     def test_cleared_host_map_does_not_resurrect_root_aliases(self, monkeypatch, tmp_path, capsys):
         """A host block without the key inherits root, so clearing must leave an empty map behind."""
@@ -151,7 +151,7 @@ class TestCmdPeersMap:
         monkeypatch.setenv("REIGN_HOME", str(tmp_path))
         cfg = _cfg(root={"userPeerAliases": {"111": "root-person"}}, userPeerAliases={"111": "host-person"})
         written = _run_map(monkeypatch, tmp_path, answers=["111", "-", ""], cfg=cfg)
-        assert written["cfg"]["hosts"]["hermes"]["userPeerAliases"] == {}
+        assert written["cfg"]["hosts"]["reign"]["userPeerAliases"] == {}
         assert "root aliases no longer apply to [reign]" in capsys.readouterr().out
 
         path = tmp_path / "honcho.json"
@@ -176,7 +176,7 @@ class TestWorkspaceSwitch:
             monkeypatch, tmp_path, answers=["w", "2", "y", ""],
             cfg=_cfg(peerName="eri"), ws_peers=["eri"], workspaces=["reign", "cosmania-dex"],
         )
-        assert written["cfg"]["hosts"]["hermes"]["workspace"] == "cosmania-dex"
+        assert written["cfg"]["hosts"]["reign"]["workspace"] == "cosmania-dex"
 
     def test_browse_client_is_built_for_the_browsed_workspace(self, monkeypatch):
         """get_honcho_client keys its cache on workspace_id, so a browse must not reuse the profile's client."""
@@ -244,12 +244,12 @@ class TestSaveScope:
         cfg = {"apiKey": "***", "userPeerAliases": {"111": "eri"}, "hosts": hosts}
         written = _run_map(monkeypatch, tmp_path, answers=answers, cfg=cfg)
         assert written["cfg"]["userPeerAliases"] == {"111": "eri", "222": "tek"}
-        assert "userPeerAliases" not in written["cfg"]["hosts"]["hermes"]
+        assert "userPeerAliases" not in written["cfg"]["hosts"]["reign"]
 
     def test_scope_this_forks_host_block(self, monkeypatch, tmp_path):
         cfg = {"apiKey": "***", "userPeerAliases": {"111": "eri"}, "hosts": {"reign": {}, "reign.dreamer": {}}}
         written = _run_map(monkeypatch, tmp_path, answers=["222", "tek", "", "this"], cfg=cfg)
-        assert written["cfg"]["hosts"]["hermes"]["userPeerAliases"] == {"111": "eri", "222": "tek"}
+        assert written["cfg"]["hosts"]["reign"]["userPeerAliases"] == {"111": "eri", "222": "tek"}
         assert written["cfg"]["userPeerAliases"] == {"111": "eri"}  # root stays the other profiles' baseline
 
 

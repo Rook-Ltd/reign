@@ -72,7 +72,7 @@ class TestParseFrontmatter:
 
         nested = "---\nname: test\nmetadata:\n  hermes:\n    tags: [a, b]\n---\n\nBody.\n"
         fm, _ = _parse_frontmatter(nested)
-        assert fm["metadata"]["hermes"]["tags"] == ["a", "b"]
+        assert fm["metadata"]["reign"]["tags"] == ["a", "b"]
 
 
     def test_utf8_bom_frontmatter(self):

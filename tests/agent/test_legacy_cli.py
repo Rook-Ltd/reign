@@ -18,7 +18,7 @@ import run_agent
 
 def _run_console_script(monkeypatch, *argv: str):
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
-    module, func = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["scripts"]["reign"].split(":")
+    module, func = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["scripts"]["reign-agent"].split(":")
     monkeypatch.setattr(sys, "argv", ["reign", *argv])
     try:
         return getattr(importlib.import_module(module), func)()

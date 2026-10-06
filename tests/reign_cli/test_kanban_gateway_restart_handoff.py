@@ -23,7 +23,7 @@ def worker_setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path,
     profile.joinpath("config.yaml").write_text("{}\n", encoding="utf-8")
     monkeypatch.setenv("REIGN_HOME", str(root))
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
-    monkeypatch.setattr(kbd, "_resolve_reign_argv", lambda: ["hermes"])
+    monkeypatch.setattr(kbd, "_resolve_reign_argv", lambda: ["reign"])
 
     workspace = tmp_path / "candidate-worktree"
     workspace.mkdir()

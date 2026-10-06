@@ -20,7 +20,7 @@ _ORPHAN_RESCUE_REF_MAX_AGE_DAYS = 30
 
 _GIT_TEXT_KW = dict(capture_output=True, text=True, encoding="utf-8", errors="replace")
 _BAR = "=" * 68
-_UPSTREAM_ADD_CMD = "git remote add upstream https://github.com/NousResearch/hermes-agent.git"
+_UPSTREAM_ADD_CMD = "git remote add upstream https://github.com/asxi9832/reign.git"
 
 
 def _git_ok(git_cmd, args, cwd, **kw) -> bool:
@@ -177,12 +177,12 @@ def _print_parked_branch_kept_notice(current_branch: str, target_branch: str, un
 
 
 OFFICIAL_REPO_URLS = {
-    "https://github.com/NousResearch/hermes-agent.git",
-    "git@github.com:NousResearch/hermes-agent.git",
-    "https://github.com/NousResearch/hermes-agent",
-    "git@github.com:NousResearch/hermes-agent",
+    "https://github.com/asxi9832/reign.git",
+    "git@github.com:asxi9832/reign.git",
+    "https://github.com/asxi9832/reign",
+    "git@github.com:asxi9832/reign",
 }
-OFFICIAL_REPO_URL = "https://github.com/NousResearch/hermes-agent.git"
+OFFICIAL_REPO_URL = "https://github.com/asxi9832/reign.git"
 SKIP_UPSTREAM_PROMPT_FILE = ".skip_upstream_prompt"
 
 
@@ -247,7 +247,7 @@ def _offer_upstream_remote(git_cmd: list[str], cwd: Path, *, assume_yes: bool, i
     from reign_cli.update_cmd import _add_upstream_remote, _mark_skip_upstream_prompt
     print(
         "\nℹ Your fork is not tracking the official Reign repository.\n"
-        "  This means you may miss updates from NousResearch/hermes-agent.\n"
+        "  This means you may miss updates from asxi9832/reign.\n"
     )
     if assume_yes or (input_fn is None and not (sys.stdin.isatty() and sys.stdout.isatty())):
         print(f"  Skipping upstream setup (non-interactive run).\n  Add it later with: {_UPSTREAM_ADD_CMD}")
@@ -268,7 +268,7 @@ def _offer_upstream_remote(git_cmd: list[str], cwd: Path, *, assume_yes: bool, i
     if not _add_upstream_remote(git_cmd, cwd):
         print("  ✗ Failed to add upstream remote. Skipping upstream sync.")
         return False
-    print("  ✓ Added upstream: https://github.com/NousResearch/hermes-agent.git")
+    print("  ✓ Added upstream: https://github.com/asxi9832/reign.git")
     return True
 
 
@@ -352,7 +352,7 @@ _FETCH_FAILURE_RULES = (
     # key (or lack of one) was the cause (#82169).
     (lambda s: "Permission denied (publickey)" in s or "Host key verification failed" in s,
      "✗ SSH authentication failed — check your SSH key is added to GitHub, or switch"
-     " `origin` to HTTPS: `git remote set-url origin https://github.com/NousResearch/hermes-agent.git`."),
+     " `origin` to HTTPS: `git remote set-url origin https://github.com/asxi9832/reign.git`."),
 )
 
 

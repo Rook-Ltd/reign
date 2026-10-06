@@ -146,7 +146,7 @@ def test_capture_custom_id_buckets_by_four_hours():
     b = _capture_custom_id("session-1", datetime(2026, 9, 12, 4, 0, tzinfo=timezone.utc))
     assert a == "session_1_2026-09-12_b0"
     assert b == "session_1_2026-09-12_b1"
-    assert _capture_custom_id("", datetime(2026, 9, 12, 23, 0, tzinfo=timezone.utc)) == "hermes_2026-09-12_b5"
+    assert _capture_custom_id("", datetime(2026, 9, 12, 23, 0, tzinfo=timezone.utc)) == "reign_2026-09-12_b5"
 
 
 def test_sync_turn_writes_turn_to_session_document(provider, frozen_capture_clock):

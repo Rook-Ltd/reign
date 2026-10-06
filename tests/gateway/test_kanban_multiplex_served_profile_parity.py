@@ -62,7 +62,7 @@ def test_worker_for_served_profile_gets_its_own_env_and_toolset_pin(served, monk
 
     monkeypatch.setattr(subprocess, "Popen", fake_popen)
     monkeypatch.setattr(kbd, "_open_worker_log", lambda task, board: open("/dev/null", "w"))
-    monkeypatch.setattr(kbd, "_reign_argv", lambda: ["hermes"], raising=False)
+    monkeypatch.setattr(kbd, "_reign_argv", lambda: ["reign"], raising=False)
     kbd._default_spawn(task, str(served.alpha), board=None)
 
     env = spawned["env"]

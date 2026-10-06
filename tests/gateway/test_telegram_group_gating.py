@@ -966,7 +966,7 @@ def test_sibling_bot_wake_word_message_is_observed_not_dropped():
         adapter = _make_adapter(
             require_mention=True,
             bots_require_mention=True,
-            mention_patterns=["hermes"],
+            mention_patterns=["reign"],
             allowed_chats=["-100"],
             group_allowed_chats=["-100"],
             observe_unmentioned_group_messages=True,
@@ -994,7 +994,7 @@ def test_sibling_bot_explicit_mention_still_dispatches_and_is_not_observed():
     adapter = _make_adapter(
         require_mention=True,
         bots_require_mention=True,
-        mention_patterns=["hermes"],
+        mention_patterns=["reign"],
         allowed_chats=["-100"],
         group_allowed_chats=["-100"],
         observe_unmentioned_group_messages=True,

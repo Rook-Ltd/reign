@@ -156,7 +156,7 @@ class TestBuildJobPromptScansSkillContent:
             "name: cron-config\n"
             "description: Uses configured cron data\n"
             "metadata:\n"
-            "  reign:\n"
+            "  hermes:\n"
             "    config:\n"
             "      - key: cron_config.data_dir\n"
             "        description: Directory used by the cron skill\n"

@@ -244,4 +244,4 @@ def test_save_config_holds_the_refresh_locks_so_a_rotation_survives(tmp_path, mo
     thread.join(2)
     assert rotation_done.is_set()
     data = json.loads(config_path.read_text())
-    assert data["hosts"]["hermes"]["apiKey"] == "hch-at-new" and data["logging"] is True
+    assert data["hosts"]["reign"]["apiKey"] == "hch-at-new" and data["logging"] is True

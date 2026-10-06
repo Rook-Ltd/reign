@@ -275,7 +275,7 @@ class TestParseFrontmatterBOM:
         "description: Does a thing.\n"
         "platforms: [macos]\n"
         "metadata:\n"
-        "  reign:\n"
+        "  hermes:\n"
         "    config:\n"
         "      - key: my.key\n"
         "        description: A configured value\n"

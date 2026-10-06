@@ -364,7 +364,7 @@ class _WithReason(RuntimeError):
     ("failure", "code", "reason"),
     [
         (TurnBusyError("ops", 0.2), 5096, "target_busy"),
-        (subprocess.TimeoutExpired(["hermes"], 600), 5093, "delivery_timeout"),
+        (subprocess.TimeoutExpired(["reign"], 600), 5093, "delivery_timeout"),
         (RuntimeError("Error code: 401 - invalid api key"), 5094, "provider_auth_or_access"),
         (RuntimeError("something nobody has a rule for"), 5094, "unknown"),
         (_WithReason("CERTIFICATE_VERIFY_FAILED", "ssl handshake failed"), 5094, "unknown"),

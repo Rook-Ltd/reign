@@ -36,7 +36,7 @@ def test_all_invalid_platform_toolsets_logs_runtime_warning(caplog):
     # The runtime warning fires once per platform per process; clear the guard
     # so this test is deterministic regardless of prior resolutions.
     _tc._warned_invalid_platform_toolsets.discard("cli")
-    config = {"platform_toolsets": {"cli": ["hermes"]}}
+    config = {"platform_toolsets": {"cli": ["reign"]}}
 
     with caplog.at_level(logging.WARNING, logger="reign_cli.tools_config"):
         _get_platform_tools(config, "cli")
@@ -206,7 +206,7 @@ def test_toolset_has_keys_for_vision_accepts_codex_auth(tmp_path, monkeypatch):
 def test_save_platform_tools_preserves_mcp_server_names():
     """Ensure MCP server names are preserved when saving platform tools.
 
-    Regression test for https://github.com/NousResearch/hermes-agent/issues/1247
+    Regression test for https://github.com/asxi9832/reign/issues/1247
     """
     config = {
         "platform_toolsets": {
@@ -364,7 +364,7 @@ def test_numeric_mcp_server_name_does_not_crash_sorted():
     _get_platform_tools must normalise them to str so that sorted()
     on the returned set never raises TypeError on mixed int/str.
 
-    Regression test for https://github.com/NousResearch/hermes-agent/issues/6901
+    Regression test for https://github.com/asxi9832/reign/issues/6901
     """
     config = {
         "platform_toolsets": {"cli": ["web", 12306]},

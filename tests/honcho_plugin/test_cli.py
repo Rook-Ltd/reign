@@ -109,7 +109,7 @@ class TestCmdSetupLocalJwt:
         # Top-level apiKey must remain unset (cloud field).
         assert not cfg.get("apiKey")
         # The new local JWT belongs under the host block.
-        host_block = (cfg.get("hosts") or {}).get("hermes") or {}
+        host_block = (cfg.get("hosts") or {}).get("reign") or {}
         assert host_block.get("apiKey") == "my-local-jwt-token"
 
 
@@ -197,7 +197,7 @@ class TestCloneHonchoForProfile:
         cfg = {
             "apiKey": "***",
             "hosts": {
-                "hermes": {
+                "reign": {
                     "userPeerAliases": {"7654321": "eri", "discord-491827364": "eri"},
                     "peerName": "eri",
                 },
@@ -213,7 +213,7 @@ class TestCloneHonchoForProfile:
         cfg = {
             "apiKey": "***",
             "hosts": {
-                "hermes": {
+                "reign": {
                     "runtimePeerPrefix": "telegram_",
                     "peerName": "eri",
                 },
@@ -229,7 +229,7 @@ class TestCloneHonchoForProfile:
         cfg = {
             "apiKey": "***",
             "hosts": {
-                "hermes": {
+                "reign": {
                     "sessionAiPeerPrefix": True,
                     "peerName": "eri",
                 },
@@ -245,7 +245,7 @@ class TestCloneHonchoForProfile:
         cfg = {
             "apiKey": "***",
             "hosts": {
-                "hermes": {
+                "reign": {
                     "pinPeerName": True,
                     "peerName": "eri",
                 },
@@ -353,7 +353,7 @@ class TestSetupWizardDeploymentShape:
         monkeypatch.setattr(honcho_cli, "_prompt", _scripted_prompt)
 
         honcho_cli.cmd_setup(SimpleNamespace())
-        return cfg["hosts"]["hermes"]
+        return cfg["hosts"]["reign"]
 
     def test_just_me_pins_and_clears_aliases(self, monkeypatch, tmp_path):
         answers = [
@@ -701,7 +701,7 @@ class TestCmdSetupDeviceFlow:
         cfg, calls, _ = self._run_setup(monkeypatch, tmp_path, answers=["cloud", "device"])
         assert len(calls) == 1
         assert calls[0]["apply_config"] is False
-        host = cfg["hosts"]["hermes"]
+        host = cfg["hosts"]["reign"]
         assert host["apiKey"] == "hch-at-x"
         assert host["oauth"]["refreshToken"] == "hch-rt-x"
         assert host["peerName"] == "lyra"
@@ -716,7 +716,7 @@ class TestCmdSetupDeviceFlow:
         assert method_prompts[0][1] == "device"
         assert len(calls) == 1
         assert calls[0]["open_url"] is None  # never auto-open a browser headless
-        assert cfg["hosts"]["hermes"]["apiKey"] == "hch-at-x"
+        assert cfg["hosts"]["reign"]["apiKey"] == "hch-at-x"
 
     def test_denied_device_flow_aborts_without_grant(self, monkeypatch, tmp_path):
         from plugins.memory.honcho.oauth_flow import AccessDenied
@@ -726,7 +726,7 @@ class TestCmdSetupDeviceFlow:
             device_error=AccessDenied("access_denied", "user denied"),
         )
         assert len(calls) == 1
-        assert "apiKey" not in cfg.get("hosts", {}).get("hermes", {})
+        assert "apiKey" not in cfg.get("hosts", {}).get("reign", {})
 
 
 def _point_cli_at(monkeypatch, cfg_path, **attrs):
@@ -842,7 +842,7 @@ class TestWriteConfigMergesOntoDisk:
 
     def _rotate_on_disk(self, cfg_path):
         disk = json.loads(cfg_path.read_text())
-        disk["hosts"]["hermes"].update(apiKey="hch-at-new", oauth={"refreshToken": "hch-rt-new"})
+        disk["hosts"]["reign"].update(apiKey="hch-at-new", oauth={"refreshToken": "hch-rt-new"})
         cfg_path.write_text(json.dumps(disk))
 
     def test_untouched_keys_take_disk_and_the_commands_edits_apply(self, monkeypatch, tmp_path):
@@ -851,12 +851,12 @@ class TestWriteConfigMergesOntoDisk:
         honcho_cli, cfg_path = self._paths(monkeypatch, tmp_path, disk)
         cfg = honcho_cli._read_config()
         self._rotate_on_disk(cfg_path)
-        cfg["hosts"]["hermes"]["recallMode"] = "tools"
-        cfg["hosts"]["hermes"].pop("runtimePeerPrefix")
+        cfg["hosts"]["reign"]["recallMode"] = "tools"
+        cfg["hosts"]["reign"].pop("runtimePeerPrefix")
         cfg["dialecticCadence"] = 3
         honcho_cli._write_config(cfg)
         out = json.loads(cfg_path.read_text())
-        assert out["hosts"]["hermes"] == {"apiKey": "hch-at-new", "oauth": {"refreshToken": "hch-rt-new"}, "recallMode": "tools"}
+        assert out["hosts"]["reign"] == {"apiKey": "hch-at-new", "oauth": {"refreshToken": "hch-rt-new"}, "recallMode": "tools"}
         assert out["apiKey"] == "root" and out["dialecticCadence"] == 3
 
     def test_a_credential_the_command_set_wins(self, monkeypatch, tmp_path):
@@ -864,21 +864,21 @@ class TestWriteConfigMergesOntoDisk:
         honcho_cli, cfg_path = self._paths(monkeypatch, tmp_path, disk)
         cfg = honcho_cli._read_config()
         self._rotate_on_disk(cfg_path)
-        cfg["hosts"]["hermes"]["apiKey"] = "hch-v3-pasted"
-        cfg["hosts"]["hermes"].pop("oauth")
+        cfg["hosts"]["reign"]["apiKey"] = "hch-v3-pasted"
+        cfg["hosts"]["reign"].pop("oauth")
         honcho_cli._write_config(cfg)
-        assert json.loads(cfg_path.read_text())["hosts"]["hermes"] == {"apiKey": "hch-v3-pasted"}
+        assert json.loads(cfg_path.read_text())["hosts"]["reign"] == {"apiKey": "hch-v3-pasted"}
 
     def test_a_second_write_on_the_same_read_applies_only_the_edits_made_since_the_first(self, monkeypatch, tmp_path):
         disk = {"hosts": {"reign": {"apiKey": "hch-at-old", "oauth": {"refreshToken": "hch-rt-old"}, "workspace": "A"}}}
         honcho_cli, cfg_path = self._paths(monkeypatch, tmp_path, disk)
         cfg = honcho_cli._read_config()
-        cfg["hosts"]["hermes"]["workspace"] = "B"
+        cfg["hosts"]["reign"]["workspace"] = "B"
         honcho_cli._write_config(cfg)
         self._rotate_on_disk(cfg_path)
-        cfg["hosts"]["hermes"]["workspace"] = "A"
+        cfg["hosts"]["reign"]["workspace"] = "A"
         honcho_cli._write_config(cfg)
-        out = json.loads(cfg_path.read_text())["hosts"]["hermes"]
+        out = json.loads(cfg_path.read_text())["hosts"]["reign"]
         assert out == {"apiKey": "hch-at-new", "oauth": {"refreshToken": "hch-rt-new"}, "workspace": "A"}
 
     def test_a_grant_the_login_installed_yields_to_a_later_rotation(self, monkeypatch, tmp_path):
@@ -888,11 +888,11 @@ class TestWriteConfigMergesOntoDisk:
         cfg = honcho_cli._read_config()
         grant = {"access_token": "hch-at-login", "refresh_token": "hch-rt-login", "expires_in": 3600}
         cred = oauth.install_grant(cfg_path, "reign", grant, client_id="c", token_endpoint="e", apply_config=False)
-        honcho_cli._apply_grant_to_host(cfg, cfg["hosts"]["hermes"], cred)
+        honcho_cli._apply_grant_to_host(cfg, cfg["hosts"]["reign"], cred)
         self._rotate_on_disk(cfg_path)
-        cfg["hosts"]["hermes"]["recallMode"] = "tools"
+        cfg["hosts"]["reign"]["recallMode"] = "tools"
         honcho_cli._write_config(cfg)
-        out = json.loads(cfg_path.read_text())["hosts"]["hermes"]
+        out = json.loads(cfg_path.read_text())["hosts"]["reign"]
         assert out["apiKey"] == "hch-at-new" and out["oauth"] == {"refreshToken": "hch-rt-new"}
         assert out["peerName"] == "alice" and out["recallMode"] == "tools"
 
@@ -909,23 +909,23 @@ class TestWriteConfigMergesOntoDisk:
         cfg = honcho_cli._read_config()
         grant = {"access_token": "hch-at-login", "refresh_token": "hch-rt-login", "expires_in": 3600}
         cred = oauth.install_grant(local, "reign", grant, client_id="c", token_endpoint="e", apply_config=False)
-        honcho_cli._apply_grant_to_host(cfg, cfg["hosts"]["hermes"], cred)
+        honcho_cli._apply_grant_to_host(cfg, cfg["hosts"]["reign"], cred)
         rotated = oauth.OAuthCredential.from_token_response(
             {"access_token": "hch-at-new", "refresh_token": "hch-rt-new", "expires_in": 3600},
             now=0.0, client_id="c", token_endpoint="e")
         oauth._persist_credential(local, "reign", rotated)
-        cfg["hosts"]["hermes"]["recallMode"] = "tools"
+        cfg["hosts"]["reign"]["recallMode"] = "tools"
         honcho_cli._write_config(cfg)
         out = json.loads(local.read_text())
-        assert out["hosts"]["hermes"]["apiKey"] == "hch-at-new"
-        assert out["hosts"]["hermes"]["oauth"]["refreshToken"] == "hch-rt-new"
-        assert out["hosts"]["hermes"]["recallMode"] == "tools" and out["hosts"]["hermes"]["peerName"] == "alice"
+        assert out["hosts"]["reign"]["apiKey"] == "hch-at-new"
+        assert out["hosts"]["reign"]["oauth"]["refreshToken"] == "hch-rt-new"
+        assert out["hosts"]["reign"]["recallMode"] == "tools" and out["hosts"]["reign"]["peerName"] == "alice"
         assert out["dialecticCadence"] == 3
 
     def test_a_read_seeded_from_another_file_is_written_whole_while_no_local_file_exists(self, monkeypatch, tmp_path):
         honcho_cli, local = self._seeded(monkeypatch, tmp_path)
         cfg = honcho_cli._read_config()
-        cfg["hosts"]["hermes"]["recallMode"] = "tools"
+        cfg["hosts"]["reign"]["recallMode"] = "tools"
         honcho_cli._write_config(cfg)
         assert json.loads(local.read_text()) == {"dialecticCadence": 3, "hosts": {"reign": {"peerName": "alice", "recallMode": "tools"}}}
 

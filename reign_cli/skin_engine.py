@@ -58,6 +58,8 @@ def _wings(*glyphs) -> List[List[str]]:
 # Branding shared by every Reign-named built-in (mono/daylight override help_header).
 _REIGN_BRANDING: Dict[str, str] = _branding(
     "Reign", "♜", "Goodbye! ♜", prompt="❯", help_header="[?] Available Commands")
+_REIGN_BRANDING["agent_name"] = "Reign"
+_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."
 
 _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
     "default": {

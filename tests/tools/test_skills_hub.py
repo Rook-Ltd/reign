@@ -35,7 +35,7 @@ class TestParseFrontmatterQuick:
         assert fm["description"] == "A test."
 
         nested = "---\nname: test\nmetadata:\n  hermes:\n    tags: [a, b]\n---\n\nBody.\n"
-        assert GitHubSource._parse_frontmatter_quick(nested)["metadata"]["hermes"]["tags"] == ["a", "b"]
+        assert GitHubSource._parse_frontmatter_quick(nested)["metadata"]["reign"]["tags"] == ["a", "b"]
 
     def test_degenerate_frontmatter_returns_empty(self):
         for content in (

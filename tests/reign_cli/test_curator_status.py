@@ -45,7 +45,7 @@ def curator_status_env(tmp_path, monkeypatch):
             "description: test\n"
             "version: 1.0.0\n"
             "metadata:\n"
-            "  reign:\n"
+            "  hermes:\n"
             "    agent_created: true\n"
             "---\n"
             f"# {name}\n"

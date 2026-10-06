@@ -29,7 +29,7 @@ def _is_valid(name):
 
 def test_38798_corruption_warns_and_suggests_correct_name():
     # The exact reported shape: cli holds 'reign' instead of 'reign-cli'.
-    warnings = validate_platform_toolsets({"cli": ["hermes"]}, _is_valid)
+    warnings = validate_platform_toolsets({"cli": ["reign"]}, _is_valid)
     unknown = [w for w in warnings if "unknown toolset 'reign'" in w]
     assert len(unknown) == 1
     # Actionable: points at the valid name the entry should have been.
