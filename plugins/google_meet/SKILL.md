@@ -6,7 +6,7 @@ platforms:
   - linux
   - macos
 metadata:
-  reign:
+  hermes:
     tags: [meetings, google-meet, transcription, realtime-voice]
 ---
 

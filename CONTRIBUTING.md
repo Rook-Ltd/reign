@@ -441,7 +441,7 @@ prerequisites:                     # Optional legacy runtime requirements
   env_vars: [MY_API_KEY]           #   Backward-compatible alias for required env vars
   commands: [curl, jq]             #   Advisory only; does not hide the skill
 metadata:
-  reign:
+  hermes:
     tags: [Category, Subcategory, Keywords]
     related_skills: [other-skill-name]
     fallback_for_toolsets: [web]       # Optional — show only when toolset is unavailable
@@ -490,11 +490,11 @@ If the field is omitted or empty, the skill loads on all platforms (backward com
 
 Skills can declare conditions that control when they appear in the system prompt, based on which tools and toolsets are available in the current session. This is primarily used for **fallback skills** — alternatives that should only be shown when a primary tool is unavailable.
 
-Four fields are supported under `metadata.reign`:
+Four fields are supported under `metadata.hermes`:
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     fallback_for_toolsets: [web]      # Show ONLY when these toolsets are unavailable
     requires_toolsets: [terminal]     # Show ONLY when these toolsets are available
     fallback_for_tools: [web_search]  # Show ONLY when these specific tools are unavailable
@@ -512,17 +512,17 @@ metadata:
 ```yaml
 # DuckDuckGo search — shown when Firecrawl (web toolset) is unavailable
 metadata:
-  reign:
+  hermes:
     fallback_for_toolsets: [web]
 
 # Smart home skill — only useful when terminal is available
 metadata:
-  reign:
+  hermes:
     requires_toolsets: [terminal]
 
 # Local browser fallback — shown when Browserbase is unavailable
 metadata:
-  reign:
+  hermes:
     fallback_for_toolsets: [browser]
 ```
 
