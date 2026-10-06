@@ -36,9 +36,13 @@ def main() -> None:
     subprocess.run([str(PY), "rebrand/rebrand.py"], cwd=wt, check=True, capture_output=True)
     subprocess.run(["git", "add", "-A"], cwd=wt, check=True)
     tree = subprocess.run(["git", "write-tree"], cwd=wt, check=True, capture_output=True, text=True).stdout.strip()
+    import yaml
+    owned = yaml.safe_load((ROOT / "rebrand/mapping.yaml").read_text()).get("overlay_exclude", [])
     out = ROOT / "rebrand/overlay/hand-edits.patch"
     with out.open("w") as fh:
-        subprocess.run(["git", "diff", "--binary", tree, "HEAD", "--", "."] + EXCLUDES, cwd=ROOT, check=True, stdout=fh)
+        subprocess.run(["git", "diff", "--binary", tree, "HEAD", "--", "."] + EXCLUDES + [f":(exclude){p}" for p in owned], cwd=ROOT, check=True, stdout=fh)
+        # Rook-authored workflow lives under an excluded directory; carry it explicitly.
+        subprocess.run(["git", "diff", "--binary", tree, "HEAD", "--", ".github/workflows/upstream-sync.yml"], cwd=ROOT, check=True, stdout=fh)
     n = sum(1 for l in out.read_text(errors="replace").splitlines() if l.startswith("diff --git"))
     print(f"→ overlay: {n} files ({out.stat().st_size // 1024} KB)  base tree {tree[:10]}")
     subprocess.run(["git", "worktree", "remove", "--force", str(wt)], cwd=ROOT, check=True)
