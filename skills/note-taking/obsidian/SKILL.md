@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Obsidian, Notes, Markdown, Vault]
     related_skills: []
 ---

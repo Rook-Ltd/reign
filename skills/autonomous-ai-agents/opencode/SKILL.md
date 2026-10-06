@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, OpenCode, Autonomous, Refactoring, Code-Review]
     related_skills: [claude-code, codex, reign]
 ---

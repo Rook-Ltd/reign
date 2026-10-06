@@ -888,7 +888,7 @@ class TestBuildSkillsSystemPromptConditional:
         skill_dir = tmp_path / "skills" / "iot" / "openhue"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text(
-            "---\nname: openhue\ndescription: Hue lights\nmetadata:\n  reign:\n    requires_toolsets: [terminal]\n---\n"
+            "---\nname: openhue\ndescription: Hue lights\nmetadata:\n  hermes:\n    requires_toolsets: [terminal]\n---\n"
         )
         result = build_skills_system_prompt(
             available_tools=set(),
@@ -904,7 +904,7 @@ class TestBuildSkillsSystemPromptConditional:
         skill_dir = tmp_path / "skills" / "search" / "duckduckgo"
         skill_dir.mkdir(parents=True)
         (skill_dir / "SKILL.md").write_text(
-            "---\nname: duckduckgo\ndescription: Free web search\nmetadata:\n  reign:\n    fallback_for_toolsets: [web]\n---\n"
+            "---\nname: duckduckgo\ndescription: Free web search\nmetadata:\n  hermes:\n    fallback_for_toolsets: [web]\n---\n"
         )
         result = build_skills_system_prompt()
         assert "duckduckgo" in result

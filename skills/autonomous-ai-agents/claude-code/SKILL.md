@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, Claude, Anthropic, Code-Review, Refactoring, PTY, Automation]
     related_skills: [codex, reign, opencode]
 ---

@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [Payments, Stripe, Link, Checkout, MPP]
     related_skills: [mpp-agent, stripe-projects]
 ---

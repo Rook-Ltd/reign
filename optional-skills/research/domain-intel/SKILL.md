@@ -6,7 +6,7 @@ author: FurkanL0, Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Domains, OSINT, DNS, Research]
     related_skills: []
 ---

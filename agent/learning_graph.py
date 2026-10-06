@@ -49,10 +49,10 @@ def _frontmatter(text: str) -> dict[str, Any]:
 
 
 def _reign_meta(fm: dict[str, Any]) -> dict[str, Any]:
-    """``metadata.reign`` as a dict, tolerant of the string-valued frontmatter
+    """``metadata.hermes`` as a dict, tolerant of the string-valued frontmatter
     that ``parse_frontmatter``'s malformed-YAML fallback produces."""
     meta = fm.get("metadata")
-    reign = meta.get("reign") if isinstance(meta, dict) else None
+    reign = meta.get("hermes") if isinstance(meta, dict) else None
     return reign if isinstance(reign, dict) else {}
 
 

@@ -6,7 +6,7 @@ author: SHL0MS, Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [ASCII, Video, FFmpeg, Terminal-Art]
     related_skills: []
 ---

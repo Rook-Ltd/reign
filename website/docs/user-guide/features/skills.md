@@ -167,7 +167,7 @@ description: Brief description of what this skill does
 version: 1.0.0
 platforms: [macos, linux]     # Optional — restrict to specific OS platforms
 metadata:
-  reign:
+  hermes:
     tags: [python, automation]
     category: devops
     fallback_for_toolsets: [web]    # Optional — conditional activation (see below)
@@ -247,7 +247,7 @@ Skills can automatically show or hide themselves based on which tools are availa
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     fallback_for_toolsets: [web]      # Show ONLY when these toolsets are unavailable
     requires_toolsets: [terminal]     # Show ONLY when these toolsets are available
     fallback_for_tools: [web_search]  # Show ONLY when these specific tools are unavailable
@@ -287,7 +287,7 @@ Skills can also declare non-secret config settings (paths, preferences) stored i
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -894,7 +894,7 @@ owner/repo
 Rules:
 - Each skill lives in its own directory under the tap's root path (default `skills/`).
 - The directory name becomes the skill's install slug.
-- Each skill directory must contain a `SKILL.md` with standard [SKILL.md frontmatter](#skillmd-format) (`name`, `description`, plus optional `metadata.reign.tags`, `version`, `author`, `platforms`, `metadata.reign.config`).
+- Each skill directory must contain a `SKILL.md` with standard [SKILL.md frontmatter](#skillmd-format) (`name`, `description`, plus optional `metadata.hermes.tags`, `version`, `author`, `platforms`, `metadata.hermes.config`).
 - Subdirectories like `references/`, `templates/`, `scripts/`, `assets/` are downloaded alongside `SKILL.md` at install time.
 - Skills whose directory name starts with `.` or `_` are ignored.
 
@@ -918,7 +918,7 @@ description: Our deployment runbook — services, rollback, Slack channels
 version: 1.0.0
 author: My Org Platform Team
 metadata:
-  reign:
+  hermes:
     tags: [deployment, runbook, internal]
 ---
 

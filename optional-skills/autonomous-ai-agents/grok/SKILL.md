@@ -6,7 +6,7 @@ author: Matt Maximo (MattMaximo), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, Grok, xAI, Code-Review, Refactoring, Automation]
     related_skills: [codex, claude-code, reign]
 ---

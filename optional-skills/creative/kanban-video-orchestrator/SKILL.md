@@ -6,7 +6,7 @@ author: [SHL0MS, alt-glitch]
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [video, kanban, multi-agent, orchestration, production-pipeline]
     related_skills: [ascii-video, manim-video, p5js, comfyui, touchdesigner-mcp, pixel-art, ascii-art, songwriting-and-ai-music, heartmula, songsee, youtube-content, claude-design, excalidraw, architecture-diagram, concept-diagrams, baoyu-comic, baoyu-infographic, humanizer, gif-search, meme-generation]
     credits: |

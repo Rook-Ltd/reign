@@ -396,7 +396,7 @@ def print_pet_gallery(*, limit: int = 20) -> None:
 
     installed = {p.slug for p in store.installed_pets()}
     shown = entries[:limit] if limit > 0 else entries
-    print(f"(^o^)/ petdex gallery — first {len(shown)} of {len(entries)}:")
+    print(f"♜ petdex gallery — first {len(shown)} of {len(entries)}:")
     for entry in shown:
         mark = "●" if entry.slug in installed else "○"
         print(f"  {mark} {entry.slug:<24} {entry.display_name}")

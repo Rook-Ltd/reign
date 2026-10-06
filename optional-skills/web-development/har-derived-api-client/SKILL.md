@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Browser, HAR, API, Reverse-Engineering, Playwright]
     category: web-development
 ---

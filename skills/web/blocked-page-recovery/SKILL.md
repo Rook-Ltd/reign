@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Research, Archives, Wayback, Paywall, WAF, Fallback]
     related_skills: [grounded-citations]
 ---

@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Competitors, News, Market-Research, Monitoring]
     related_skills: [blogwatcher]
 ---

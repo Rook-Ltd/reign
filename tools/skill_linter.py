@@ -196,20 +196,20 @@ def _check_metadata_block(frontmatter: Dict[str, Any]) -> List[LintFinding]:
                 )
             )
     meta = frontmatter.get("metadata")
-    reign_meta = (meta.get("reign") or meta.get("hermes")) if isinstance(meta, dict) else None
+    reign_meta = meta.get("hermes") if isinstance(meta, dict) else None
     if not isinstance(reign_meta, dict):
         findings.append(
             LintFinding(
                 WARNING,
                 "missing-metadata",
-                "frontmatter is missing metadata.reign.{tags, related_skills}.",
+                "frontmatter is missing metadata.hermes.{tags, related_skills}.",
             )
         )
     else:
         if "tags" not in reign_meta:
             findings.append(
                 LintFinding(
-                    WARNING, "missing-metadata", "metadata.reign.tags is missing."
+                    WARNING, "missing-metadata", "metadata.hermes.tags is missing."
                 )
             )
     author = str(frontmatter.get("author", ""))

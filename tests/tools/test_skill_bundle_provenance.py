@@ -518,7 +518,7 @@ UPSTREAM_STUB_MD = """---
 name: upstream-demo
 description: Upstream-maintained catalog entry.
 metadata:
-  reign:
+  hermes:
     upstream:
       repo: acme/design-skill
       path: .reign/skills/design
@@ -528,7 +528,7 @@ metadata:
 
 
 def test_optional_source_upstream_stub_fetches_from_external_repo(tmp_path, monkeypatch):
-    """A catalog stub with metadata.reign.upstream installs the upstream repo's
+    """A catalog stub with metadata.hermes.upstream installs the upstream repo's
     content (relabelled official/trusted), not the stub itself."""
     from tools.skills_hub import OptionalSkillSource, SkillBundle
 
@@ -573,10 +573,10 @@ def test_optional_source_upstream_pointer_rejects_malformed(tmp_path):
 
     source = OptionalSkillSource()
     bad = [
-        "---\nname: x\nmetadata:\n  reign:\n    upstream:\n      repo: acme\n      path: skills/x\n---\n",          # repo not owner/name
-        "---\nname: x\nmetadata:\n  reign:\n    upstream:\n      repo: a/b/c\n      path: skills/x\n---\n",        # repo too deep
-        "---\nname: x\nmetadata:\n  reign:\n    upstream:\n      repo: acme/skill\n      path: ../../etc\n---\n",  # traversal
-        "---\nname: x\nmetadata:\n  reign:\n    upstream:\n      repo: acme/skill\n---\n",                          # missing path
+        "---\nname: x\nmetadata:\n  hermes:\n    upstream:\n      repo: acme\n      path: skills/x\n---\n",          # repo not owner/name
+        "---\nname: x\nmetadata:\n  hermes:\n    upstream:\n      repo: a/b/c\n      path: skills/x\n---\n",        # repo too deep
+        "---\nname: x\nmetadata:\n  hermes:\n    upstream:\n      repo: acme/skill\n      path: ../../etc\n---\n",  # traversal
+        "---\nname: x\nmetadata:\n  hermes:\n    upstream:\n      repo: acme/skill\n---\n",                          # missing path
         "---\nname: x\n---\n",                                                                                       # no pointer
     ]
     for content in bad:

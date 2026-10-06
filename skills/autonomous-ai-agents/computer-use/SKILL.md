@@ -6,7 +6,7 @@ author: Francesco Bonacci (f-trycua), Reign
 license: MIT
 platforms: [macos, windows, linux]
 metadata:
-  reign:
+  hermes:
     tags: [computer-use, desktop, automation, gui, cross-platform]
     category: desktop
     related_skills: []

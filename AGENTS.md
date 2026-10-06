@@ -1009,13 +1009,13 @@ niche skills belong in `optional-skills/`.
 
 Standard fields: `name`, `description`, `version`, `author`, `license`,
 `platforms` (OS-gating list: `[macos]`, `[linux, macos]`, ...),
-`metadata.reign.tags`, `metadata.reign.category`,
-`metadata.reign.related_skills`, `metadata.reign.config` (config.yaml
+`metadata.hermes.tags`, `metadata.hermes.category`,
+`metadata.hermes.related_skills`, `metadata.hermes.config` (config.yaml
 settings the skill needs — stored under `skills.config.<key>`, prompted
 during setup, injected at load time).
 
 Top-level `tags:` and `category:` are also accepted and mirrored from
-`metadata.reign.*` by the loader.
+`metadata.hermes.*` by the loader.
 
 ### Skill authoring standards (HARDLINE)
 

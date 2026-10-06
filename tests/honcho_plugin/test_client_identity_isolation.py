@@ -276,7 +276,7 @@ class TestCredentialIdentity:
             c1 = get_honcho_client(cfg1)
 
             raw = json.loads((home / "honcho.json").read_text())
-            raw["hosts"]["reign"]["timeout"] = 77
+            raw["hosts"]["hermes"]["timeout"] = 77
             (home / "honcho.json").write_text(json.dumps(raw))
             cfg2 = HonchoClientConfig.from_global_config()
             c2 = get_honcho_client(cfg2)

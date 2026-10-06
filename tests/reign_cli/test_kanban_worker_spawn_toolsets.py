@@ -61,7 +61,7 @@ agent:
 
     from reign_cli import kanban_db as kb
 
-    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["reign"])
+    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["hermes"])
 
     captured = {}
 
@@ -104,7 +104,7 @@ def test_default_spawn_model_override_survives_real_cli_parse(monkeypatch, tmp_p
     from reign_cli import kanban_db as kb
     from reign_cli._parser import build_top_level_parser
 
-    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["reign"])
+    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["hermes"])
     captured = {}
 
     class FakeProc:

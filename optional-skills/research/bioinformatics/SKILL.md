@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [bioinformatics, genomics, sequencing, biology, research, science]
     category: research
 ---

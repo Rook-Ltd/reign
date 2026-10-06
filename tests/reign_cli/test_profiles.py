@@ -237,7 +237,7 @@ class TestNoSkillsOptOut:
         # happens inside sync_skills) and its skipped_opt_out flag surfaces.
         called = []
         stdout_by_call = [
-            '{"copied": ["reign"], "skipped_opt_out": true}',
+            '{"copied": ["hermes"], "skipped_opt_out": true}',
             '{"copied": []}',
         ]
         monkeypatch.setattr(
@@ -249,7 +249,7 @@ class TestNoSkillsOptOut:
         )
         r1 = seed_profile_skills(profile_dir, quiet=True)
         assert r1.get("skipped_opt_out") is True
-        assert r1.get("copied") == ["reign"]
+        assert r1.get("copied") == ["hermes"]
         assert len(called) == 1
 
         # Delete marker → next call is a normal full sync.

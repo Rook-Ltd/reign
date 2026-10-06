@@ -40,7 +40,7 @@ SKILL.md Format (YAML Frontmatter, agentskills.io compatible):
       commands: [curl, jq]        #   Command checks remain advisory only.
     compatibility: Requires X     # Optional (agentskills.io)
     metadata:                     # Optional, arbitrary key-value (agentskills.io)
-      reign:
+      hermes:
         tags: [fine-tuning, llm]
         related_skills: [peft, lora]
     ---
@@ -1682,11 +1682,11 @@ def skill_view(
                     )
 
         # Read tags/related_skills with backward compat:
-        # Check metadata.reign.* first (agentskills.io convention), fall back to top-level
+        # Check metadata.hermes.* first (agentskills.io convention), fall back to top-level
         reign_meta = {}
         metadata = frontmatter.get("metadata")
         if isinstance(metadata, dict):
-            reign_meta = metadata.get("reign") or metadata.get("hermes") or {}
+            reign_meta = metadata.get("hermes", {})
 
         tags = _parse_tags(reign_meta.get("tags") or frontmatter.get("tags", ""))
         related_skills = _parse_tags(

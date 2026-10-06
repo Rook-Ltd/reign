@@ -98,7 +98,7 @@ class TestCmdSetupLocalJwt:
         # Top-level apiKey must remain unset (cloud field).
         assert not cfg.get("apiKey")
         # The new local JWT belongs under the host block.
-        host_block = (cfg.get("hosts") or {}).get("reign") or {}
+        host_block = (cfg.get("hosts") or {}).get("hermes") or {}
         assert host_block.get("apiKey") == "my-local-jwt-token"
 
 
@@ -385,7 +385,7 @@ class TestSetupWizardDeploymentShape:
         monkeypatch.setattr(honcho_cli, "_prompt", _scripted_prompt)
 
         honcho_cli.cmd_setup(SimpleNamespace())
-        return cfg["hosts"]["reign"]
+        return cfg["hosts"]["hermes"]
 
     def test_just_me_pins_and_clears_aliases(self, monkeypatch, tmp_path):
         answers = [
@@ -717,7 +717,7 @@ class TestCmdSetupDeviceFlow:
         assert len(calls) == 1
         assert calls[0]["apply_config"] is False
         assert calls[0]["source"] == "reign-cli"
-        host = cfg["hosts"]["reign"]
+        host = cfg["hosts"]["hermes"]
         assert host["apiKey"] == "hch-at-x"
         assert host["oauth"]["refreshToken"] == "hch-rt-x"
         assert host["peerName"] == "lyra"
@@ -732,7 +732,7 @@ class TestCmdSetupDeviceFlow:
         assert method_prompts[0][1] == "device"
         assert len(calls) == 1
         assert calls[0]["open_url"] is None  # never auto-open a browser headless
-        assert cfg["hosts"]["reign"]["apiKey"] == "hch-at-x"
+        assert cfg["hosts"]["hermes"]["apiKey"] == "hch-at-x"
 
     def test_denied_device_flow_aborts_without_grant(self, monkeypatch, tmp_path):
         from plugins.memory.honcho.oauth_flow import AccessDenied

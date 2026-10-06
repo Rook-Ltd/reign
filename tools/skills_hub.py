@@ -890,7 +890,7 @@ class GitHubSource(SkillSource):
         tags = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
+            reign_meta = metadata.get("hermes", {})
             if isinstance(reign_meta, dict):
                 tags = reign_meta.get("tags", [])
         if not tags:
@@ -1659,7 +1659,7 @@ class UrlSource(SkillSource):
         tags: List[str] = []
         metadata = fm.get("metadata", {})
         if isinstance(metadata, dict):
-            reign_meta = (metadata.get("reign") or metadata.get("hermes") or {})
+            reign_meta = metadata.get("hermes", {})
             if isinstance(reign_meta, dict):
                 raw_tags = reign_meta.get("tags", [])
                 if isinstance(raw_tags, list):
@@ -3303,7 +3303,7 @@ class LobeHubSource(SkillSource):
             f"name: {identifier}",
             f"description: {description[:500]}",
             "metadata:",
-            "  reign:",
+            "  hermes:",
             f"    tags: [{', '.join(str(t) for t in tag_list)}]",
             "  lobehub:",
             "    source: lobehub",
@@ -3804,11 +3804,11 @@ class OptionalSkillSource(SkillSource):
     def _upstream_pointer(self, skill_dir: Path) -> Optional[Dict[str, str]]:
         """Return the upstream pointer for a catalog-stub skill dir, if any.
 
-        A stub declares ``metadata.reign.upstream`` in its SKILL.md
+        A stub declares ``metadata.hermes.upstream`` in its SKILL.md
         frontmatter:
 
             metadata:
-              reign:
+              hermes:
                 upstream:
                   repo: pbakaus/impeccable
                   path: .reign/skills/impeccable
@@ -3824,7 +3824,7 @@ class OptionalSkillSource(SkillSource):
         return self._upstream_pointer_from_content(content)
 
     def _upstream_pointer_from_content(self, content: Union[str, bytes]) -> Optional[Dict[str, str]]:
-        """Parse ``metadata.reign.upstream`` out of SKILL.md content."""
+        """Parse ``metadata.hermes.upstream`` out of SKILL.md content."""
         if isinstance(content, bytes):
             try:
                 content = content.decode("utf-8")
@@ -3834,7 +3834,7 @@ class OptionalSkillSource(SkillSource):
         meta_block = fm.get("metadata")
         if not isinstance(meta_block, dict):
             return None
-        reign_meta = (meta_block.get("reign") or meta_block.get("hermes"))
+        reign_meta = meta_block.get("hermes")
         if not isinstance(reign_meta, dict):
             return None
         upstream = reign_meta.get("upstream")
@@ -3919,7 +3919,7 @@ class OptionalSkillSource(SkillSource):
             tags = []
             meta_block = fm.get("metadata", {})
             if isinstance(meta_block, dict):
-                reign_meta = (meta_block.get("reign") or meta_block.get("hermes") or {})
+                reign_meta = meta_block.get("hermes", {})
                 if isinstance(reign_meta, dict):
                     tags = reign_meta.get("tags", [])
 

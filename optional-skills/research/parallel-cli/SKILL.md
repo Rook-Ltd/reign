@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Research, Web, Search, Deep-Research, Enrichment, CLI]
     related_skills: [duckduckgo-search, mcporter]
 ---

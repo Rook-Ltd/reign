@@ -195,19 +195,19 @@ def test_full_loopback_flow_then_refresh(tmp_path, fake_as):
     # Grant installed: token stored, config deep-merged, other host preserved.
     assert cred.access_token == "hch-at-1"
     saved = json.loads(config_path.read_text())
-    assert saved["hosts"]["reign"]["apiKey"] == "hch-at-1"
-    assert saved["hosts"]["reign"]["oauth"]["refreshToken"] == "hch-rt-1"
-    assert saved["hosts"]["reign"]["recallMode"] == "hybrid"
+    assert saved["hosts"]["hermes"]["apiKey"] == "hch-at-1"
+    assert saved["hosts"]["hermes"]["oauth"]["refreshToken"] == "hch-rt-1"
+    assert saved["hosts"]["hermes"]["recallMode"] == "hybrid"
     assert saved["environment"] == "production"
     assert saved["hosts"]["obsidian"] == {"workspace": "obsidian"}
 
     # Force expiry; ensure_fresh_token refreshes against the same AS and rotates.
     token, refreshed = oauth.ensure_fresh_token(
-        config_path, "reign", now=saved["hosts"]["reign"]["oauth"]["expiresAt"] + 10
+        config_path, "reign", now=saved["hosts"]["hermes"]["oauth"]["expiresAt"] + 10
     )
     assert refreshed is True
     assert token == "hch-at-2"
-    rotated = json.loads(config_path.read_text())["hosts"]["reign"]["oauth"]
+    rotated = json.loads(config_path.read_text())["hosts"]["hermes"]["oauth"]
     assert rotated["refreshToken"] == "hch-rt-2"
 
 
@@ -254,7 +254,7 @@ def test_grant_persists_default_client_id(tmp_path, fake_as, monkeypatch):
         timeout=10,
     )
     saved = json.loads(config_path.read_text())
-    assert saved["hosts"]["reign"]["oauth"]["clientId"] == "reign"
+    assert saved["hosts"]["hermes"]["oauth"]["clientId"] == "reign"
 
 
 def test_config_path_rides_the_authorize_link(fake_as):
@@ -290,7 +290,7 @@ def test_cli_flow_stores_tokens_without_applying_config(tmp_path, fake_as):
     )
 
     saved = json.loads(config_path.read_text())
-    host = saved["hosts"]["reign"]
+    host = saved["hosts"]["hermes"]
     assert host["apiKey"] == cred.access_token
     assert host["oauth"]["refreshToken"] == cred.refresh_token
     # Wizard-owned setting untouched; grant config keys absent.

@@ -14,7 +14,7 @@ _CATALOG = {
          "manifest_file": "templates/conversation.json"},
         {"id": "coding-agent", "name": "Coding Agent", "integrations": ["claude-code"],
          "manifest_file": "templates/coding-agent.json"},
-        {"id": "reign-gateway-bot", "name": "Gateway Bot", "integrations": ["reign"],
+        {"id": "reign-gateway-bot", "name": "Gateway Bot", "integrations": ["hermes"],
          "manifest_file": "templates/reign-gateway-bot.json"},
     ]
 }

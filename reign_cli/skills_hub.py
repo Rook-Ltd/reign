@@ -800,7 +800,7 @@ def do_install(identifier: str, category: str = "", force: bool = False,
     c.print(f"[dim]Files: {', '.join(bundle.files.keys())}[/]\n")
 
     # Blueprint detection: if the installed skill declares a
-    # metadata.reign.blueprint block, it is a runnable automation. Register it as
+    # metadata.hermes.blueprint block, it is a runnable automation. Register it as
     # a Suggested Cron Job rather than auto-scheduling — installing never
     # silently creates a recurring job; the user accepts it via /suggestions.
     # This is the single surface every automation proposal flows through.

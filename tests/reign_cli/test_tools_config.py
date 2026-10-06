@@ -43,7 +43,7 @@ def test_all_invalid_platform_toolsets_logs_runtime_warning(caplog):
     # The runtime warning fires once per platform per process; clear the guard
     # so this test is deterministic regardless of prior resolutions.
     _tc._warned_invalid_platform_toolsets.discard("cli")
-    config = {"platform_toolsets": {"cli": ["reign"]}}
+    config = {"platform_toolsets": {"cli": ["hermes"]}}
 
     with caplog.at_level(logging.WARNING, logger="reign_cli.tools_config"):
         _get_platform_tools(config, "cli")

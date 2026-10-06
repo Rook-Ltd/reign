@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [debugging, python, pdb, debugpy, breakpoints, dap, post-mortem]
     related_skills: [systematic-debugging, node-inspect-debugger]
 ---

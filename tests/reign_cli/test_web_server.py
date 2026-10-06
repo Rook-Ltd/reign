@@ -1017,12 +1017,12 @@ class TestWebServerEndpoints:
         cfg = json.loads((get_reign_home() / "honcho.json").read_text(encoding="utf-8"))
         # baseUrl is root-scoped; the rest live in the active host block.
         assert cfg["baseUrl"] == "https://honcho.example.dev"
-        assert cfg["hosts"]["reign"]["workspace"] == "myws"
-        assert cfg["hosts"]["reign"]["peerName"] == "eri"
-        assert cfg["hosts"]["reign"]["environment"] == "local"
-        assert cfg["hosts"]["reign"]["sessionStrategy"] == "per-repo"
+        assert cfg["hosts"]["hermes"]["workspace"] == "myws"
+        assert cfg["hosts"]["hermes"]["peerName"] == "eri"
+        assert cfg["hosts"]["hermes"]["environment"] == "local"
+        assert cfg["hosts"]["hermes"]["sessionStrategy"] == "per-repo"
         # The key lands where the client reads first; GET keeps it write-only.
-        assert cfg["hosts"]["reign"]["apiKey"] == "hch-test-key"
+        assert cfg["hosts"]["hermes"]["apiKey"] == "hch-test-key"
 
 
     def test_get_honcho_config_does_not_return_secret(self, monkeypatch, tmp_path):

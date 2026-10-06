@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Email, Inbox, Triage, Replies, Productivity]
     related_skills: [himalaya, google-workspace]
 ---

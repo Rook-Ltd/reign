@@ -8,7 +8,7 @@ license: MIT
 tags: [unreal, unreal-engine, ue5, 3d, mcp, scenes, cinematics, lighting, gamedev]
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [unreal, unreal-engine, ue5, 3d, mcp, scenes, cinematics, lighting, gamedev]
     related_skills: []
 ---

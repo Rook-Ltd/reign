@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [macos, linux]
 metadata:
-  reign:
+  hermes:
     tags: [Search, Knowledge-Base, RAG, Notes, MCP, Local-AI]
     related_skills: [obsidian, reign, arxiv]
 ---

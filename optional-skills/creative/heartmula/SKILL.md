@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [music, audio, generation, ai, heartmula, heartcodec, lyrics, songs]
     related_skills: [audiocraft-audio-generation, songwriting-and-ai-music]
 ---

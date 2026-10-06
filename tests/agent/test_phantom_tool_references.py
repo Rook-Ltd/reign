@@ -143,6 +143,6 @@ class TestEssentialOnlySync:
         result = ss.sync_skills(quiet=True)
 
         assert result["skipped_opt_out"] is True
-        assert result["copied"] == ["reign"]
+        assert result["copied"] == ["hermes"]
         assert (home / "skills" / "autonomous-ai-agents" / "reign" / "SKILL.md").exists()
         assert not (home / "skills" / "media").exists()

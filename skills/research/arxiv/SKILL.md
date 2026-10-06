@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Research, Arxiv, Papers, Academic, Science, API]
     related_skills: [pdf]
 ---

@@ -1079,7 +1079,7 @@ def extract_skill_conditions(frontmatter: Dict[str, Any]) -> Dict[str, List]:
     # Handle cases where metadata is not a dict (e.g., a string from malformed YAML)
     if not isinstance(metadata, dict):
         metadata = {}
-    reign = metadata.get("reign") or {}
+    reign = metadata.get("hermes") or {}
     if not isinstance(reign, dict):
         reign = {}
     return {
@@ -1106,7 +1106,7 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
     Skills declare config.yaml settings they need via::
 
         metadata:
-          reign:
+          hermes:
             config:
               - key: wiki.path
                 description: Path to the LLM Wiki knowledge base directory
@@ -1119,7 +1119,7 @@ def extract_skill_config_vars(frontmatter: Dict[str, Any]) -> List[Dict[str, Any
     metadata = frontmatter.get("metadata")
     if not isinstance(metadata, dict):
         return []
-    reign = metadata.get("reign")
+    reign = metadata.get("hermes")
     if not isinstance(reign, dict):
         return []
     raw = reign.get("config")

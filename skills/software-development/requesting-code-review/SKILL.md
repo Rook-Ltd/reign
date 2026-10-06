@@ -6,7 +6,7 @@ author: Reign (adapted from obra/superpowers + MorAlekss)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [code-review, security, verification, quality, pre-commit, auto-fix]
     related_skills: [subagent-driven-development, test-driven-development, github]
 ---

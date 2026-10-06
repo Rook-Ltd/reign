@@ -38,7 +38,7 @@ def _make_task(kb, *, assignee: str = "w"):
 
 
 def _capture_spawn_env(kb, monkeypatch, workspace: str) -> dict:
-    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["reign"])
+    monkeypatch.setattr(kb, "_resolve_reign_argv", lambda: ["hermes"])
 
     captured: dict = {}
 

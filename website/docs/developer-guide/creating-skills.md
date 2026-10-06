@@ -54,7 +54,7 @@ platforms: [macos, linux]          # Optional — restrict to specific OS platfo
                                    #   Valid: macos, linux, windows
                                    #   Omit to load on all platforms (default)
 metadata:
-  reign:
+  hermes:
     tags: [Category, Subcategory, Keywords]
     related_skills: [other-skill-name]
     requires_toolsets: [web]            # Optional — only show when these toolsets are active
@@ -116,7 +116,7 @@ Skills can declare dependencies on specific tools or toolsets. This controls whe
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     requires_toolsets: [web]           # Hide if the web toolset is NOT active
     requires_tools: [web_search]       # Hide if web_search tool is NOT available
     fallback_for_toolsets: [browser]   # Hide if the browser toolset IS active
@@ -189,7 +189,7 @@ Skills can declare non-secret settings that are stored in `config.yaml` under th
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     config:
       - key: myplugin.path
         description: Path to the plugin data directory
@@ -341,11 +341,11 @@ If your skill is specialized, community-contributed, or niche, it's better suite
 
 ## Blueprints: skills that are also automations
 
-A **blueprint** is an ordinary skill that additionally declares a schedule in its frontmatter. Add a `metadata.reign.blueprint` block and the skill becomes a shareable, runnable automation:
+A **blueprint** is an ordinary skill that additionally declares a schedule in its frontmatter. Add a `metadata.hermes.blueprint` block and the skill becomes a shareable, runnable automation:
 
 ```yaml
 metadata:
-  reign:
+  hermes:
     tags: [blueprint, email]
     blueprint:
       schedule: "0 8 * * *"     # presence of `blueprint:` marks it runnable

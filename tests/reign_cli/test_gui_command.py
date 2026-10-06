@@ -160,7 +160,7 @@ def test_gui_install_env_prepends_managed_node_on_bare_path(tmp_path, monkeypatc
     monkeypatch.setenv("PATH", os.pathsep.join(["/usr/bin", "/bin"]))
 
     install_ok = subprocess.CompletedProcess(["npm", "ci"], 0)
-    launch_ok = subprocess.CompletedProcess(["reign"], 0)
+    launch_ok = subprocess.CompletedProcess(["hermes"], 0)
 
     # A plain return_value rather than a fixed side_effect list: this test only
     # cares about the env handed to the npm install, and pinning an exact

@@ -76,5 +76,5 @@ def test_meta_wrapper_shape(db):
     _mk(db, "root1")
     meta = session_provenance_meta(db, "acp-1", "root1")
     assert set(meta.keys()) == {"reign"}
-    assert "sessionProvenance" in meta["reign"]
-    assert meta["reign"]["sessionProvenance"]["currentReignSessionId"] == "root1"
+    assert "sessionProvenance" in meta["hermes"]
+    assert meta["hermes"]["sessionProvenance"]["currentReignSessionId"] == "root1"

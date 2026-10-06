@@ -2186,7 +2186,7 @@ class TestChatCompletionsAgentIncomplete:
             assert raw_secret not in body
             assert raw_secret not in resp.headers.get("X-Reign-Error", "")
             assert "OPENAI_API_KEY=" in body
-            assert data["error"]["reign"]["failed"] is True
+            assert data["error"]["hermes"]["failed"] is True
 
 
 # ---------------------------------------------------------------------------

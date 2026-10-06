@@ -399,7 +399,7 @@ def test_delivery_runner_unlinks_when_child_launch_raises(tmp_path, monkeypatch)
 
     monkeypatch.setattr(subprocess, "run", boom)
     with pytest.raises(RuntimeError, match="child launch failed"):
-        bot_mode_dm._run_delivery(["reign"], str(dm_file), stdin_file=False)
+        bot_mode_dm._run_delivery(["hermes"], str(dm_file), stdin_file=False)
     assert not dm_file.exists()
 
 

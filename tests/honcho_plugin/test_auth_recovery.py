@@ -87,7 +87,7 @@ class TestExchangeRetry:
 
         assert token == "hch-at-new1" and refreshed is True
         assert calls == ["hch-rt-old", "hch-rt-old"]
-        saved = json.loads(path.read_text())["hosts"]["reign"]
+        saved = json.loads(path.read_text())["hosts"]["hermes"]
         assert saved["oauth"]["refreshToken"] == "hch-rt-new1"
 
     def test_invalid_grant_stops_retries_and_marks_reauth_required(self, tmp_path, monkeypatch):
@@ -174,7 +174,7 @@ class TestForceRefreshToken:
         )
         token = oauth.force_refresh_token(path, "reign")
         assert token == "hch-at-new1"
-        saved = json.loads(path.read_text())["hosts"]["reign"]
+        saved = json.loads(path.read_text())["hosts"]["hermes"]
         assert saved["apiKey"] == "hch-at-new1"
 
     def test_adopts_concurrent_rotation_without_exchange(self, tmp_path, monkeypatch):
@@ -919,7 +919,7 @@ class TestInitAuthFailureNotice:
 
         def _session_dies(*a, **k):
             path = env["path"]
-            block = json.loads(path.read_text())["hosts"]["reign"]
+            block = json.loads(path.read_text())["hosts"]["hermes"]
             cred = oauth.OAuthCredential.from_host_block(block)
             oauth._mark_grant_dead((str(path), "reign"), cred)
             raise Exception("Invalid or expired access token")

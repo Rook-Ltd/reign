@@ -359,7 +359,7 @@ For persistent deployment with both the gateway and dashboard, a `docker-compose
 
 ```yaml
 services:
-  reign:
+  hermes:
     image: nousresearch/hermes-agent:latest
     container_name: reign
     restart: unless-stopped
@@ -427,7 +427,7 @@ Use that image in Compose and pass through the host user's PulseAudio socket and
 
 ```yaml
 services:
-  reign:
+  hermes:
     build:
       context: .
       dockerfile: Dockerfile.audio
@@ -629,7 +629,7 @@ For tools that bring their own service (a database, a web server, a queue, a hea
 
 ```yaml
 services:
-  reign:
+  hermes:
     image: nousresearch/hermes-agent:latest
     container_name: reign
     restart: unless-stopped
@@ -687,7 +687,7 @@ services:
           devices:
             - capabilities: [gpu]
 
-  reign:
+  hermes:
     image: nousresearch/hermes-agent:latest
     container_name: reign
     restart: unless-stopped

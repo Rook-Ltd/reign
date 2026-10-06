@@ -6,7 +6,7 @@ author: Mibay (Mibayy), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Stocks, Finance, Market, Crypto, Investing]
     category: finance
     related_skills: [dcf-model, comps-analysis, lbo-model]

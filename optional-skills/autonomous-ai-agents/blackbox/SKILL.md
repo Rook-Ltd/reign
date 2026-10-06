@@ -6,7 +6,7 @@ author: Reign (Rook)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, Blackbox, Multi-Agent, Judge, Multi-Model]
     related_skills: [claude-code, codex, reign]
 ---

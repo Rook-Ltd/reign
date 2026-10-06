@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [yuanbao, mention, at, group, members, 元宝, 派, 艾特]
     related_skills: []
 ---

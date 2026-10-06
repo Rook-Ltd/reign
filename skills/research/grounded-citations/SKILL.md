@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Research, Citations, Grounding, Sources, Web, Reports]
     category: research
     related_skills: [arxiv, pdf]

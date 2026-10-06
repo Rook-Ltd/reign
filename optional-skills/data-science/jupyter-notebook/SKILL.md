@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [jupyter, notebook, repl, data-science, exploration, iterative]
     category: data-science
 ---

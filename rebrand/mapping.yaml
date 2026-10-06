@@ -58,6 +58,17 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"hermes"(?=, "llama")'
   - '(?<=if )"hermes"(?= in (?:mid|model_lower))'
   - '(?<=\[/:\]\))hermes(?=\[-_ \]\?\[34\])'
+  # Skill frontmatter key `metadata.hermes` is a schema identifier shared with hub skills
+  # and read by a changing set of upstream files; keep it `hermes` everywhere (decided 2026-10-06).
+  - '(?m)^(\s+)hermes:\s*$'
+  - 'metadata:\\n *hermes:\\n'           # inline yaml in test strings (literal backslash-n)
+  - '\.get\("hermes"'
+  - '\["hermes"\]'
+  - '"hermes" (?:not )?in (?:meta|metadata|fm|frontmatter|block)\b'
+  - 'metadata\.hermes\b'
+  - 'metadata\[\"hermes\"\]'
+  - '(?m)^\s*"hermes": \{\s*$'      # dict literal writer (tools/blueprints.py)
+  - '"  hermes:"'                      # yaml line writer (tools/skills_hub.py)
   # The `hermes-agent` console script / launcher must not collapse into `hermes`->`reign`
   # (it would overwrite the CLI launcher). Kept here, mapped to reign-agent in post_replace.
   - 'command_link_dir/hermes-agent'
@@ -68,7 +79,7 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"hermes-agent", "hermes-acp"'
   - '"bin" / "hermes-agent"'
   - '/usr/local/bin/hermes-agent"'
-  - '(?m)^hermes-agent = "run_agent:main"'
+  - '(?m)^hermes-agent = "'
   # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
   # over an already-branded tree is a no-op)
   - 'meta(?:data|_block)?\.get\("hermes"\)'
@@ -236,8 +247,8 @@ post_replace:
         with:  "expose `reign-agent`. The `reign-agent` console script"
       - plain: "hermes-agent must dispatch"
         with:  "reign-agent must dispatch"
-      - regex: '(?m)^hermes-agent = "run_agent:main"'
-        with:  'reign-agent = "run_agent:main"'
+      - regex: '(?m)^hermes-agent = "'
+        with:  'reign-agent = "'
   - files:                # exact console-script name strings, safe tree-wide
       - "**/*.py"
       - "**/*.sh"

@@ -6,7 +6,7 @@ author: Yeongyu Kim (code-yeongyu), adapted by Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [ast, codemod, refactoring, structural-search, code-search, rewrite, tree-sitter]
     category: software-development
     related_skills: [simplify-code, systematic-debugging]

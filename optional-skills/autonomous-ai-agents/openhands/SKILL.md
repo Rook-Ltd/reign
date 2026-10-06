@@ -6,7 +6,7 @@ author: Tim Koepsel (xzessmedia), Reign
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, OpenHands, Model-Agnostic, LiteLLM]
     related_skills: [claude-code, codex, opencode, reign]
 ---

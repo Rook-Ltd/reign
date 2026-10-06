@@ -21,7 +21,7 @@ version: 1.0.0
 author: Reign
 license: MIT
 metadata:
-  reign:
+  hermes:
     tags: [arxiv, research]
     related_skills: []
 ---

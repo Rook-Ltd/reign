@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [MCP, OAuth, PKCE, Remote-Deployment]
     related_skills: [reign, mcporter, fastmcp]
 ---

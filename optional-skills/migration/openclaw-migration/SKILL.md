@@ -6,7 +6,7 @@ author: Reign (Rook)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Migration, OpenClaw, Reign, Memory, Persona, Import]
     related_skills: [reign]
 ---

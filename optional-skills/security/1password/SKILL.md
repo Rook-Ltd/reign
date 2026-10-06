@@ -6,7 +6,7 @@ author: arceus77-7, enhanced by Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [security, secrets, 1password, op, cli]
     category: security
 setup:

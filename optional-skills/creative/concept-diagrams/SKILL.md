@@ -7,7 +7,7 @@ license: MIT
 dependencies: []
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [diagrams, svg, visualization, education, physics, chemistry, engineering]
     related_skills: [architecture-diagram, excalidraw]
 ---
