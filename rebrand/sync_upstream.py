@@ -67,7 +67,7 @@ def main() -> None:
 
     print(f"→ fetching upstream and checking out {args.ref}")
     sh("git", "fetch", "-q", "upstream", quiet=True)
-    upstream_sha = sh("git", "rev-parse", args.ref, quiet=True).strip()
+    upstream_sha = sh("git", "rev-parse", f"{args.ref}^{{commit}}", quiet=True).strip()  # annotated tags -> commit
     reign_head = sh("git", "rev-parse", "HEAD", quiet=True).strip()
     synced_line = next((l for l in (REBRAND / "UPSTREAM.md").read_text().splitlines() if l.startswith("- Synced at:")), "")
     if upstream_sha in synced_line:

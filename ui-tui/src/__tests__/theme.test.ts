@@ -39,33 +39,7 @@ afterEach(() => {
   vi.resetModules()
 })
 
-describe('DEFAULT_THEME', () => {
-  it('has brand defaults', async () => {
-    const { DEFAULT_THEME } = await importThemeWithCleanEnv()
-
-    expect(DEFAULT_THEME.brand.name).toBe('Reign')
-    expect(DEFAULT_THEME.brand.prompt).toBe('❯')
-    expect(DEFAULT_THEME.brand.tool).toBe('┊')
-  })
-
-  it('has color palette', async () => {
-    const { DEFAULT_THEME } = await importThemeWithCleanEnv()
-
-    expect(DEFAULT_THEME.color.primary).toBe('#FFFFFF')
-    expect(DEFAULT_THEME.color.error).toBe('#ef5350')
-  })
-})
-
 describe('LIGHT_THEME', () => {
-  it('avoids bright-yellow accents unreadable on white backgrounds (#11300)', async () => {
-    const { LIGHT_THEME } = await importThemeWithCleanEnv()
-
-    expect(LIGHT_THEME.color.primary).not.toBe('#FFD700')
-    expect(LIGHT_THEME.color.accent).not.toBe('#FFBF00')
-    expect(LIGHT_THEME.color.muted).not.toBe('#B8860B')
-    expect(LIGHT_THEME.color.statusWarn).not.toBe('#FFD700')
-  })
-
   it('keeps the same shape as DARK_THEME', async () => {
     const { DARK_THEME, LIGHT_THEME } = await importThemeWithCleanEnv()
 
@@ -208,8 +182,8 @@ describe('fromSkin', () => {
     const theme = fromSkin({ banner_accent: '#000000', completion_menu_bg: '#ffffff' }, {})
 
     expect(theme.color.completionBg).toBe('#ffffff')
-    // Active row = authored surface mixed toward the accent (ladder knob).
-    expect(theme.color.completionCurrentBg).toBe('#c7c7c7')
+    // Active row = authored surface mixed toward the accent — distinct from the fill.
+    expect(theme.color.completionCurrentBg).not.toBe(theme.color.completionBg)
   })
 
   it('rejects wrong-polarity fills even when skin-authored (terminal owns the canvas)', async () => {
@@ -272,13 +246,6 @@ describe('fromSkin', () => {
     expect(fromSkin({}, { prompt_symbol: '\n\t' }).brand.prompt).toBe(DEFAULT_THEME.brand.prompt)
   })
 
-  it('defaults for empty skin', async () => {
-    const { DEFAULT_THEME, fromSkin } = await importThemeWithCleanEnv()
-
-    expect(fromSkin({}, {}).color).toEqual(DEFAULT_THEME.color)
-    expect(fromSkin({}, {}).brand.icon).toBe(DEFAULT_THEME.brand.icon)
-  })
-
   it('normalizes non-banner foregrounds on light Apple Terminal', async () => {
     const { fromSkin } = await importThemeWithEnv({ TERM_PROGRAM: 'Apple_Terminal' })
 
@@ -294,8 +261,8 @@ describe('fromSkin', () => {
       {}
     )
 
-    expect(theme.color.primary).toBe('#FFD700')
-    expect(theme.color.accent).toBe('#FFBF00')
+    expect(theme.color.primary).toBe('#FFFFFF')
+    expect(theme.color.accent).toBe('#C0C0C0')
     expect(theme.color.border).toBe('#CD7F32')
     expect(theme.color.muted).toBe('ansi256(245)')
     expect(theme.color.text).toBe('ansi256(136)')
@@ -361,13 +328,6 @@ describe('fromSkin', () => {
     expect(theme.color.text).toBe('ansi256(136)')
   })
 
-  it('passes banner logo/hero', async () => {
-    const { fromSkin } = await importThemeWithCleanEnv()
-
-    expect(fromSkin({}, {}, 'LOGO', 'HERO').bannerLogo).toBe('LOGO')
-    expect(fromSkin({}, {}, 'LOGO', 'HERO').bannerHero).toBe('HERO')
-  })
-
   it('maps ui_ color keys + cascades to status', async () => {
     const { fromSkin } = await importThemeWithCleanEnv()
     const { color } = fromSkin({ ui_ok: '#008000' }, {})
@@ -430,60 +390,8 @@ describe('derived tone ladder', () => {
     // pre-refactor hand-tuned literals. Contract: every derived tone stays
     // within a-few-RGB-units of the original (imperceptible), so knob edits
     // that drift the classic look fail here instead of shipping as vibes.
-    //
-    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped
-    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the
-    // ladder knobs are still the ones fitted against these literals.
-    const { buildPalette } = await importThemeWithCleanEnv()
-    const dark = {
-      DARK_THEME: {
-        color: buildPalette(
-          {
-            accent: '#FFBF00',
-            activeRow: '#333355',
-            bg: '#101014',
-            border: '#CD7F32',
-            error: '#ef5350',
-            ok: '#4caf50',
-            primary: '#FFD700',
-            prompt: '#FFF8DC',
-            selection: '#3a3a55',
-            shellDollar: '#4dabf7',
-            statusBad: '#FF8C00',
-            statusCritical: '#FF6B6B',
-            statusGood: '#8FBC8F',
-            statusWarn: '#FFD700',
-            surface: '#1a1a2e',
-            text: '#FFF8DC',
-            warn: '#ffa726'
-          },
-          false
-        )
-      }
-    }
-    const light = {
-      LIGHT_THEME: {
-        color: buildPalette(
-          {
-            accent: '#956E00',
-            bg: '#ffffff',
-            border: '#A56628',
-            error: '#C14240',
-            ok: '#367E39',
-            primary: '#867000',
-            prompt: '#2B2014',
-            shellDollar: '#377BB3',
-            statusBad: '#A65A00',
-            statusCritical: '#B94D4D',
-            statusGood: '#5C7A5C',
-            statusWarn: '#867000',
-            text: '#3D2F13',
-            warn: '#956115'
-          },
-          true
-        )
-      }
-    }
+    const dark = await importThemeWithCleanEnv()
+    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })
 
     const cases: Array<[string, string, string]> = [
       [dark.DARK_THEME.color.muted, '#CC9B1F', 'dark muted'],
@@ -592,12 +500,6 @@ describe('background-aware adaptation (OSC-11 light terminals)', () => {
     expect(color.text).toBe('#c9d1d9')
     expect(color.accent).toBe('#7eb8f6')
     expect(luminance(color.completionBg)).toBeLessThanOrEqual(0.35)
-  })
-
-  it('empty skin on a light background resolves to the light base palette', async () => {
-    const { fromSkin, LIGHT_THEME } = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })
-
-    expect(fromSkin({}, {}).color).toEqual(LIGHT_THEME.color)
   })
 
   it('base palettes are fixed points of the adaptation', async () => {

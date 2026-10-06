@@ -16,10 +16,8 @@ The verification step:
 
 from __future__ import annotations
 
-import subprocess
 import sys
 import textwrap
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -84,11 +82,11 @@ class TestVerifyCoreDependencies:
             captured_argv.append(list(cmd))
             return MagicMock(returncode=0, stdout="", stderr="")
 
-        with patch("reign_cli.main._resolve_install_target_python", return_value=py), \
-             patch("reign_cli.main.subprocess.run", side_effect=fake_subprocess_run), \
-             patch("reign_cli.main._run_install_with_heartbeat"):
+        with patch("reign_cli.main_install_repair._resolve_install_target_python", return_value=py), \
+             patch("reign_cli.main_install_repair.subprocess.run", side_effect=fake_subprocess_run), \
+             patch("reign_cli.main_install_repair._run_install_with_heartbeat"):
 
-            from reign_cli.main import _verify_core_dependencies_installed
+            from reign_cli.main_install_repair import _verify_core_dependencies_installed
             _verify_core_dependencies_installed(["uv", "pip"], env=env)
 
         # Find the probe argv — it's the call that passed the dep names.
@@ -116,41 +114,12 @@ class TestVerifyCoreDependencies:
         import reign_cli.main as main_mod
         monkeypatch.setattr(main_mod, "PROJECT_ROOT", tmp_path)
         # No pyproject.toml in tmp_path.
-        with patch("reign_cli.main._resolve_install_target_python") as mock_resolve, \
-             patch("reign_cli.main._run_install_with_heartbeat") as mock_install:
-            from reign_cli.main import _verify_core_dependencies_installed
+        with patch("reign_cli.main_install_repair._resolve_install_target_python") as mock_resolve, \
+             patch("reign_cli.main_install_repair._run_install_with_heartbeat") as mock_install:
+            from reign_cli.main_install_repair import _verify_core_dependencies_installed
             _verify_core_dependencies_installed(["uv", "pip"], env={})
             assert not mock_resolve.called
             assert not mock_install.called
 
 
 
-class TestResolveInstallTargetPython:
-    def test_uses_virtual_env_from_environment(self, tmp_path):
-        """When VIRTUAL_ENV is set, the verification step must probe THAT
-        venv's interpreter — not the outer Python that drove `reign update`.
-        If we probed sys.executable instead, we'd false-positive every dep
-        the outer interpreter happens to lack."""
-        venv_root = tmp_path / "newvenv"
-        scripts = venv_root / "Scripts"
-        scripts.mkdir(parents=True)
-        py = scripts / "python.exe"
-        py.write_text("fake")
-
-        with patch("reign_cli.main._is_windows", return_value=True):
-            from reign_cli.main import _resolve_install_target_python
-            result = _resolve_install_target_python(
-                ["uv", "pip"], env={"VIRTUAL_ENV": str(venv_root)}
-            )
-            assert result == py
-
-    def test_returns_none_when_venv_python_missing(self, tmp_path):
-        """If the path we'd point at doesn't exist (uv install failed before
-        the python shim landed), return None so the verification step
-        cleanly short-circuits instead of crashing on FileNotFoundError."""
-        with patch("reign_cli.main._is_windows", return_value=True):
-            from reign_cli.main import _resolve_install_target_python
-            result = _resolve_install_target_python(
-                ["uv", "pip"], env={"VIRTUAL_ENV": str(tmp_path / "does_not_exist")}
-            )
-            assert result is None

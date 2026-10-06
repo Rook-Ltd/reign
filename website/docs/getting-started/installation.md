@@ -17,6 +17,10 @@ platform-gated features are supported), see **[Platform Support](./platform-supp
 ### With the Reign Desktop installer on macOS or Windows (recommended)
 To easily install the command-line and desktop applications, [download the Reign Desktop installer](https://hermes-agent.nousresearch.com/) from our website and run it.
 
+:::note
+The macOS installer is **Apple Silicon only**. macOS on x86 (Intel) processors is [not a supported platform](./platform-support.md#unsupported).
+:::
+
 ### Without Reign Desktop:
 For a command-line only install without Reign Desktop, run:
 
@@ -73,7 +77,7 @@ reign setup          # Or run the full setup wizard to configure everything at o
 ```
 
 :::tip Fastest path: Nous Portal
-One subscription covers 300+ models plus the [Tool Gateway](/user-guide/features/tool-gateway) (web search, image generation, TTS, cloud browser). Skip the per-tool key juggling:
+One subscription covers 300+ models plus the [Tool Gateway](../user-guide/features/tool-gateway.md) (web search, image generation, TTS, cloud browser). Skip the per-tool key juggling:
 
 ```bash
 reign setup --portal
@@ -83,7 +87,7 @@ That logs you in, sets Nous as your provider, and turns on the Tool Gateway in o
 :::
 
 :::tip Already running Reign on another machine?
-You don't need to rebuild your setup from scratch. Restore a full backup with `reign import` (see [Exporting Reign to another machine](/reference/faq#exporting-reign-to-another-machine)), or bring over a single agent with `reign profile import` (see [Moving a single profile to another machine](/reference/faq#moving-a-single-profile-to-another-machine)). Note that a profile export excludes credentials by design, so an export alone is not a full backup — [`reign backup` vs `reign profile export`](/reference/faq#reign-backup-vs-reign-profile-export) explains which to use.
+You don't need to rebuild your setup from scratch. Restore a full backup with `reign import` (see [Exporting Reign to another machine](../reference/faq.md#exporting-reign-to-another-machine)), or bring over a single agent with `reign profile import` (see [Moving a single profile to another machine](../reference/faq.md#moving-a-single-profile-to-another-machine)). Note that a profile export excludes credentials by design, so an export alone is not a full backup — [`reign backup` vs `reign profile export`](../reference/faq.md#reign-backup-vs-reign-profile-export) explains which to use.
 :::
 
 ---
@@ -155,7 +159,7 @@ Running Reign as a dedicated unprivileged user (e.g. a `reign` systemd service a
    sudo loginctl enable-linger <service-user>
    ```
 
-   See [Messaging Gateway](/user-guide/messaging/) for the service setup itself.
+   See [Messaging Gateway](../user-guide/messaging/index.md) for the service setup itself.
 
 The same pattern works on Arch (the installer uses pacman with the same sudo-detection logic), Fedora/RHEL, and openSUSE — those distros don't support `--with-deps` at all, so an administrator always installs the system libraries separately. The relevant `dnf`/`zypper` commands are printed by the installer.
 
@@ -170,6 +174,26 @@ The same pattern works on Arch (the installer uses pacman with the same sudo-det
 | Missing config after update | Run `reign config check` then `reign config migrate` |
 
 For more diagnostics, run `reign doctor` — it will tell you exactly what's missing and how to fix it.
+
+### Symlinked home directories and external storage
+
+Reign supports a symlinked `REIGN_HOME` and symlinked home subdirectories,
+including `hooks`, `skills`, `sessions`, and `logs`. During home initialization,
+existing directory links are preserved, and permissions on linked directories
+(and descendants such as `logs/curator`) are left to their owner.
+
+If a link target is missing, inaccessible, or not a directory, initialization
+stops with a storage error naming the path and link target. Reign does **not**
+replace the link or create its missing target: doing so could write data onto
+the local disk while an external or NAS volume is unmounted. Check the reported
+link, restore the mount or correct its target, and verify access permissions
+before retrying. For a deliberately new dotfiles target, create it yourself only
+after confirming the intended storage is available.
+
+`reign doctor` reports these failures as storage problems, not invalid YAML.
+Keep your existing `config.yaml`; running `reign setup` is not the repair for an
+unavailable directory. This is a directory-availability check, not a mount monitor:
+an existing directory cannot establish that the intended volume is mounted.
 
 ## Install method auto-detection
 

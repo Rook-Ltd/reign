@@ -6,9 +6,9 @@ description: "Connect Reign to the Nous Portal MCP server so your local agent ca
 
 # Manage Reign Cloud with MCP
 
-[Reign Cloud](https://portal.nousresearch.com/cloud) runs hosted Reign instances for you. Normally you manage them from the `/agents` page in the [Nous Portal](/integrations/nous-portal). This guide connects your **local** Reign to the Portal's MCP server so you can manage those cloud instances by just asking — "list my cloud agents", "restart the stopped one", "what's it costing me" — without leaving your terminal.
+[Reign Cloud](https://portal.nousresearch.com/cloud) runs hosted Reign instances for you. Normally you manage them from the `/agents` page in the [Nous Portal](../integrations/nous-portal.md). This guide connects your **local** Reign to the Portal's MCP server so you can manage those cloud instances by just asking — "list my cloud agents", "restart the stopped one", "what's it costing me" — without leaving your terminal.
 
-It's a standard [MCP](/user-guide/features/mcp) server hosted by Rook, gated by the same OAuth login you already use for the Portal. Once connected, Reign gets two tools it can call on your behalf.
+It's a standard [MCP](../user-guide/features/mcp.md) server hosted by Rook, gated by the same OAuth login you already use for the Portal. Once connected, Reign gets two tools it can call on your behalf.
 
 ## What you can do with it
 
@@ -28,7 +28,7 @@ Every call runs against **your** org with your Portal identity, and membership i
 
 ## Prerequisites
 
-- A [Nous Portal](/integrations/nous-portal) account with [Reign Cloud](https://portal.nousresearch.com/cloud) access (at least one instance, or the ability to create one).
+- A [Nous Portal](../integrations/nous-portal.md) account with [Reign Cloud](https://portal.nousresearch.com/cloud) access (at least one instance, or the ability to create one).
 - MCP support installed. If you used the standard install script it's already there; otherwise:
 
   ```bash
@@ -127,7 +127,7 @@ mcp_servers:
       include: [agents]
 ```
 
-Run `/reload-mcp` after changing the config. See [Use MCP with Reign](/guides/use-mcp-with-reign) for the full filtering model (`include`/`exclude`, `prompts`, `resources`).
+Run `/reload-mcp` after changing the config. See [Use MCP with Reign](./use-mcp-with-reign.md) for the full filtering model (`include`/`exclude`, `prompts`, `resources`).
 
 ## Troubleshooting
 
@@ -165,12 +165,12 @@ OAuth tokens refresh automatically, but if the Portal invalidates your session (
 
 ### Headless / SSH / remote host
 
-The OAuth browser callback runs on the machine where Reign is running. On a remote host, forward the loopback port over SSH — the same pattern as any other OAuth login. See [OAuth over SSH / Remote Hosts](/guides/oauth-over-ssh).
+The OAuth browser callback runs on the machine where Reign is running. On a remote host, forward the loopback port over SSH — the same pattern as any other OAuth login. See [OAuth over SSH / Remote Hosts](./oauth-over-ssh.md).
 
 ## See also
 
-- **[Nous Portal](/integrations/nous-portal)** — the subscription, models, and Tool Gateway behind the same login
-- **[Use MCP with Reign](/guides/use-mcp-with-reign)** — connecting and filtering MCP servers in general
-- **[MCP feature overview](/user-guide/features/mcp)** — what MCP is and how Reign uses it
-- **[MCP configuration reference](/reference/mcp-config-reference)** — every `mcp_servers` field, including `auth: oauth`
-- **[OAuth over SSH](/guides/oauth-over-ssh)** — logging in from remote or browser-only environments
+- **[Nous Portal](../integrations/nous-portal.md)** — the subscription, models, and Tool Gateway behind the same login
+- **[Use MCP with Reign](./use-mcp-with-reign.md)** — connecting and filtering MCP servers in general
+- **[MCP feature overview](../user-guide/features/mcp.md)** — what MCP is and how Reign uses it
+- **[MCP configuration reference](../reference/mcp-config-reference.md)** — every `mcp_servers` field, including `auth: oauth`
+- **[OAuth over SSH](./oauth-over-ssh.md)** — logging in from remote or browser-only environments

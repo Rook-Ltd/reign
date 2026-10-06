@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from reign_cli.main import _atomic_replace_dir
+from reign_cli.update_cmd import _atomic_replace_dir
 
 
 def test_atomic_replace_swaps_content_on_success(tmp_path: Path) -> None:

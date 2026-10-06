@@ -101,10 +101,10 @@ you can do a comparison diff in Chrome DevTools Memory tab.
 
 ```bash
 node apps/desktop/scripts/profile-typing.mjs \
-  --chars=400 --cps=30 --out=/tmp/reign-typing
-# → /tmp/reign-typing.cpuprofile  (open in Chrome DevTools Performance)
-# → /tmp/reign-typing.before.heapsnapshot
-# → /tmp/reign-typing.after.heapsnapshot
+  --chars=400 --cps=30 --out=$HOME/.reign/cache/scratch/reign-typing
+# → ~/.reign/cache/scratch/reign-typing.cpuprofile  (open in Chrome DevTools Performance)
+# → ~/.reign/cache/scratch/reign-typing.before.heapsnapshot
+# → ~/.reign/cache/scratch/reign-typing.after.heapsnapshot
 ```
 
 Loading the cpuprofile: Chrome DevTools → Performance tab → drag the file

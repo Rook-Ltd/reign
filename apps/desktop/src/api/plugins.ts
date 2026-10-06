@@ -1,5 +1,6 @@
+import { reconnectBackoffDelayMs } from '@reign/shared'
+
 import type { ReignConnection } from '@/global'
-import { reconnectBackoffDelayMs } from '@/lib/reconnect-backoff'
 import { RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
 
 import { getApiRequestConnection, getApiRequestProfile, reignApi, profileScoped } from './client'

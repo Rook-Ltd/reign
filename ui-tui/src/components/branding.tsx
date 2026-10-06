@@ -1,9 +1,9 @@
 import { Box, Text, useStdout } from '@reign/ink'
+import { mix } from '@reign/shared/color'
 import { useEffect, useState } from 'react'
 import unicodeSpinners from 'unicode-animations'
 
-import { artWidth, logo, LOGO_WIDTH, rook, ROOK_WIDTH } from '../banner.js'
-import { mix } from '../lib/color.js'
+import { artWidth, caduceus, CADUCEUS_WIDTH, logo, LOGO_WIDTH } from '../banner.js'
 import { flat } from '../lib/text.js'
 import type { Theme } from '../theme.js'
 import type { PanelSection, SessionInfo } from '../types.js'
@@ -212,8 +212,8 @@ const TOOLSETS_MAX = 8
 export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
   const term = useStdout().stdout?.columns ?? 100
   const cols = Math.max(20, Math.min(term, maxWidth ?? term))
-  const heroLines = rook(t.color, t.bannerHero || undefined)
-  const leftW = Math.min((artWidth(heroLines) || ROOK_WIDTH) + 4, Math.floor(cols * 0.4))
+  const heroLines = caduceus(t.color, t.bannerHero || undefined)
+  const leftW = Math.min((artWidth(heroLines) || CADUCEUS_WIDTH) + 4, Math.floor(cols * 0.4))
   const wide = cols >= 90 && leftW + 40 < cols
   const w = Math.max(20, wide ? cols - leftW - 14 : cols - 12)
   const lineBudget = Math.max(12, w - 2)
@@ -250,8 +250,9 @@ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
   }
 
   // ── Collapsible skills section ──
-  const skillEntries = Object.entries(info.skills).sort()
-  const skillsTotal = flat(info.skills).length
+  const skills = info.skills ?? {}
+  const skillEntries = Object.entries(skills).sort()
+  const skillsTotal = flat(skills).length
   const skillsCatCount = skillEntries.length
 
   const skillsBody = () => {
@@ -276,8 +277,9 @@ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
   }
 
   // ── Collapsible tools section ──
-  const toolEntries = Object.entries(info.tools).sort()
-  const toolsTotal = flat(info.tools).length
+  const tools = info.tools ?? {}
+  const toolEntries = Object.entries(tools).sort()
+  const toolsTotal = flat(tools).length
 
   // MCP headline counts *connected* servers, not configured-but-disabled ones,
   // so it matches the classic CLI banner (`sum(s.connected)` in
@@ -322,6 +324,11 @@ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
             <Text color={t.color.muted}>disabled</Text>
           ) : s.status === 'connecting' ? (
             <Text color={t.color.warn}>connecting</Text>
+          ) : s.status === 'lazy' ? (
+            // Registered from the schema cache, process not spawned yet: its tools are callable.
+            <Text color={t.color.text}>
+              {s.tools} tool{s.tools === 1 ? '' : 's'} <Text color={t.color.muted}>(lazy)</Text>
+            </Text>
           ) : s.status === 'configured' ? (
             <Text color={t.color.muted}>configured</Text>
           ) : (
@@ -354,7 +361,7 @@ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
       <Text />
 
       <Text color={t.color.accent}>
-        {info.model.split('/').pop()}
+        {(info.model ?? '').split('/').pop()}
         <Text color={t.color.muted}> · Rook</Text>
       </Text>
 
@@ -386,7 +393,7 @@ export function SessionPanel({ info, maxWidth, sid, t }: SessionPanelProps) {
         // here so they aren't lost.
         <Box flexDirection="column" marginBottom={1}>
           <Text color={t.color.accent} wrap="truncate-end">
-            {info.model.split('/').pop()}
+            {(info.model ?? '').split('/').pop()}
             <Text color={t.color.muted}> · Rook</Text>
           </Text>
           <Text color={t.color.muted} wrap="truncate-end">

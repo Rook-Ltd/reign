@@ -7,7 +7,7 @@ def test_tui_finds_bundled_entry_js(tmp_path):
     entry = tui_dist / "entry.js"
     entry.write_text("// bundled TUI", encoding="utf-8")
 
-    from reign_cli.main import _find_bundled_tui
+    from reign_cli.main_tui_launch import _find_bundled_tui
     result = _find_bundled_tui(reign_cli_dir=tmp_path / "reign_cli")
     assert result is not None
     assert result.name == "entry.js"
