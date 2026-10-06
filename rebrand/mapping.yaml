@@ -14,6 +14,7 @@ exclude_files:            # never touched by content replace
   - "contributors/**"     # git author identities, not branding
   - "brand/**"
   - "rebrand/**"
+  - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
   - "**/package-lock.json" # regenerated after the run
   - uv.lock
   - flake.lock
