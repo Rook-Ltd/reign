@@ -238,6 +238,8 @@ post_replace:
         with:  "updates from asxi9832/reign"
       - plain: "canonical NousResearch/hermes-agent repo"
         with:  "canonical asxi9832/reign repo"
+      - plain: "_HERMES_REF"
+        with:  "_REIGN_REF"
   - files:
       - "scripts/install.sh"
       - "**/test_install_sh_acp_launcher.py"
