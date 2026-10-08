@@ -1,15 +1,17 @@
-"""The decomposed command modules stay lazy after `import reign_cli.main`.
+"""The frozen updater surface on reign_cli.main stays lazy and resolvable.
 
-The main.py decomposition re-exports the sessions/update/dashboard command
-surface from reign_cli.main so argparse wiring and monkeypatches keep
-resolving. Those re-exports must not import the modules eagerly: every
-`reign` invocation (including `reign --version`) would pay for update_cmd's
-dependency chain (jwt, click, ...) even when no subcommand runs.
+``reign_cli/update_cmd*.py`` (frozen: old installed versions call into it) reads
+helpers off ``reign_cli.main`` via ``_m().<name>``. main.py resolves the ones that
+live in the lazily-imported command modules through PEP 562 ``__getattr__`` so
+every ``reign`` invocation (including ``reign --version``) does not pay for
+update_cmd's dependency chain (jwt, click, ...) when no subcommand runs.
 """
 
 import subprocess
 import sys
 import textwrap
+
+import pytest
 
 import reign_cli.main
 
@@ -40,27 +42,18 @@ def test_importing_main_does_not_import_command_modules():
     assert result.returncode == 0, result.stderr
 
 
-def test_lazy_reexports_resolve_to_real_objects():
-    import reign_cli.dashboard_procs
-    import reign_cli.sessions_cmd
-    import reign_cli.update_cmd
-
-    assert reign_cli.main.cmd_sessions is reign_cli.sessions_cmd.cmd_sessions
-    assert (
-        reign_cli.main._cmd_update_impl is reign_cli.update_cmd._cmd_update_impl
-    )
-    assert (
-        reign_cli.main._scan_dashboard_processes
-        is reign_cli.dashboard_procs._scan_dashboard_processes
-    )
-    # Back-compat alias resolves to the kill helper.
-    assert (
-        reign_cli.main._warn_stale_dashboard_processes
-        is reign_cli.dashboard_procs._kill_stale_dashboard_processes
-    )
+@pytest.mark.real_concurrent_gate  # conftest autouse stub would shadow one frozen name
+def test_frozen_updater_surface_resolves_to_real_objects():
+    for module, names in reign_cli.main._FROZEN_UPDATER_SURFACE.items():
+        mod = sys.modules[module] if module in sys.modules else __import__(module, fromlist=["_"])
+        for name in names:
+            got = getattr(reign_cli.main, name)
+            # Identity, or the same function after another test importlib.reload()ed the module
+            # (the resolved value is cached on reign_cli.main by design).
+            assert got is getattr(mod, name) or (
+                getattr(got, "__module__", None) == module and getattr(got, "__name__", None) == name
+            ), name
 
 
-def test_lazy_reexports_accept_monkeypatch(monkeypatch):
-    sentinel = object()
-    monkeypatch.setattr("reign_cli.main._cmd_update_impl", sentinel)
-    assert reign_cli.main._cmd_update_impl is sentinel
+
+

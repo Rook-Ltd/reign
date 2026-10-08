@@ -1,0 +1,37 @@
+
+<binary path>
+   apps/desktop/public/intro-nous-girl.png
+   apps/desktop/public/nous-badge.png
+
+README.md
+   267: Reign is built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research, released under the MIT license. See [NOTICE](NOTICE) for detail
+
+apps/desktop/src/components/ui/decode-text.tsx
+   11: *    (matches the nousnet-web download-button decode effect).
+
+optional-skills/creative/pretext/templates/donut-orbit.html
+   6: <title>NOUS · pretext</title>
+   605: // NOUS uses the same cell-shader/reveal language as bb-ascii's source logo.
+   677: // Slightly dilate/smooth the measured NOUS silhouette so surrounding text
+   1240: gui.add(ctrls, "orbContainNous", 0, 3, 0.05).name("orb contain NOUS");
+   1241: gui.add(ctrls, "orbFadeDuration", 0.1, 3, 0.05).name("orb fade on NOUS");
+   1242: gui.add(ctrls, "nousAfterWire", 0, 4, 0.05).name("NOUS after wire").onFinishChange(() => restartScene());
+   1243: gui.add(ctrls, "nousLetterSpacing", 0, 4, 0.05).name("NOUS spacing");
+
+scripts/contributor_audit.py
+   52: re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
+
+scripts/release.py
+   1243: "hermes@noushq.ai": "benbarclay",
+   1751: "nouseman666@gmail.com": "nouseman666",  # PR #19088
+
+tests/reign_cli/test_debug.py
+   869: c = self._captured("/debug NOUS")
+
+web/src/index.css
+   144: /* Nousnet's reign layout bumps `small` and `code` to readable
+
+website/docusaurus.config.ts
+   194: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
+
+residual: 17 lines in 9 files

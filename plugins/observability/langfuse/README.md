@@ -47,9 +47,21 @@ REIGN_LANGFUSE_ENV=production       # environment tag
 REIGN_LANGFUSE_RELEASE=v1.0.0       # release tag
 REIGN_LANGFUSE_SAMPLE_RATE=0.5      # sample 50% of traces
 REIGN_LANGFUSE_MAX_CHARS=12000      # max chars per field (default: 12000)
+REIGN_LANGFUSE_MAX_DEPTH=4          # max payload depth (default: 4)
 REIGN_LANGFUSE_CAPTURE=sanitized    # content capture mode (see below)
 REIGN_LANGFUSE_DEBUG=true           # verbose plugin logging
 ```
+
+`REIGN_LANGFUSE_MAX_DEPTH` controls nested payload capture in both `sanitized`
+and `full` modes, including tool arguments and JSON tool results. The root is
+depth 0; each dictionary value or array element adds one level. Values beyond
+the limit become `<max-depth>`, including scalars. For deeper MCP responses,
+set it to a higher non-negative integer (for example, `10`) in the Reign
+process environment. Unset or blank values default to `4`; invalid or negative
+values log a warning and fall back to `4`. `0` keeps only the root level.
+Increasing the depth exports more content and may produce larger traces;
+secret redaction, string-length limits, and the 50-item collection limit remain
+unchanged. `metadata` mode still omits content.
 
 ## Capture modes
 

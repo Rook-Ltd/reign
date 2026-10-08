@@ -36,7 +36,7 @@ reign send --to telegram "deploy finished"
 echo "RAM 92%" | reign send --to telegram:-1001234567890
 
 # Send a file
-reign send --to discord:#ops --file /tmp/report.md
+reign send --to discord:#ops --file ~/.reign/cache/scratch/report.md
 
 # Attach a subject/header line
 reign send --to slack:#eng --subject "[CI] build.log" --file build.log
@@ -186,8 +186,22 @@ msg_id=$(reign send --to discord:#ops --json "build started" \
 **Usually no.** For any bot-token platform — Telegram, Discord, Slack,
 Signal, SMS, WhatsApp Cloud API, and most others — `reign send` calls
 the platform's REST endpoint directly using credentials from
-`~/.reign/.env` and `~/.reign/config.yaml`. It's a standalone subprocess
+`~/.reign/.env` and `~/.reign/config.yaml` (or the equivalent files under
+your resolved Reign home — `%LOCALAPPDATA%\reign` on Windows, or the profile
+directory when `REIGN_HOME` / `-p` is set). It's a standalone subprocess
 that exits as soon as the message is delivered.
+
+If a platform reports `not configured`, the error lists the exact files it
+read and what each one held, e.g.
+`Looked in: C:\Users\me\AppData\Local\reign\.env (no DISCORD_BOT_TOKEN),
+C:\Users\me\AppData\Local\reign\config.yaml (no platforms.discord block),
+environment (DISCORD_BOT_TOKEN unset), external secret sources (none configured)`.
+When a gateway started from the same home has that platform connected, the
+token only exists in the gateway's process environment — add it to that home's
+`.env` so `reign send` can use it. When your shell is scoped to a profile home
+(`REIGN_HOME=<root>/profiles/<name>`) but the connected gateway runs from the
+default root, the error says so — the gateway never read the profile's `.env`,
+and `reign send --list` points at the root's `channel_directory.json`.
 
 A live gateway is only required for **plugin platforms** that rely on a
 persistent adapter connection (for example, a custom plugin that keeps
@@ -241,9 +255,9 @@ If you just need to pipe a raw string, reach for `reign send`.
 
 ## Related
 
-- [Automate Anything with Cron](/guides/automate-with-cron) —
+- [Automate Anything with Cron](./automate-with-cron.md) —
   scheduled jobs whose output auto-delivers to any platform.
-- [Gateway Internals](/developer-guide/gateway-internals) —
+- [Gateway Internals](../developer-guide/gateway-internals.md) —
   the delivery router that `reign send` shares with cron delivery.
-- [Messaging Platform Setup](/user-guide/messaging/) —
+- [Messaging Platform Setup](../user-guide/messaging/index.md) —
   one-time configuration for each platform.

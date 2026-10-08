@@ -7,7 +7,7 @@ license: MIT
 platforms: [linux]
 environments: [s6]
 metadata:
-  reign:
+  hermes:
     tags: [docker, s6, supervision, gateway, profiles]
     related_skills: [reign]
 ---

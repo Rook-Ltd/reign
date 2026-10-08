@@ -6,7 +6,7 @@ author: Hugo Sequier (Hugo-SEQUIER), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Hyperliquid, Blockchain, Crypto, Trading, Perpetuals, Spot, DeFi]
     related_skills: []
 ---

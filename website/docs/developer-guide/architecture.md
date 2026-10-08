@@ -40,7 +40,7 @@ This page is the top-level map of Reign internals. Use it to orient yourself in 
            ▼                                    ▼
 ┌───────────────────┐              ┌──────────────────────┐
 │ Session Storage   │              │ Tool Backends         │
-│ (SQLite + FTS5)   │              │ Terminal (6 backends) │
+│ (SQLite + FTS5)   │              │ Terminal (7 backends) │
 │ reign_state.py   │              │ Browser (5 backends)  │
 │ gateway/session.py│              │ Web (4 backends)      │
 └───────────────────┘              │ MCP (dynamic)         │
@@ -52,11 +52,11 @@ This page is the top-level map of Reign internals. Use it to orient yourself in 
 
 ```text
 reign/
-├── run_agent.py              # AIAgent — core conversation loop (large file)
-├── cli.py                    # ReignCLI — interactive terminal UI (large file)
+├── run_agent.py              # AIAgent facade — loop lives in agent/conversation_loop.py + agent/turn_*.py
+├── cli.py                    # ReignCLI facade — mixins in reign_cli/cli_*_mixin.py
 ├── model_tools.py            # Tool discovery, schema collection, dispatch
 ├── toolsets.py               # Tool groupings and platform presets
-├── reign_state.py           # SQLite session/state database with FTS5
+├── reign_state.py           # SQLite session/state database facade (+ reign_state_*.py siblings)
 ├── reign_constants.py       # REIGN_HOME, profile-aware paths
 ├── batch_runner.py           # Batch trajectory generation
 │
@@ -76,14 +76,14 @@ reign/
 │   └── trajectory.py         # Trajectory saving helpers
 │
 ├── reign_cli/               # CLI subcommands and setup
-│   ├── main.py               # Entry point — all `reign` subcommands (large file)
+│   ├── main.py               # Entry point — `reign` subcommands (parsers in subcommands/, main_*.py)
 │   ├── config.py             # DEFAULT_CONFIG, OPTIONAL_ENV_VARS, migration
 │   ├── commands.py           # COMMAND_REGISTRY — central slash command definitions
-│   ├── auth.py               # PROVIDER_REGISTRY, credential resolution
+│   ├── auth.py               # PROVIDER_REGISTRY, credential resolution (+ auth_*.py siblings)
 │   ├── runtime_provider.py   # Provider → api_mode + credentials
 │   ├── models.py             # Model catalog, provider model lists
 │   ├── model_switch.py       # /model command logic (CLI + gateway shared)
-│   ├── setup.py              # Interactive setup wizard (large file)
+│   ├── setup.py              # Interactive setup wizard (+ setup_*.py siblings)
 │   ├── skin_engine.py        # CLI theming engine
 │   ├── skills_config.py      # reign skills — enable/disable per platform
 │   ├── skills_hub.py         # /skills slash command
@@ -99,17 +99,17 @@ reign/
 │   ├── process_registry.py   # Background process management
 │   ├── file_tools.py         # read_file, write_file, patch, search_files
 │   ├── web_tools.py          # web_search, web_extract
-│   ├── browser_tool.py       # 10 browser automation tools
+│   ├── browser_tool.py       # Browser automation tools facade (+ browser_tool_*.py siblings)
 │   ├── code_execution_tool.py # execute_code sandbox
 │   ├── delegate_tool.py      # Subagent delegation
-│   ├── mcp_tool.py           # MCP client (large file)
+│   ├── mcp_tool.py           # MCP client facade (+ mcp_tool_*.py siblings)
 │   ├── credential_files.py   # File-based credential passthrough
 │   ├── env_passthrough.py    # Env var passthrough for sandboxes
 │   ├── ansi_strip.py         # ANSI escape stripping
 │   └── environments/         # Terminal backends (local, docker, ssh, modal, daytona, singularity)
 │
 ├── gateway/                  # Messaging platform gateway
-│   ├── run.py                # GatewayRunner — message dispatch (large file)
+│   ├── run.py                # GatewayRunner facade — message dispatch (+ run_*.py siblings)
 │   ├── session.py            # SessionStore — conversation persistence
 │   ├── delivery.py           # Outbound message delivery
 │   ├── pairing.py            # DM pairing authorization
@@ -191,7 +191,7 @@ If you are new to the codebase:
 
 ### Agent Loop
 
-The synchronous orchestration engine (`AIAgent` in `run_agent.py`). Handles provider selection, prompt construction, tool execution, retries, fallback, callbacks, compression, and persistence. Supports three API modes for different provider backends.
+The synchronous orchestration engine (`AIAgent`, exposed by the `run_agent.py` facade; the loop lives in `agent/conversation_loop.py` and `agent/turn_*.py`). Handles provider selection, prompt construction, tool execution, retries, fallback, callbacks, compression, and persistence. Supports three API modes for different provider backends.
 
 → [Agent Loop Internals](./agent-loop.md)
 
@@ -233,7 +233,7 @@ Long-running process with 25+ platform adapters (built-in + bundled plugins), un
 
 Three discovery sources: `~/.reign/plugins/` (user), `.reign/plugins/` (project), and pip entry points. Plugins register tools, hooks, and CLI commands through a context API. Two specialized plugin types exist: memory providers (`plugins/memory/`) and context engines (`plugins/context_engine/`). Both are single-select — only one of each can be active at a time, configured via `reign plugins` or `config.yaml`.
 
-→ [Plugin Guide](/developer-guide/plugins), [Memory Provider Plugin](./memory-provider-plugin.md)
+→ [Plugin Guide](./plugins/index.md), [Memory Provider Plugin](./memory-provider-plugin.md)
 
 ### Cron
 

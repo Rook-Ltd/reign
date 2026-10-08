@@ -101,6 +101,7 @@ Webhook payloads/routes: `references/webhooks.md`.
 ```
 reign profile list|create NAME (--clone|--clone-all|--clone-from)|use|show|delete
 reign profile rename A B | alias NAME | export NAME | import FILE
+reign profile migrate-identity A B   Retry a completed rename's session/routing identity migration
 ```
 
 ### Credentials & Pools

@@ -6,7 +6,7 @@ author: Tony Simons (asimons81), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, Antigravity, CLI, Auth, Plugins, Sandbox]
     related_skills: [grok, codex, claude-code, reign]
 ---

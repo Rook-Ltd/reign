@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [gitnexus, code-intelligence, knowledge-graph, visualization]
     related_skills: [reign, codebase-inspection]
 ---

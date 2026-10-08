@@ -18,7 +18,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@reign/plugin-sdk": ["./src/sdk/index.ts"],
+      "@reign/shared/ansi": ["../shared/src/ansi.ts"],
       "@reign/shared/billing": ["../shared/src/billing-types.ts"],
+      "@reign/shared/color": ["../shared/src/color.ts"],
+      "@reign/shared/i18n": ["../shared/src/i18n.ts"],
       "@reign/shared/translucency": ["../shared/src/translucency.ts"],
       "@reign/shared": ["../shared/src/index.ts"]
     }

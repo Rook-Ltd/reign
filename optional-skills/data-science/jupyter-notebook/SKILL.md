@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [jupyter, notebook, repl, data-science, exploration, iterative]
     category: data-science
 ---
@@ -55,7 +55,7 @@ uv run "$SCRIPT" servers
 If no servers found, start one:
 ```
 jupyter-lab --no-browser --port=8888 --notebook-dir=$HOME/notebooks \
-  --IdentityProvider.token='' --ServerApp.password='' > /tmp/jupyter.log 2>&1 &
+  --IdentityProvider.token='' --ServerApp.password='' > ~/.reign/cache/scratch/jupyter.log 2>&1 &
 sleep 3
 ```
 

@@ -15,13 +15,13 @@ Configure and troubleshoot Honcho memory for Reign.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/autonomous-ai-agents/honcho` |
-| Path | `optional-skills/autonomous-ai-agents\honcho` |
+| Path | `optional-skills/autonomous-ai-agents/honcho` |
 | Version | `2.0.0` |
 | Author | Reign |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Honcho`, `Memory`, `Profiles`, `Observation`, `Dialectic`, `User-Modeling`, `Session-Summary` |
-| Related skills | [`reign`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-reign) |
+| Related skills | [`reign`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-reign.md) |
 
 ## Reference: full SKILL.md
 

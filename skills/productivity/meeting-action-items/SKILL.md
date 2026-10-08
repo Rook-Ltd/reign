@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Meetings, Action-Items, Follow-Up, Productivity]
     related_skills: [teams-meeting-pipeline, google-workspace, notion]
 ---

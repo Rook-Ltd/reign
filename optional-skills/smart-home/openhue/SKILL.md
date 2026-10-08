@@ -6,7 +6,7 @@ author: community
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Smart-Home, Hue, Lights, IoT, Automation]
     homepage: https://www.openhue.io/cli
 prerequisites:
@@ -22,8 +22,8 @@ Control Philips Hue lights and scenes via a Hue Bridge from the terminal.
 ```bash
 # Linux (pre-built binary — releases ship tarballs, not bare binaries)
 curl -sL "https://github.com/openhue/openhue-cli/releases/latest/download/openhue_Linux_x86_64.tar.gz" \
-  | tar -xz -C /tmp openhue \
-  && install -m 0755 /tmp/openhue ~/.local/bin/openhue
+  | tar -xz -C ~/.reign/cache/scratch openhue \
+  && install -m 0755 ~/.reign/cache/scratch/openhue ~/.local/bin/openhue
 # (use openhue_Linux_arm64.tar.gz on ARM64)
 
 # macOS

@@ -6,7 +6,7 @@ author: Jakub Wolniewicz (@frizikk) + Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [kanban, review, quality, verification]
     category: devops
     requires_toolsets: [kanban]

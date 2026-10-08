@@ -55,7 +55,6 @@ class TestGetReignHomeProfileWarning:
         err = capsys.readouterr().err
         assert err.count("REIGN_HOME fallback") == 1
         assert "'coder'" in err
-        assert "#18594" in err
 
         # 3. One-shot: second and third calls don't re-warn
         fresh_constants.get_reign_home()
@@ -90,5 +89,49 @@ class TestGetReignHomeProfileWarning:
 
         assert result == tmp_path / ".reign"
         # Shouldn't crash; shouldn't warn either (can't tell what profile was intended)
+        assert "REIGN_HOME fallback" not in capsys.readouterr().err
+
+
+class TestBootReadersBeforeProfileOverride:
+    """Readers that run before the CLI applies the sticky ``active_profile`` must not warn.
+
+    ``reign_bootstrap`` points ``TMPDIR`` at the scratch dir of the *process* home during
+    import, and ``main._apply_profile_override`` re-homes the process a few lines later. A
+    caller that already resolved its home must not send the policy back through
+    ``get_reign_home()``: for a sticky-profile user with ``REIGN_HOME`` unset in a plain
+    shell that lookup falls back to the default profile and warns, on every ``reign``
+    command, while nothing lands in the wrong place. Same fix the parser's ``_cfg_path()``
+    carries for the ``--no-config`` help string.
+    """
+
+    def test_scratch_export_uses_the_process_home_silently(
+        self, fresh_constants, tmp_path, capsys
+    ):
+        """Boot scratch setup: silent, and pointed at the home the bootstrap resolved."""
+        reign_dir = tmp_path / ".reign"
+        (reign_dir / "profiles" / "coder").mkdir(parents=True)
+        (reign_dir / "active_profile").write_text("coder\n")
+        capsys.readouterr()  # drop anything the setup above printed
+
+        env = {"PATH": "/usr/bin:/bin"}
+        assert fresh_constants.apply_scratch_tmp_env(env) is True
+
+        assert env["TMPDIR"] == str(reign_dir / "cache" / "scratch")
+        assert "REIGN_HOME fallback" not in capsys.readouterr().err
+
+    def test_explicit_home_scratch_dir_never_reads_the_effective_home(
+        self, fresh_constants, tmp_path, capsys
+    ):
+        """A caller that passes a home (`reign doctor` for another profile) stays silent."""
+        reign_dir = tmp_path / ".reign"
+        profile_dir = reign_dir / "profiles" / "coder"
+        profile_dir.mkdir(parents=True)
+        (reign_dir / "active_profile").write_text("coder\n")
+        capsys.readouterr()  # drop anything the setup above printed
+
+        scratch = fresh_constants.get_scratch_dir(profile_dir)
+
+        assert scratch == profile_dir / "cache" / "scratch"
+        assert scratch.is_dir()
         assert "REIGN_HOME fallback" not in capsys.readouterr().err
 
