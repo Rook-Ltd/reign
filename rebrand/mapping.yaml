@@ -570,6 +570,16 @@ post_replace:
       # A large sync diff takes the classifier over a minute (68s on the first sync).
       - regex: '(name: Detect affected areas\n\s+runs-on: ubuntu-latest\n\s+timeout-minutes: )1\n'
         with:  '\g<1>10\n'
+  - files:
+      - ".github/workflows/contributor-check.yml"
+    replace:
+      # Upstream maps its contributors at release time; a sync PR brings in every upstream
+      # commit since the last sync, so check only Reign's own commits: leave out the history
+      # behind each sync merge's upstream parent. Joel's own commits need no mapping.
+      - plain: "NEW_EMAILS=$(git log ${MERGE_BASE}..HEAD --format='%ae' --no-merges | sort -u)"
+        with:  "UPSTREAM=$(git log ${MERGE_BASE}..HEAD --merges --grep='^Reign: sync with upstream ' --format='%P' | awk '{print \"^\" $2}')\n          # shellcheck disable=SC2086\n          NEW_EMAILS=$(git log ${MERGE_BASE}..HEAD $UPSTREAM --format='%ae' --no-merges | sort -u)"
+      - plain: "*teknium*|*noreply@github.com*"
+        with:  "*teknium*|*@rampant.llc|*noreply@github.com*"
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.

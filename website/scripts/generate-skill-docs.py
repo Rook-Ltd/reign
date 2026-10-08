@@ -342,7 +342,7 @@ def render_skill_page(
     # Heuristic nicer title from name
     display_name = name.replace("-", " ").replace("_", " ").title()
 
-    reign_meta = (fm.get("metadata") or {}).get("reign") or {}
+    reign_meta = (fm.get("metadata") or {}).get("hermes") or {}
     tags = reign_meta.get("tags") or []
     related = reign_meta.get("related_skills") or []
     platforms = fm.get("platforms")

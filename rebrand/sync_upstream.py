@@ -9,7 +9,7 @@ Steps (all in a throwaway git worktree at the upstream ref):
   1. copy rebrand/ + brand/ + plan into the worktree
   2. run rebrand/rebrand.py            (stages 1-5: delete, protect, replace, rename, post_replace)
   3. git apply --3way rebrand/overlay/hand-edits.patch   (Phase 3/4 hand edits)
-  4. run rebrand/place_images.py
+  4. run rebrand/place_images.py, then website/scripts/generate-skill-docs.py
   5. regenerate uv.lock and npm lockfiles (--no-lockfiles to skip; the overlay never carries them)
   6. gates: rebrand.py --check residual delta vs. rebrand/audit/residual-after-phase4.txt,
             upstream image hashes, conflict markers left by step 3
@@ -27,6 +27,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -60,7 +61,7 @@ def main() -> None:
     if not PY.exists():
         sys.exit("project venv missing: run uv sync first")
     date = dt.date.today().isoformat()
-    wt = Path(os.environ.get("REIGN_SYNC_WORKTREE", f"/tmp/reign-sync-{date}"))
+    wt = Path(os.environ.get("REIGN_SYNC_WORKTREE") or Path(tempfile.gettempdir()) / f"reign-sync-{date}")
     if wt.exists():
         sh("git", "worktree", "remove", "--force", str(wt), check=False, quiet=True)
         shutil.rmtree(wt, ignore_errors=True)
@@ -105,6 +106,9 @@ def main() -> None:
 
     print("→ placing images")
     sh(str(PY), "rebrand/place_images.py", cwd=wt, quiet=True)
+
+    print("→ regenerating skill docs (renamed skills sort differently in the catalogs)")
+    sh(str(PY), "website/scripts/generate-skill-docs.py", cwd=wt, quiet=True)
 
     if args.lockfiles:
         print("→ regenerating lockfiles")

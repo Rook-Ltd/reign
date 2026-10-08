@@ -8,7 +8,7 @@ promote churn-prone hand edits to mapping.yaml rules and re-run this to shrink t
     python rebrand/make_overlay.py            # uses the fork point from rebrand/UPSTREAM.md
     python rebrand/make_overlay.py --base SHA
 """
-import argparse, re, shutil, subprocess, sys
+import argparse, re, shutil, subprocess, sys, tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -25,7 +25,7 @@ def main() -> None:
     ap.add_argument("--base", help="upstream commit the current Reign tree was cut from")
     args = ap.parse_args()
     base = args.base or re.search(r"Forked at: ([0-9a-f]{40})", (ROOT / "rebrand/UPSTREAM.md").read_text()).group(1)
-    wt = Path("/tmp/reign-overlay-base")
+    wt = Path(tempfile.gettempdir()) / "reign-overlay-base"
     subprocess.run(["git", "worktree", "remove", "--force", str(wt)], cwd=ROOT, capture_output=True)
     shutil.rmtree(wt, ignore_errors=True)
     subprocess.run(["git", "worktree", "add", "-q", "--detach", str(wt), base], cwd=ROOT, check=True)

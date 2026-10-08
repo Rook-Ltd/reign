@@ -945,32 +945,6 @@ index 3abe358211..9359131f71 100644
      },
      prism: {
        theme: prismThemes.github,
-diff --git a/website/scripts/extract-skills.py b/website/scripts/extract-skills.py
-index e9201a3e8e..0d0dc93da7 100644
---- a/website/scripts/extract-skills.py
-+++ b/website/scripts/extract-skills.py
-@@ -288,7 +288,7 @@ def extract_local_skills():
-             tags = []
-             metadata = fm.get("metadata")
-             if isinstance(metadata, dict):
--                reign_meta = metadata.get("hermes", {})
-+                reign_meta = metadata.get("reign", {})
-                 if isinstance(reign_meta, dict):
-                     tags = reign_meta.get("tags", [])
-             if not tags:
-diff --git a/website/scripts/generate-skill-docs.py b/website/scripts/generate-skill-docs.py
-index dba2040d98..ca47308e46 100755
---- a/website/scripts/generate-skill-docs.py
-+++ b/website/scripts/generate-skill-docs.py
-@@ -341,7 +341,7 @@ def render_skill_page(
-     # Heuristic nicer title from name
-     display_name = name.replace("-", " ").replace("_", " ").title()
- 
--    reign_meta = (fm.get("metadata") or {}).get("hermes") or {}
-+    reign_meta = (fm.get("metadata") or {}).get("reign") or {}
-     tags = reign_meta.get("tags") or []
-     related = reign_meta.get("related_skills") or []
-     platforms = fm.get("platforms")
 diff --git a/.github/workflows/upstream-sync.yml b/.github/workflows/upstream-sync.yml
 new file mode 100644
 index 0000000000..75cdc484e6
