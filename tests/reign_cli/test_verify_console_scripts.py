@@ -32,7 +32,7 @@ def scripts_dir(tmp_path, monkeypatch):
 
             [project.scripts]
             reign = "reign_cli.main:main"
-            reign = "run_agent:main"
+            reign-agent = "run_agent:main"
             reign-acp = "acp_adapter.entry:main"
             """
         ),

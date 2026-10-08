@@ -580,6 +580,13 @@ post_replace:
         with:  "UPSTREAM=$(git log ${MERGE_BASE}..HEAD --merges --grep='^Reign: sync with upstream ' --format='%P' | awk '{print \"^\" $2}')\n          # shellcheck disable=SC2086\n          NEW_EMAILS=$(git log ${MERGE_BASE}..HEAD $UPSTREAM --format='%ae' --no-merges | sort -u)"
       - plain: "*teknium*|*noreply@github.com*"
         with:  "*teknium*|*@rampant.llc|*noreply@github.com*"
+  - files:
+      - "tests/reign_cli/test_verify_console_scripts.py"
+    replace:
+      # The fixture's indented `hermes-agent = ...` misses the line-start protect and collapses
+      # to a second `reign` key, so the TOML declares two scripts and the Windows lane fails.
+      - plain: 'reign = "run_agent:main"'
+        with:  'reign-agent = "run_agent:main"'
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
