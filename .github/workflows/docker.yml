@@ -82,7 +82,7 @@ jobs:
         variant: [slim, desktop]
         include:
           - arch: amd64
-            runner: ubuntu-latest-32-core
+            runner: self-hosted
             platform: linux/amd64
           # arm64 builds on the native arm64 larger runner. A build of
           # linux/arm64 on an x64 host uses emulation.
@@ -200,7 +200,7 @@ jobs:
         variant: [slim, desktop]
         include:
           - arch: amd64
-            runner: ubuntu-latest-32-core
+            runner: self-hosted
             platform: linux/amd64
           # Native arm64 for the same reason as the build matrix above.
           - arch: arm64

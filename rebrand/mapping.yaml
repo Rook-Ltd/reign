@@ -548,6 +548,29 @@ post_replace:
       - regex: '(?s)(_REIGN_BRANDING: Dict\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
         with:  '\1\n_REIGN_BRANDING["agent_name"] = "Reign"\n_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."'
 
+  # CI runs on Rook's self-hosted runner (reign1). Upstream's 32/96-core larger runners
+  # don't exist on this account, so their jobs queued for a day and were cancelled.
+  # reign1 has far fewer cores, so those jobs get longer limits and the test runner
+  # picks its worker count from the machine instead of upstream's 96.
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+    replace:
+      - regex: 'runs-on: ubuntu-latest-(?:32|96)-core\n(\s+)timeout-minutes: \d+'
+        with:  'runs-on: self-hosted\n\1timeout-minutes: 120'
+      - regex: '(runs-on|runner): ubuntu-latest-(?:32|96)-core\b'
+        with:  '\1: self-hosted'
+      - plain: "runner: windows-latest-32-core"
+        with:  "runner: windows-latest"
+      - plain: "REIGN_TEST_WORKERS: 96"
+        with:  'REIGN_TEST_WORKERS: ""'
+  - files:
+      - ".github/workflows/ci.yaml"
+    replace:
+      # A large sync diff takes the classifier over a minute (68s on the first sync).
+      - regex: '(name: Detect affected areas\n\s+runs-on: ubuntu-latest\n\s+timeout-minutes: )1\n'
+        with:  '\g<1>10\n'
+
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
 overlay_exclude:
