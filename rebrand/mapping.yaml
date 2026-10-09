@@ -598,6 +598,13 @@ post_replace:
       - plain: 'reign = "run_agent:main"'
         with:  'reign-agent = "run_agent:main"'
   - files:
+      - "tests/e2e/core/upgrade/test_fresh_process_entrypoints.py"
+    replace:
+      # Same collapse: the `hermes-agent` console-script entry renames to a second `reign` entry,
+      # so the matrix never covers the `reign-agent` script.
+      - plain: "    \"reign-help\": Entry(\"reign\", (\"--help\",), frozenset({0})),\n}\n"
+        with:  "    \"reign-agent-help\": Entry(\"reign-agent\", (\"--help\",), frozenset({0})),\n}\n"
+  - files:
       - "apps/desktop/src/lib/connection-display.test.ts"
     replace:
       # `user: 'hermes'` in the fixture renames, but the expected `hermes@studio.example.test`
