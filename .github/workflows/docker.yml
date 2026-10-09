@@ -87,7 +87,7 @@ jobs:
           # arm64 builds on the native arm64 larger runner. A build of
           # linux/arm64 on an x64 host uses emulation.
           - arch: arm64
-            runner: ubuntu-latest-32-arm-core
+            runner: self-hosted
             platform: linux/arm64
 
     runs-on: ${{ matrix.runner }}
@@ -105,6 +105,11 @@ jobs:
       # collide with the failed first attempt. A genuine persistent failure
       # still fails the job — only the first attempt has continue-on-error.
       # Refs: docker/setup-buildx-action#510
+      # reign1 is x64, so arm64 images build under QEMU emulation.
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
       - name: Set up Docker Buildx
         id: buildx
         continue-on-error: true
@@ -204,7 +209,7 @@ jobs:
             platform: linux/amd64
           # Native arm64 for the same reason as the build matrix above.
           - arch: arm64
-            runner: ubuntu-latest-32-arm-core
+            runner: self-hosted
             platform: linux/arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -217,6 +222,11 @@ jobs:
 
       # Retry once on transient Docker Hub / buildkit pull failures.
       # See build job for rationale; same pattern.
+      # reign1 is x64, so arm64 images build under QEMU emulation.
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
       - name: Set up Docker Buildx
         id: buildx
         continue-on-error: true
@@ -301,6 +311,11 @@ jobs:
 
       # Retry once on transient Docker Hub / buildkit pull failures.
       # See build job for rationale; same pattern.
+      # reign1 is x64, so arm64 images build under QEMU emulation.
+      - name: Set up QEMU
+        if: matrix.arch == 'arm64'
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
+
       - name: Set up Docker Buildx
         id: buildx
         continue-on-error: true
