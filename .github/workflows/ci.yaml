@@ -18,6 +18,7 @@ on:
   pull_request:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -81,7 +82,7 @@ jobs:
   tests-os:
     name: OS-specific tests
     needs: detect
-    if: needs.detect.outputs.python == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.detect.outputs.python == 'true'
     uses: ./.github/workflows/tests-os.yml
     with:
       # The Windows lane spawns the real desktop-update hand-off script
@@ -107,7 +108,7 @@ jobs:
     name: Installer tests
     needs: detect
     # Windows-only, and only for PRs that touch install.ps1 or its tests.
-    if: needs.detect.outputs.installer == 'true'
+    if: github.event_name == 'workflow_dispatch' && needs.detect.outputs.installer == 'true'
     uses: ./.github/workflows/installer-tests.yml
 
   rust-tests:

@@ -634,6 +634,30 @@ post_replace:
     replace:
       - regex: '(runs-on|runner|default): ubuntu-latest\b(?!-)'
         with:  '\1: self-hosted'
+  # Windows and macOS have no self-hosted runner, and hosted minutes on a private repo bill
+  # Windows at 2x and macOS at 10x. Joel's call (2026-10-09): those lanes run only on a manual
+  # dispatch, and arm64 images build on reign1 under QEMU instead of the paid arm64 runner.
+  - files:
+      - ".github/workflows/ci.yaml"
+    replace:
+      - plain: "on:\n  pull_request:\n  push:\n    branches: [main]\n\n"
+        with:  "on:\n  pull_request:\n  push:\n    branches: [main]\n  workflow_dispatch:\n\n"
+      - regex: "    if: (needs\\.detect\\.outputs\\.(?:python|installer) == 'true'\n    uses: \\./\\.github/workflows/(?:tests-os|installer-tests)\\.yml)"
+        with:  "    if: github.event_name == 'workflow_dispatch' && \\1"
+  - files:
+      - ".github/workflows/install-e2e.yml"
+    replace:
+      - regex: "  schedule:\n(?:    #[^\n]*\n)*    - cron: [^\n]*\n"
+        with:  ""
+      - regex: "if: github\\.event_name != 'workflow_dispatch' \\|\\| (contains\\(fromJSON\\('\\[\"all\", \"(?:windows|macos)-desktop\"\\]'\\), inputs\\.route\\))"
+        with:  "if: github.event_name == 'workflow_dispatch' && \\1"
+  - files:
+      - ".github/workflows/docker.yml"
+    replace:
+      - plain: "runner: ubuntu-latest-32-arm-core"
+        with:  "runner: self-hosted"
+      - regex: "(?<!# v3\\.7\\.0\n\n)(      - name: Set up Docker Buildx\n        id: buildx\n)"
+        with:  "      # reign1 is x64, so arm64 images build under QEMU emulation.\n      - name: Set up QEMU\n        if: matrix.arch == 'arm64'\n        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0\n\n\\1"
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
