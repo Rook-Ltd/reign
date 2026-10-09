@@ -43,11 +43,14 @@ delete:
   - MagicMock                       # test pollution if it ever lands upstream
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
-  # emails first, so the domain rule below cannot shield half of an address
+  # emails first, so the domain rule below cannot shield half of an address. These stay
+  # unconditional: example.com addresses here are real commit identities (release.py AUTHOR_MAP).
   - '[\w.+\-]*(?:hermes|nous)[\w.+\-]*@[\w.\-]+\.\w+'
   - '[\w.+\-]+@[\w.\-]*(?:hermes|nous)[\w.\-]*\.\w+'
-  # URLs and bare domains pointing at Nous / Hermes properties (decision 8)
-  - 'https?://[^\s"''<>()\[\]`]*(?:[Hh]ermes|[Nn]ous)[^\s"''<>()\[\]`]*'
+  # URLs and bare domains pointing at Nous / Hermes properties (decision 8). Placeholder hosts
+  # (example.*, *.test, localhost, a bare `host`) are test data, not Nous properties: they rebrand
+  # like any other text, so a fixture's input URL and its expected value agree.
+  - 'https?://(?![\w.\-:@]*(?:\bexample\.|\.test\b|\blocalhost\b|\b127\.0\.0\.1\b)|host[/:])[^\s"''<>()\[\]`]*(?:[Hh]ermes|[Nn]ous)[^\s"''<>()\[\]`]*'
   - '[\w.-]*nousresearch\.com[^\s"''<>()\[\]`]*'
   # GitHub org/repo slugs and Docker Hub images under the Nous org
   - '[Nn]ous[Rr]esearch/[\w.\-]+'
@@ -565,6 +568,13 @@ post_replace:
       - plain: "REIGN_TEST_WORKERS: 96"
         with:  'REIGN_TEST_WORKERS: ""'
   - files:
+      - ".github/workflows/tests.yml"
+    replace:
+      # GitHub's hosted images ship Node; reign1 does not, and the photon sidecar tests shell
+      # out to `node`.
+      - regex: '(\n    name: Run tests\n(?:(?!      - name: Checkout code).*\n)*?      - name: Checkout code\n        uses: [^\n]+\n)(?!\n      - name: Set up Node)'
+        with:  '\1\n      - name: Set up Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 26\n'
+  - files:
       - ".github/workflows/ci.yaml"
     replace:
       # A large sync diff takes the classifier over a minute (68s on the first sync).
@@ -587,6 +597,36 @@ post_replace:
       # to a second `reign` key, so the TOML declares two scripts and the Windows lane fails.
       - plain: 'reign = "run_agent:main"'
         with:  'reign-agent = "run_agent:main"'
+  - files:
+      - "apps/desktop/src/lib/connection-display.test.ts"
+    replace:
+      # `user: 'hermes'` in the fixture renames, but the expected `hermes@studio.example.test`
+      # reads as an email and stays protected.
+      - plain: "'hermes@studio.example.test:2222'"
+        with:  "'reign@studio.example.test:2222'"
+  - files:
+      - "apps/desktop/scripts/local-pack-publish.test.mjs"
+    replace:
+      # package.json's repository URL points at the fork (rule above); the owner follows it.
+      - plain: "configs[0].owner, 'NousResearch')"
+        with:  "configs[0].owner, 'asxi9832')"
+  # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
+  # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
+  - files:
+    - ui-tui/src/__tests__/theme.test.ts
+    replace:
+    - plain: "    const dark = await importThemeWithCleanEnv()\n    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })\n\n    const cases: Array<[string, string, string]> = ["
+      with: "    //\n    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped\n    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the\n    // ladder knobs are still the ones fitted against these literals.\n    const { buildPalette } = await importThemeWithCleanEnv()\n    const dark = {\n      DARK_THEME: {\n        color: buildPalette(\n          {\n            accent: '#FFBF00',\n            activeRow: '#333355',\n            bg: '#101014',\n            border: '#CD7F32',\n            error: '#ef5350',\n            ok: '#4caf50',\n            primary: '#FFD700',\n            prompt: '#FFF8DC',\n            selection: '#3a3a55',\n            shellDollar: '#4dabf7',\n            statusBad: '#FF8C00',\n            statusCritical: '#FF6B6B',\n            statusGood: '#8FBC8F',\n            statusWarn: '#FFD700',\n            surface: '#1a1a2e',\n            text: '#FFF8DC',\n            warn: '#ffa726'\n          },\n          false\n        )\n      }\n\
+        \    }\n    const light = {\n      LIGHT_THEME: {\n        color: buildPalette(\n          {\n            accent: '#956E00',\n            bg: '#ffffff',\n            border: '#A56628',\n            error: '#C14240',\n            ok: '#367E39',\n            primary: '#867000',\n            prompt: '#2B2014',\n            shellDollar: '#377BB3',\n            statusBad: '#A65A00',\n            statusCritical: '#B94D4D',\n            statusGood: '#5C7A5C',\n            statusWarn: '#867000',\n            text: '#3D2F13',\n            warn: '#956115'\n          },\n          true\n        )\n      }\n    }\n\n    const cases: Array<[string, string, string]> = ["
+  # Last, after the ci.yaml rule that keys on `runs-on: ubuntu-latest`: the account's included
+  # hosted minutes ran out (2026-10-09) and every short ubuntu job bills a whole minute, so all
+  # Linux jobs run on reign1 too. Windows and macOS lanes have no self-hosted equivalent.
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+    replace:
+      - regex: '(runs-on|runner|default): ubuntu-latest\b(?!-)'
+        with:  '\1: self-hosted'
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.

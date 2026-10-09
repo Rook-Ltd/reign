@@ -4664,7 +4664,7 @@ export const fr = defineLocale({
       "Entrez l'URL du gateway. Reign Desktop détectera s'il a besoin d'un jeton ou d'une connexion par navigateur.",
     remoteUrlTitle: 'URL du gateway',
     remoteUrlDesc: "Utilisez l'URL de base du gateway Reign, y compris https:// pour les connexions distantes.",
-    remoteUrlPlaceholder: 'https://gateway.example.com/hermes',
+    remoteUrlPlaceholder: 'https://gateway.example.com/reign',
     probing: "Détection de l'authentification du gateway...",
     probeError: "Impossible d'atteindre ce gateway Reign.",
     probeErrorDetails: 'Détails',

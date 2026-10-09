@@ -9,11 +9,11 @@ import {
   appendUniquePathEntries,
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
-  reignManagedNodePathEntries,
   normalizeReignHomeRoot,
   pathEnvKey,
   POSIX_SANE_PATH_ENTRIES,
-  profileBackendParentEnv
+  profileBackendParentEnv,
+  reignManagedNodePathEntries
 } from './backend-env'
 
 test('desktop backend PATH adds Reign-managed bins and missing POSIX sane entries', () => {

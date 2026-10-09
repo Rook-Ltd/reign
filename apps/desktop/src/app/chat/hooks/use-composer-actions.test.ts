@@ -10,8 +10,8 @@ import {
   attachmentPreviewDataUrl,
   type DroppedFile,
   extractDroppedFiles,
-  REIGN_PATHS_MIME,
   partitionDroppedFiles,
+  REIGN_PATHS_MIME,
   useComposerActions
 } from './use-composer-actions'
 

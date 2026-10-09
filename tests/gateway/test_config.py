@@ -527,16 +527,16 @@ class TestLoadGatewayConfig:
         reign_home.mkdir()
         (reign_home / "config.yaml").write_text(
             "gateway:\n"
-            "  room_link_url: https://peer.example.test/hermes\n",
+            "  room_link_url: https://peer.example.test/reign\n",
             encoding="utf-8",
         )
         monkeypatch.setenv("REIGN_HOME", str(reign_home))
 
         config = load_gateway_config()
 
-        assert config.room_link_url == "https://peer.example.test/hermes"
+        assert config.room_link_url == "https://peer.example.test/reign"
         assert GatewayConfig.from_dict(config.to_dict()).room_link_url == (
-            "https://peer.example.test/hermes"
+            "https://peer.example.test/reign"
         )
 
 

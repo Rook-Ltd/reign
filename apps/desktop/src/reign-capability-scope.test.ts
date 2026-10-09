@@ -5,8 +5,8 @@ import { getAuxiliaryModels, getGlobalModelInfo } from './api/models'
 import { getOfficialSkills, getSkillHubSources } from './api/skills'
 import { getToolsetConfig } from './api/toolsets'
 import {
-  getReignConfigRecord,
   getMcpCatalog,
+  getReignConfigRecord,
   getSkillContent,
   getSkills,
   getToolsets,

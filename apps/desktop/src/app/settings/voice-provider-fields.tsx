@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { useI18n } from '@/i18n'
 import {
   getElevenLabsVoices,
   getReignConfigSchema,
@@ -8,7 +9,6 @@ import {
   profileScopeKey,
   saveReignConfigRecord
 } from '@/reign'
-import { useI18n } from '@/i18n'
 import { notifyError } from '@/store/notifications'
 import type { ReignConfigRecord } from '@/types/reign'
 

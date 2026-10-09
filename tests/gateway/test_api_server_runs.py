@@ -1788,7 +1788,7 @@ class TestHostedRoomRuns:
     ):
         monkeypatch.setenv("REIGN_DESKTOP", "1")
         monkeypatch.setenv(
-            "REIGN_ROOM_LINK_URL", "https://peer.example.test/hermes"
+            "REIGN_ROOM_LINK_URL", "https://peer.example.test/reign"
         )
         app = _create_runs_app(auth_adapter)
         async with TestClient(TestServer(app)) as cli:
@@ -1809,7 +1809,7 @@ class TestHostedRoomRuns:
         assert body["catalog"]["link_modes"] == ["direct"]
         assert body["catalog"]["endpoint"] == {
             "available": True,
-            "url": "https://peer.example.test/hermes",
+            "url": "https://peer.example.test/reign",
             "transport_security": "tls",
         }
         assert body["expires_at"] == body["status_expires_at"]

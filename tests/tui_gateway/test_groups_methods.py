@@ -153,7 +153,7 @@ def test_app_managed_catalog_and_self_advertised_endpoint_are_consistent(
 ):
     monkeypatch.setenv("API_SERVER_KEY", "gateway-api-key-1234567890")
     monkeypatch.setenv("REIGN_DESKTOP", "1")
-    monkeypatch.setenv("REIGN_ROOM_LINK_URL", "https://peer.example.test/hermes")
+    monkeypatch.setenv("REIGN_ROOM_LINK_URL", "https://peer.example.test/reign")
     capability = _result(srv._methods["groups.capabilities"](1, {}))
     invitation = _result(
         srv._methods["groups.peer.invite"](
@@ -171,7 +171,7 @@ def test_app_managed_catalog_and_self_advertised_endpoint_are_consistent(
     assert capability["room_link"]["catalog"] == invitation["catalog"]
     assert capability["room_link"]["endpoint"] == {
         "available": True,
-        "url": "https://peer.example.test/hermes",
+        "url": "https://peer.example.test/reign",
         "transport_security": "tls",
     }
     assert invitation["endpoint"] == capability["room_link"]["endpoint"]

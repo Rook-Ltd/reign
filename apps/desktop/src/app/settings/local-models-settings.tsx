@@ -6,23 +6,6 @@ import { NEW_CHAT_ROUTE } from '@/app/routes'
 import { Button } from '@/components/ui/button'
 import { SearchField } from '@/components/ui/search-field'
 import { Tip } from '@/components/ui/tooltip'
-import {
-  activateLocalModel,
-  deleteLocalModel,
-  downloadBrowsedModel,
-  downloadLocalModel,
-  ejectLocalModel,
-  getLocalCatalog,
-  getLocalHardware,
-  getLocalModelsStatus,
-  type HFFileGroup,
-  type HFSearchHit,
-  listHFRepoFiles,
-  quickstartLocalModels,
-  searchHFModels,
-  setLocalServer,
-  sideloadLocalModel
-} from '@/reign'
 import { useI18n } from '@/i18n'
 import {
   Check,
@@ -40,6 +23,23 @@ import {
   Zap
 } from '@/lib/icons'
 import { cn } from '@/lib/utils'
+import {
+  activateLocalModel,
+  deleteLocalModel,
+  downloadBrowsedModel,
+  downloadLocalModel,
+  ejectLocalModel,
+  getLocalCatalog,
+  getLocalHardware,
+  getLocalModelsStatus,
+  type HFFileGroup,
+  type HFSearchHit,
+  listHFRepoFiles,
+  quickstartLocalModels,
+  searchHFModels,
+  setLocalServer,
+  sideloadLocalModel
+} from '@/reign'
 import {
   $localRuntimeInstallStarting,
   $localRuntimeJobs,

@@ -1,8 +1,8 @@
 import { atom } from 'nanostores'
 
-import { getActionStatus, getStatus, restartGateway } from '@/reign'
 import { translateNow } from '@/i18n'
 import { sharedGatewayProfiles } from '@/lib/shared-gateway-restart'
+import { getActionStatus, getStatus, restartGateway } from '@/reign'
 import { confirm } from '@/store/confirm'
 import { notify, notifyError } from '@/store/notifications'
 import type { ActionResponse } from '@/types/reign'

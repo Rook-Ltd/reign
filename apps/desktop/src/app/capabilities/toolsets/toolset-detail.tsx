@@ -2,8 +2,8 @@ import { compactNumber } from '@reign/shared'
 import { useNavigate } from 'react-router'
 
 import { Button } from '@/components/ui/button'
-import { type ProfileScope, profileScopeKey } from '@/reign'
 import { useI18n } from '@/i18n'
+import { type ProfileScope, profileScopeKey } from '@/reign'
 import type { ToolsetInfo } from '@/types/reign'
 
 import { ToolChip } from '../../master-detail'
