@@ -62,9 +62,6 @@ on:
         required: false
         type: string
         default: ''
-  schedule:
-    # Every 12 hours, off the hour to avoid the top-of-hour runner crunch.
-    - cron: '20 7,19 * * *'
   push:
     tags:
       # Release tags only: the repo also carries backup/* and one-off tags.
@@ -184,7 +181,7 @@ jobs:
 
   windows:
     name: ${{ matrix.name }}
-    if: github.event_name != 'workflow_dispatch' || contains(fromJSON('["all", "windows-desktop"]'), inputs.route)
+    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["all", "windows-desktop"]'), inputs.route)
     needs: generate-matrix
     strategy:
       fail-fast: false
@@ -199,7 +196,7 @@ jobs:
 
   macos:
     name: ${{ matrix.name }}
-    if: github.event_name != 'workflow_dispatch' || contains(fromJSON('["all", "macos-desktop"]'), inputs.route)
+    if: github.event_name == 'workflow_dispatch' && contains(fromJSON('["all", "macos-desktop"]'), inputs.route)
     needs: generate-matrix
     strategy:
       fail-fast: false
