@@ -34,6 +34,7 @@ import pytest
 
 from tests.fakes.fake_llm_provider import MODEL_ID, Error, ToolCall
 
+from ._helpers import poll
 from ._routing_helpers import (
     EgressTrap,
     Fleet,
@@ -377,7 +378,11 @@ def test_tui_gateway_model_switch_routing(tmp_path: Path, request: pytest.Fixtur
             pool_state["fail"] = leg.host == "pool" and not leg.ok
             done = gw.turn(sid, f"turn {i}")
             if i == 0:
-                gw.seen_or_wait(gw.event("session.title", sid), timeout=120)  # first-turn aux call settles
+                # The first session.title is the instant derived title; the model upgrade is a
+                # background aux call that can land after message.complete on a slow runner, where
+                # it would be charged to leg 1. Wait for that request itself.
+                poll(lambda: any(r.get("kind") == "aux" for r in fleet.since(marks)["main"]),
+                     120, "the first-turn title aux call to reach main")
             log = fleet.since(marks)
             payload = (done.get("params") or {}).get("payload") or {}
             ctx = f"leg {i} ({leg.value!r} -> {leg.host}): {done.get('params', {}).get('type')} {str(payload)[:300]}\n{describe(log)}"
