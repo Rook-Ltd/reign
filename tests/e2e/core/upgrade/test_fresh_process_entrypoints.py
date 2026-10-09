@@ -624,7 +624,7 @@ _ENTRIES = {
     "reign-help": Entry("reign", ("--help",), frozenset({0})),
     "reign-acp-version": Entry("reign-acp", ("--version",), frozenset({0}), prints_version=True),
     "reign-acp-help": Entry("reign-acp", ("--help",), frozenset({0})),
-    "reign-help": Entry("reign", ("--help",), frozenset({0})),
+    "reign-agent-help": Entry("reign-agent", ("--help",), frozenset({0})),
 }
 def _run_on_tty(argv: list[str], *, env: dict[str, str], cwd: Path, writable: list[Path],
                 timeout: float) -> subprocess.CompletedProcess:
