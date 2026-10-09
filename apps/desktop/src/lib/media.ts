@@ -1,6 +1,6 @@
 import { LOCAL_CONNECTION_ID } from '@reign/shared'
 
-import { capabilityScoped, reignApi, type OwnerScope } from '@/api/client'
+import { capabilityScoped, type OwnerScope, reignApi } from '@/api/client'
 import type { ReignConnection } from '@/global'
 import { translateNow } from '@/i18n'
 import { desktopFsCacheKey, readDesktopFileDataUrl } from '@/lib/desktop-fs'

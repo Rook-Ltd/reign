@@ -3303,7 +3303,7 @@ export const ru = defineLocale({
     remoteSetupDesc: 'Введите URL вашего шлюза. Reign Desktop определит, нужен токен или вход через браузер.',
     remoteUrlTitle: 'URL шлюза',
     remoteUrlDesc: 'Используйте базовый URL шлюза Reign, включая https:// для удалённых.',
-    remoteUrlPlaceholder: 'https://gateway.example.com/hermes',
+    remoteUrlPlaceholder: 'https://gateway.example.com/reign',
     probing: 'Определяем аутентификацию шлюза...',
     probeError: 'Не удалось подключиться к этому шлюзу Reign.',
     identityProvider: 'ваш провайдер аутентификации',

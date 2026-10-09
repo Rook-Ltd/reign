@@ -16,9 +16,9 @@ import {
   connectionScoped,
   getApiRequestConnection,
   getApiRequestProfile,
-  reignApi,
   type ProfileScope,
-  profileScoped
+  profileScoped,
+  reignApi
 } from './client'
 
 const SESSION_LIST_REQUEST_TIMEOUT_MS = 60_000

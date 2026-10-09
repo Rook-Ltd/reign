@@ -7,7 +7,7 @@ import type {
   ToolsetModelsResponse
 } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, profileScoped } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, reignApi } from './client'
 
 // The optional trailing `profile` on every capability fetcher below is the
 // Capabilities view's profile-scope override: it lets the Skills/Tools/MCP

@@ -172,7 +172,7 @@ Electron `userData/connection.json` remote block:
 {
   "mode": "remote",
   "remote": {
-    "url": "https://hermes.example.com",
+    "url": "https://reign.example.com",
     "authMode": "token",
     "token": { "encoding": "safeStorage", "value": "..." },
     "headers": {

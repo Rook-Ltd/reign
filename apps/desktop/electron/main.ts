@@ -66,9 +66,9 @@ import { createBackendConnectionState } from './backend-connection-state'
 import { BackendDialClaims } from './backend-dial-claim'
 import {
   buildDesktopBackendEnv,
-  reignManagedNodePathEntries,
   normalizeReignHomeRoot,
-  profileBackendParentEnv
+  profileBackendParentEnv,
+  reignManagedNodePathEntries
 } from './backend-env'
 import { createBackendExitRecoveryLatch } from './backend-exit-recovery'
 import { isReauthRequiredError, waitForReignReady } from './backend-health'

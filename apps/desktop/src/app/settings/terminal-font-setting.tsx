@@ -7,8 +7,8 @@ import {
   TERMINAL_FONT_SUGGESTIONS
 } from '@/app/right-sidebar/terminal/terminal-font'
 import { Button } from '@/components/ui/button'
-import { saveReignConfig } from '@/reign'
 import { useI18n } from '@/i18n'
+import { saveReignConfig } from '@/reign'
 import { notifyError } from '@/store/notifications'
 import type { ReignConfigRecord } from '@/types/reign'
 

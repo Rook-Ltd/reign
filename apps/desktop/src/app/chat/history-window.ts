@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { capabilityScoped, reignApi, type ProfileScope } from '@/api/client'
+import { capabilityScoped, type ProfileScope, reignApi } from '@/api/client'
 import {
   cachedTimelineIndex,
   previousPromptRowId,

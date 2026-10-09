@@ -1,11 +1,10 @@
 import type { AppendMessage, ThreadMessage } from '@assistant-ui/react'
+import { useStore } from '@nanostores/react'
 import { JsonRpcGatewayError } from '@reign/shared'
 import { SLASH_COMMAND_RE } from '@reign/shared'
 import { stripAnsi } from '@reign/shared/ansi'
-import { useStore } from '@nanostores/react'
 import { type MutableRefObject, useCallback, useEffect, useRef } from 'react'
 
-import { transcribeAudio } from '@/reign'
 import { useI18n } from '@/i18n'
 import { type ChatMessage, textPart } from '@/lib/chat-messages'
 import { pathLabel } from '@/lib/chat-runtime'
@@ -15,6 +14,7 @@ import { setMutableRef } from '@/lib/mutable-ref'
 import { isWindowsAbsolutePath } from '@/lib/path-compare'
 import { normalize } from '@/lib/text'
 import { transcribeAudioClientDirect } from '@/lib/voice-client-direct'
+import { transcribeAudio } from '@/reign'
 import { clearClarifyRequest } from '@/store/clarify'
 import {
   $composerAttachments,
