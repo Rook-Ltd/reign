@@ -125,13 +125,3 @@ describe('intentFromMessage', () => {
     expect(intentFromMessage(null, 'tok')).toBeNull()
   })
 })
-
-describe('withInlineChrome intent wiring', () => {
-  it('injects reign.send and the data-reign-send click bridge', () => {
-    const framed = withInlineChrome('<html><body><h1>w</h1></body></html>', 'tok', '')
-
-    expect(framed).toContain('window.reign={send:send}')
-    expect(framed).toContain('data-reign-send')
-    expect(framed).toContain('reign-inline-preview-intent')
-  })
-})

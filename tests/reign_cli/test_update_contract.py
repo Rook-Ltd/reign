@@ -28,7 +28,7 @@ def _valid_marker(tmp_path: Path) -> Path:
         "schema": 1,
         "deployment_kind": "image",
         "manager": "docker",
-        "image": "nousresearch/hermes-agent",
+        "image": "asxi9832/reign",
         "version": "1.0.0",
         "revision": "a" * 40,
     }))

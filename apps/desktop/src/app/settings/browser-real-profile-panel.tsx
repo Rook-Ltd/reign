@@ -42,7 +42,7 @@ export function readUseRealProfile(record: Record<string, unknown> | undefined):
 export function BrowserRealProfilePanel({ profile }: BrowserRealProfilePanelProps) {
   const { t } = useI18n()
   const copy = t.settings.toolsets.browserRealProfile
-  const { data: config } = useReignConfigRecord(profile)
+  const { data: config, writeScope } = useReignConfigRecord(profile)
   const setConfig = reignConfigCacheWriter(profile)
   const [busy, setBusy] = useState(false)
 
@@ -65,7 +65,10 @@ export function BrowserRealProfilePanel({ profile }: BrowserRealProfilePanelProp
       setConfig(next)
 
       try {
-        await saveReignConfigRecord(next, profile)
+        // Sparse patch: PUT /api/config deep-merges, and echoing the cached
+        // snapshot would overwrite keys other surfaces changed since it loaded.
+        await saveReignConfigRecord({ browser: { use_real_profile: on } }, writeScope ?? profile)
+
         notify({
           kind: 'info',
           title: on ? copy.enabledTitle : copy.disabledTitle,
@@ -78,7 +81,7 @@ export function BrowserRealProfilePanel({ profile }: BrowserRealProfilePanelProp
         setBusy(false)
       }
     },
-    [config, copy, profile, setConfig]
+    [config, copy, profile, setConfig, writeScope]
   )
 
   return (

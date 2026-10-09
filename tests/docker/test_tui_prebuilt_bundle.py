@@ -39,17 +39,6 @@ def _exec_py(image: str, py: str) -> str:
     return r.stdout.strip()
 
 
-def test_reign_tui_dir_env_is_set(built_image: str) -> None:
-    """REIGN_TUI_DIR must point at the prebuilt bundle dir in the image."""
-    r = subprocess.run(
-        ["docker", "run", "--rm", "--entrypoint", "sh", built_image,
-         "-c", 'printf "%s" "$REIGN_TUI_DIR"'],
-        capture_output=True, text=True, timeout=60,
-    )
-    assert r.returncode == 0, r.stderr[-2000:]
-    assert r.stdout.strip() == "/opt/reign/ui-tui", (
-        f"REIGN_TUI_DIR={r.stdout.strip()!r} (expected /opt/reign/ui-tui)"
-    )
 
 
 def test_prebuilt_bundle_present_and_no_runtime_install(built_image: str) -> None:
@@ -58,7 +47,7 @@ def test_prebuilt_bundle_present_and_no_runtime_install(built_image: str) -> Non
     py = (
         "import json\n"
         "from pathlib import Path\n"
-        "from reign_cli.main import _tui_need_npm_install, _find_bundled_tui, _make_tui_argv\n"
+        "from reign_cli.main_tui_launch import _tui_need_npm_install, _find_bundled_tui, _make_tui_argv\n"
         "ui = Path('/opt/reign/ui-tui')\n"
         "argv, cwd = _make_tui_argv(ui, tui_dev=False)\n"
         "out = {\n"

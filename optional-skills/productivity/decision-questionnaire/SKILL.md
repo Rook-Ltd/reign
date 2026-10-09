@@ -6,7 +6,7 @@ author: "Matt Pocock (mattpocock/skills, to-questionnaire) + Reign"
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [questionnaire, decision, async, stakeholder, discovery, communication]
     related_skills: [meeting-action-items, document-to-action-items]
 ---

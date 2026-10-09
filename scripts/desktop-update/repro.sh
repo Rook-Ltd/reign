@@ -2,7 +2,7 @@
 # repro.sh -- reproduce desktop-update paths against a sandboxed REIGN_HOME.
 #
 # Nothing here touches your real ~/.reign or checkout. Each mode builds (or
-# reuses) a disposable install under /tmp and drives the REAL code path --
+# reuses) a disposable install under $TMPDIR and drives the REAL code path --
 # the actual installer, the actual orchestrator, the actual `reign update`.
 #
 #   repro.sh shim          shim UI only: success event after 6s
@@ -18,7 +18,7 @@
 #                          sandbox preflight, opt-out fallbacks) -- asserts
 #                          every outcome without touching a real install
 #
-# The sandbox persists between runs (~/tmp is fine to nuke): fresh reuses
+# The sandbox persists between runs (the scratch dir is fine to nuke): fresh reuses
 # nothing, behind/error reuse the last sandbox install when present because
 # a from-scratch install is minutes.
 #
@@ -93,9 +93,9 @@ case "$MODE" in
     ;;
   gate)
     # Pure-decision matrix for the linux relaunch gate. Builds a fake
-    # checkout layout under /tmp; --self-test-gate prints the decision and
+    # checkout layout under $TMPDIR; --self-test-gate prints the decision and
     # exits without running an update.
-    G="/tmp/reign-gate-test.$$"
+    G="$(mktemp -d -t reign-gate-test.XXXXXX)"
     UNPACKED="$G/reign/apps/desktop/release/linux-unpacked"
     mkdir -p "$UNPACKED"
     touch "$UNPACKED/reign" && chmod +x "$UNPACKED/reign"
@@ -136,7 +136,7 @@ case "$MODE" in
     # of the outcome. Each case runs the REAL orchestrator (--no-ui) against
     # a fake install whose `reign` stub exits 0 instantly, so the flow
     # reaches finish() with FINAL_CODE=0 and exercises the launch leg.
-    L="/tmp/reign-launch-test.$$"
+    L="$(mktemp -d -t reign-launch-test.XXXXXX)"
     fails=0
     expect_msg() { # name python-expr
       if python3 -c "import json,sys; d=json.load(open('$L/.reign-update-result.json')); sys.exit(0 if ($2) else 1)"; then

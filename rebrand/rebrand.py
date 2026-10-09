@@ -187,7 +187,12 @@ class Rebrander:
             if p.exists():
                 gone.append(rel)
                 if apply:
-                    subprocess.run(["git", "rm", "-r", "-q", "--", rel], cwd=ROOT, check=True)
+                    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=ROOT, capture_output=True).returncode == 0
+                    if tracked:
+                        subprocess.run(["git", "rm", "-r", "-q", "--", rel], cwd=ROOT, check=True)
+                    else:  # untracked leftovers (test pollution such as MagicMock/): just delete
+                        import shutil
+                        shutil.rmtree(p) if p.is_dir() else p.unlink()
         self.stats["paths_deleted"] = len(gone)
         return gone
 

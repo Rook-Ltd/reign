@@ -1,0 +1,126 @@
+name: Upstream Sync
+
+# Weekly re-cut of Reign from the newest upstream hermes-agent release tag.
+#
+#   schedule ──► pick newest v* tag ──► rebrand/sync_upstream.py --ci
+#                                           │
+#              ┌────────────────────────────┴───────────────────────────┐
+#              ▼ clean                                                  ▼ blocked (overlay conflicts)
+#   push sync/upstream-<tag>                                  upload report, open/update an issue;
+#   force-update `dev` (dev installs pick it up on `reign update`)   resolve locally with
+#   open PR sync/upstream-<tag> -> main  (approval gate)         python rebrand/sync_upstream.py --ref <tag> --keep-worktree
+#
+# The PR is the approval step: review, let CI run, merge to main. Nothing
+# reaches main without a human merging. Set the UPSTREAM_SYNC_TOKEN secret
+# (fine-grained PAT: contents + pull-requests write) so the PR triggers CI;
+# PRs opened with the default GITHUB_TOKEN do not start pull_request workflows.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'        # Mondays 06:17 UTC
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Upstream ref to sync to (default: newest v* release tag)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # 10.2.0
+        with:
+          python-version: '3.11'
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install project (for the codemod and lockfile regeneration)
+        run: uv sync --locked --python 3.11 --extra dev
+
+      - name: Fetch upstream and pick the target ref
+        id: pick
+        run: |
+          set -euo pipefail
+          git config user.name  "reign-sync[bot]"
+          git config user.email "reign-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/NousResearch/hermes-agent.git
+          git fetch -q upstream --tags
+          REF='${{ inputs.ref }}'
+          if [ -z "$REF" ]; then
+            REF=$(git tag -l 'v*' | sort -V | tail -1)
+          fi
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+          echo "slug=$(echo "$REF" | tr '/' '-')" >> "$GITHUB_OUTPUT"
+          echo "Target: $REF ($(git rev-parse --short "$REF"))"
+
+      - name: Re-cut Reign from upstream
+        id: sync
+        run: |
+          set +e
+          REIGN_SYNC_WORKTREE="$RUNNER_TEMP/reign-sync" .venv/bin/python rebrand/sync_upstream.py \
+            --ci --ref '${{ steps.pick.outputs.ref }}' --branch 'sync/upstream-${{ steps.pick.outputs.slug }}'
+          code=$?
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          [ -f rebrand/audit/sync-report.md ] && cat rebrand/audit/sync-report.md >> "$GITHUB_STEP_SUMMARY"
+          case "$code" in 0|2|3) exit 0 ;; *) exit "$code" ;; esac
+
+      - name: Nothing to sync
+        if: steps.sync.outputs.code == '3'
+        run: echo "main is already synced to ${{ steps.pick.outputs.ref }}"
+
+      - name: Push sync branch, update dev, open PR
+        if: steps.sync.outputs.code == '0'
+        run: |
+          set -euo pipefail
+          BR='sync/upstream-${{ steps.pick.outputs.slug }}'
+          git push -f origin "$BR:$BR"
+          git push -f origin "$BR:dev"
+          PR=$(gh pr list --head "$BR" --state open --json number --jq '.[0].number' || true)
+          if [ -z "$PR" ]; then
+            gh pr create --head "$BR" --base main \
+              --title "Reign: sync with upstream ${{ steps.pick.outputs.ref }}" \
+              --body-file rebrand/audit/sync-report.md
+          else
+            gh pr edit "$PR" --body-file rebrand/audit/sync-report.md
+          fi
+          echo "dev now tracks $BR; merge the PR to promote to main" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Report a blocked sync
+        if: steps.sync.outputs.code == '2'
+        run: |
+          set -euo pipefail
+          TITLE='Upstream sync blocked: ${{ steps.pick.outputs.ref }} needs manual conflict resolution'
+          { echo "Run locally, resolve the conflicts in the kept worktree, run the tests, then push the sync branch:"; echo;
+            echo '```'; echo 'git fetch upstream --tags'; echo 'python rebrand/sync_upstream.py --ref ${{ steps.pick.outputs.ref }} --keep-worktree'; echo '```'; echo;
+            cat rebrand/audit/sync-report.md; } > /tmp/issue.md
+          N=$(gh issue list --search "in:title \"$TITLE\"" --state open --json number --jq '.[0].number' || true)
+          if [ -z "$N" ]; then gh issue create --title "$TITLE" --body-file /tmp/issue.md; else gh issue comment "$N" --body-file /tmp/issue.md; fi
+          exit 1
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: sync-report
+          path: rebrand/audit/sync-report.md
+          if-no-files-found: ignore

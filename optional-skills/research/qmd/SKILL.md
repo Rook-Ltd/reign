@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [macos, linux]
 metadata:
-  reign:
+  hermes:
     tags: [Search, Knowledge-Base, RAG, Notes, MCP, Local-AI]
     related_skills: [obsidian, reign, arxiv]
 ---
@@ -291,9 +291,9 @@ cat > ~/Library/LaunchAgents/com.qmd.daemon.plist << 'EOF'
   <key>KeepAlive</key>
   <true/>
   <key>StandardOutPath</key>
-  <string>/tmp/qmd-daemon.log</string>
+  <string>/Users/YOU/.reign/cache/scratch/qmd-daemon.log</string>
   <key>StandardErrorPath</key>
-  <string>/tmp/qmd-daemon.log</string>
+  <string>/Users/YOU/.reign/cache/scratch/qmd-daemon.log</string>
 </dict>
 </plist>
 EOF

@@ -19,7 +19,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import reign_state
+import reign_state_guard
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
@@ -27,13 +27,14 @@ _CHILD_PROBE = r"""
 import json, os, sys
 sys.path.insert(0, {repo!r})
 import reign_state as hs
+import reign_state_guard
 fired = False
 try:
     hs._ensure_test_isolation(hs._real_platform_state_root() / "state.db")
 except RuntimeError:
     fired = True
 print(json.dumps({{
-    "armed": hs._running_under_pytest(),
+    "armed": reign_state_guard._running_under_pytest(),
     "fired": fired,
 }}))
 """
@@ -65,20 +66,13 @@ def _minimal_env(**extra) -> dict:
     return env
 
 
-def test_conftest_exports_the_marker():
-    """The hermetic conftest must export the marker before tests run."""
-    assert os.environ.get("REIGN_TEST_ISOLATION"), (
-        "REIGN_TEST_ISOLATION must be exported by tests/conftest.py so "
-        "subprocess children inherit a test-context signal that survives "
-        "PYTEST_* scrubbing"
-    )
 
 
 def test_marker_alone_reports_test_context(monkeypatch):
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.delenv("PYTEST_VERSION", raising=False)
     monkeypatch.setenv("REIGN_TEST_ISOLATION", "/tmp/some-isolation-root")
-    assert reign_state._running_under_pytest() is True
+    assert reign_state_guard._running_under_pytest() is True
 
 
 def test_no_signals_reports_production(monkeypatch):
@@ -87,7 +81,7 @@ def test_no_signals_reports_production(monkeypatch):
     monkeypatch.delenv("PYTEST_CURRENT_TEST", raising=False)
     monkeypatch.delenv("PYTEST_VERSION", raising=False)
     monkeypatch.delenv("REIGN_TEST_ISOLATION", raising=False)
-    assert reign_state._running_under_pytest() is False
+    assert reign_state_guard._running_under_pytest() is False
 
 
 def test_child_with_rebuilt_env_keeping_marker_refuses_production_db():

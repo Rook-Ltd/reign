@@ -6,7 +6,7 @@ author: Teknium (teknium1), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Documentation, Mermaid, Architecture, Diagrams, Wiki, Code-Analysis]
     related_skills: [codebase-inspection, github]
 ---

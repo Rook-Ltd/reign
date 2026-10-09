@@ -15,13 +15,13 @@ Read the live Reign desktop DOM/CSS over CDP.
 | | |
 |---|---|
 | Source | Bundled (installed by default) |
-| Path | `skills/software-development\inspecting-reign-desktop-dom` |
+| Path | `skills/software-development/inspecting-reign-desktop-dom` |
 | Version | `1.0.0` |
 | Author | Reign |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `desktop`, `electron`, `cdp`, `dom`, `ui-verification`, `self-inspection` |
-| Related skills | [`node-inspect-debugger`](/docs/user-guide/skills/bundled/software-development/software-development-node-inspect-debugger), [`systematic-debugging`](/docs/user-guide/skills/bundled/software-development/software-development-systematic-debugging), [`dogfood`](/docs/user-guide/skills/bundled/software-development/software-development-dogfood) |
+| Related skills | [`node-inspect-debugger`](../../bundled/software-development/software-development-node-inspect-debugger.md), [`systematic-debugging`](../../bundled/software-development/software-development-systematic-debugging.md), [`dogfood`](../../bundled/software-development/software-development-dogfood.md) |
 
 ## Reference: full SKILL.md
 
@@ -140,10 +140,10 @@ When there is no port, or you must not disturb the user's window:
 
 ```bash
 cd apps/desktop
-REIGN_HOME=/tmp/cdp-probe-home \
+REIGN_HOME=$HOME/.reign/cache/scratch/cdp-probe-home \
 REIGN_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 \
 REIGN_DESKTOP_CDP_PORT=9333 \
-  npx electron . --user-data-dir=/tmp/cdp-probe-userdata
+  npx electron . --user-data-dir=$HOME/.reign/cache/scratch/cdp-probe-userdata
 ```
 
 The separate `--user-data-dir` dodges Electron's single-instance lock, so it

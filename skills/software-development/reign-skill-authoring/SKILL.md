@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [skills, authoring, reign, conventions, skill-md]
     related_skills: [requesting-code-review]
 ---
@@ -62,7 +62,7 @@ author: Real Name (github-handle), Reign
 license: MIT
 platforms: [linux, macos, windows]   # audit, don't guess — see Platform Gating
 metadata:
-  reign:
+  hermes:
     tags: [Short, Descriptive, Tags]
     related_skills: [other-in-repo-skill]
 ---
@@ -101,6 +101,7 @@ Bad: `Use when a user asks to monitor named competitors or companies for product
 | `osascript`, `defaults`, `pmset` | `[macos]` |
 | `apt`/`systemctl`/`/proc` | `[linux]` |
 
+<!-- no-tmp: ok — names the anti-pattern skill authors must avoid -->
 POSIX-only signals to search for in `scripts/`: `fcntl`, `termios`, `pty`, `os.fork`, `os.killpg`, `signal.SIGKILL`, `os.kill(pid, 0)` liveness checks, hardcoded `/tmp` `/proc` `/etc`. Default posture: fix cross-platform first (`tempfile.gettempdir()`, `pathlib.Path`, `psutil.pid_exists`); gate narrower only when the dependency is genuinely platform-bound, and say why in `## Pitfalls`.
 
 ## Size Limits
@@ -199,7 +200,7 @@ A skill exists to make the agent's process more predictable — the agent reliab
 - [ ] Tier decided deliberately (bundled bar: 5+ sessions/month; else `optional-skills/`)
 - [ ] File at `skills/<category>/<name>/SKILL.md` or `optional-skills/<category>/<name>/SKILL.md`
 - [ ] Frontmatter starts at byte 0 with `---`, closes with `\n---\n`
-- [ ] `name`, `description`, `version`, `author`, `license`, `platforms`, `metadata.reign.{tags, related_skills}` all present
+- [ ] `name`, `description`, `version`, `author`, `license`, `platforms`, `metadata.hermes.{tags, related_skills}` all present
 - [ ] Description ≤ 60 chars, one sentence, ends with a period, no marketing words
 - [ ] `author` credits the human contributor first
 - [ ] `platforms:` audited against actual prose/scripts, not copied from a sibling

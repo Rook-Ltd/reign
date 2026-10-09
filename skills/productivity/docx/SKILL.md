@@ -6,7 +6,7 @@ author: Rook
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [word, docx, documents, office, templates, revisions, comments]
     category: productivity
     related_skills: [pdf, xlsx, powerpoint]

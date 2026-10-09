@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Prices, Availability, Shopping, Travel, Alerts]
     related_skills: [maps]
 ---

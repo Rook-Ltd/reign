@@ -15,13 +15,13 @@ Import an OpenClaw setup (memories, skills) into Reign.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/migration/openclaw-migration` |
-| Path | `optional-skills/migration\openclaw-migration` |
+| Path | `optional-skills/migration/openclaw-migration` |
 | Version | `1.0.0` |
 | Author | Reign (Rook) |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Migration`, `OpenClaw`, `Reign`, `Memory`, `Persona`, `Import` |
-| Related skills | [`reign`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-reign) |
+| Related skills | [`reign`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-reign.md) |
 
 ## Reference: full SKILL.md
 

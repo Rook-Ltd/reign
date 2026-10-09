@@ -9,7 +9,7 @@ description: "Plugins shipped with Reign that run automatically via lifecycle ho
 
 Reign ships a small set of plugins bundled with the repository. They live under `<repo>/plugins/<name>/` and load automatically alongside user-installed plugins in `~/.reign/plugins/`. They use the same plugin surface as third-party plugins — hooks, tools, slash commands — just maintained in-tree.
 
-See the [Plugins](/user-guide/features/plugins) page for the general plugin system, and [Build a Reign Plugin](/developer-guide/plugins) to write your own.
+See the [Plugins](./plugins.md) page for the general plugin system, and [Build a Reign Plugin](../../developer-guide/plugins/index.md) to write your own.
 
 ## How discovery works
 
@@ -61,7 +61,7 @@ The repo ships these bundled plugins under `plugins/`. All are opt-in — enable
 | `teams_pipeline` | standalone | Microsoft Teams meeting pipeline — Graph-backed, transcript-first meeting summaries |
 | `spotify` | backend (7 tools) | Native Spotify playback, queue, search, playlists, albums, library |
 | `google_meet` | standalone | Join Meet calls, live-caption transcription, optional realtime duplex audio |
-| `image_gen/openai` | image backend | OpenAI `gpt-image-2` image generation backend (alternative to FAL) |
+| `image_gen/openai` | image backend | OpenAI GPT Image 2 and 2.5 Flare/Sunburst generation and editing (API key) |
 | `image_gen/openai-codex` | image backend | OpenAI image generation via Codex OAuth |
 | `image_gen/xai` | image backend | xAI `grok-2-image` backend |
 | `reign-achievements` | dashboard tab | Steam-style collectible badges generated from your real Reign session history |
@@ -77,7 +77,7 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 
 | Hook | Behaviour |
 |---|---|
-| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `REIGN_HOME` or `/tmp/reign-*`, track it silently as `test` / `temp` / `cron-output`. |
+| `post_tool_call` | When `write_file` / `terminal` / `patch` creates a file matching `test_*`, `tmp_*`, or `*.test.*` inside `REIGN_HOME` or `/tmp/reign-*`, track it silently as `test` / `temp` / `cron-output`. | <!-- no-tmp: ok — documents the plugin's scope guard -->
 | `on_session_end` | If any test files were auto-tracked during the turn, run the safe `quick` cleanup and log a one-line summary. Stays silent otherwise. |
 
 **Deletion rules:**
@@ -111,7 +111,8 @@ Auto-tracks and removes ephemeral files created during sessions — test scripts
 | `tracked.json.bak` | Atomic-write backup of the above |
 | `cleanup.log` | Append-only audit trail of every track / skip / reject / delete |
 
-**Safety** — cleanup only ever touches paths under `REIGN_HOME` or `/tmp/reign-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end.
+<!-- no-tmp: ok — documents the plugin's scope guard -->
+**Safety** — cleanup only ever touches paths under `REIGN_HOME` or `/tmp/reign-*`. Windows mounts (`/mnt/c/...`) are rejected. Well-known top-level state dirs (`logs/`, `memories/`, `sessions/`, `cron/`, `cache/`, `skills/`, `plugins/`, `disk-cleanup/` itself) are never removed even when empty — a fresh install does not get gutted on first session end. User project trees (`workspace/`, `projects/`, `plans/`, `home/`) are never tracked or swept at all: a `test_*.py` or `tmp_*` file inside your project is source code, not scratch. `kanban/` (task attachments and workspaces) is never tracked either, and a tracked *directory* under a protected top level such as `cache/` is never removed — only the files inside it age out.
 
 **Enabling:** `reign plugins enable disk-cleanup` (or check the box in `reign plugins`).
 
@@ -208,7 +209,44 @@ NeMo Relay is no longer a bundled Reign plugin. Do not run `reign plugins enable
 
 To opt into Relay middleware or exporters, create a standard Relay `plugins.toml`, then set `REIGN_NEMO_RELAY_PLUGINS_TOML` to that file before starting Reign. The policy is process-wide for every profile hosted by that Reign process. See the [NeMo Relay observability configuration](https://docs.nvidia.com/nemo/relay/configure-plugins/observability/about) for ATOF, ATIF, and OpenTelemetry options.
 
-The old `REIGN_NEMO_RELAY_ATOF_*` and `REIGN_NEMO_RELAY_ATIF_*` settings no longer activate exporters. `reign doctor` reports these stale settings when no replacement `plugins.toml` is selected.
+The old `REIGN_NEMO_RELAY_ATOF_*` and `REIGN_NEMO_RELAY_ATIF_*` settings no longer activate exporters — a `.env` that still carries them (and no `REIGN_NEMO_RELAY_PLUGINS_TOML`) exports **nothing**, and the gateway logs one warning saying so. `reign doctor` reports these stale settings when no replacement `plugins.toml` is selected.
+
+**Automatic migration.** `reign update` (and `reign migrate relay`, or `reign migrate relay --all-profiles` for every profile home) converts the legacy variables into `<reign home>/relay-plugins.toml`, sets `REIGN_NEMO_RELAY_PLUGINS_TOML` in that profile's `.env`, and comments the legacy lines out (nothing is deleted). Under a multiplexed gateway every profile home gets its own file. The generated file is validated through Relay before it is written; this is the shape it produces (note the `type = "file"` sink discriminator — a sink without it is rejected):
+
+```toml
+version = 1
+
+[[components]]
+kind = "observability"
+enabled = true
+
+[components.config]
+version = 4
+enable_full_payloads = false
+
+[components.config.atof]
+enabled = true
+
+[[components.config.atof.sinks]]
+type = "file"
+output_directory = "/home/you/.reign/telemetry/nemo-relay/atof"
+filename = "reign-atof.jsonl"
+mode = "append"
+
+[components.config.atif]
+enabled = true
+agent_name = "Reign"
+model_name = "unknown"
+output_directory = "/home/you/.reign/telemetry/nemo-relay/atif"
+filename_template = "trajectory-{session_id}.json"
+
+[components.config.policy]
+unknown_component = "warn"
+unknown_field = "warn"
+unsupported_value = "error"
+```
+
+Then add `REIGN_NEMO_RELAY_PLUGINS_TOML=/home/you/.reign/relay-plugins.toml` to `.env` and restart the gateway.
 
 #### Session-span segmentation (continuous sessions)
 
@@ -236,7 +274,7 @@ Lets the agent **join, transcribe, and participate in Google Meet calls** — ta
 **What it adds:**
 
 - A headless virtual participant that joins a Meet URL using browser automation
-- Live transcription of the meeting audio via the configured STT provider
+- Live transcription derived from Meet's own live captions (the bot never decodes the meeting audio, so no STT billing — and captions are lossy and English-biased)
 - A `meet_join` / `meet_status` / `meet_transcript` / `meet_leave` / `meet_say` toolset the agent invokes to join calls, poll the live transcript, and act on what it heard
 - Post-meeting artifacts (transcript, status) saved under `~/.reign/workspace/meetings/<meeting_id>/`
 
@@ -255,6 +293,8 @@ Usage from chat:
 > "Join meet.google.com/abc-defg-hij and take notes. After the call, send me a summary with action items."
 
 The agent kicks off the meeting join, streams the transcription back into its context as the call proceeds, and produces a structured summary when the meeting ends (or when you tell it to stop).
+
+**Realtime mode (`mode='realtime'`) is speak-only on the audio side.** The bot's replies are synthesized by OpenAI Realtime and played into the call through a virtual microphone; what it *hears* is still the caption stream, not the meeting audio — nothing from the call is sent to the Realtime session. `meet_status` reports `micState` (`unmuted`, `unmuted_clicked` when the bot had to unmute itself after admission, or `unknown` when Meet's toggle was not found) so a silent bot can be diagnosed.
 
 **When to use it:** recurring standups where you want a bot to transcribe + summarize for async attendees; deposition-style interviews where you want structured notes; any case where you'd otherwise need Fireflies / Otter / Grain. When you'd rather not have an AI listening in — don't enable it.
 
@@ -313,7 +353,7 @@ Adds a **Steam-style achievements tab to the dashboard** — 60+ collectible, ti
 
 ## Adding a bundled plugin
 
-Bundled plugins are written exactly like any other Reign plugin — see [Build a Reign Plugin](/developer-guide/plugins). The only differences are:
+Bundled plugins are written exactly like any other Reign plugin — see [Build a Reign Plugin](../../developer-guide/plugins/index.md). The only differences are:
 
 - Directory lives at `<repo>/plugins/<name>/` instead of `~/.reign/plugins/<name>/`
 - Manifest source is reported as `bundled` in `reign plugins list`

@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Research, Archives, Wayback, Paywall, WAF, Fallback]
     related_skills: [grounded-citations]
 ---
@@ -79,7 +79,7 @@ Rate-limits aggressively (429) and rotates domains, so iterate:
 
 ```bash
 for d in archive.ph archive.md archive.li archive.is; do
-  curl -sL --max-time 20 "https://$d/newest/{URL}" -o /tmp/page.html \
+  curl -sL --max-time 20 "https://$d/newest/{URL}" -o ~/.reign/cache/scratch/page.html \
     -w "%{http_code}" && break
 done
 ```

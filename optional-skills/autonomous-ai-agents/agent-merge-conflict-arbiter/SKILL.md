@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Multi-Agent, Git, Merge-Conflict, Kanban, Arbitration]
     related_skills: [reign]
 ---

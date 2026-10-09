@@ -60,7 +60,7 @@ def _install_modal_test_modules(
     _reset_modules(("tools", "reign_cli", "modal"))
 
     reign_cli = types.ModuleType("reign_cli")
-    reign_cli.__path__ = []  # type: ignore[attr-defined]
+    reign_cli.__path__ = [str(REPO_ROOT / "reign_cli")]  # type: ignore[attr-defined]
     sys.modules["reign_cli"] = reign_cli
     reign_home = tmp_path / "reign-home"
     os.environ["REIGN_HOME"] = str(reign_home)
@@ -75,6 +75,13 @@ def _install_modal_test_modules(
     env_package = types.ModuleType("tools.environments")
     env_package.__path__ = [str(TOOLS_DIR / "environments")]  # type: ignore[attr-defined]
     sys.modules["tools.environments"] = env_package
+
+    # The faked modal module below answers every SDK touch; the real lazy-dep
+    # gate (a version-pinned metadata check) must not refuse first on an
+    # install without the modal extra.
+    sys.modules["tools.lazy_deps"] = types.SimpleNamespace(
+        ensure=lambda *args, **kwargs: None
+    )
 
     class _DummyBaseEnvironment:
         def __init__(self, cwd: str, timeout: int, env=None):

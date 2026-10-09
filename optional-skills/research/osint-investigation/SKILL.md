@@ -6,7 +6,7 @@ platforms: [linux, macos, windows]
 author: Reign (adapted from ShinMegamiBoson/OpenPlanter, MIT)
 license: MIT
 metadata:
-  reign:
+  hermes:
     tags: [osint, investigation, public-records, sec, sanctions, corporate-registry, property, courts, due-diligence, journalism]
     category: research
     related_skills: [domain-intel, arxiv]

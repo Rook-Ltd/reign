@@ -22,7 +22,8 @@ reign_cli/proxy_cli.py               Wizard + slash command handlers.
                                        status,disable,config}`.  Wires the
                                        core module into argparse.
 
-reign_cli/main.py:_dispatch_egress   Top-level subparser dispatcher.
+reign_cli/subcommands/egress.py:_dispatch_egress
+                                       Top-level subparser dispatcher.
                                        dest='egress_command' (intentionally
                                        disjoint from the inbound OAuth
                                        `reign proxy` subparser, which uses
@@ -45,18 +46,18 @@ tools/environments/docker.py
                                        _REIGN_EGRESS_NODE_OPTIONS_APPEND
                                        sentinel, enforce_on_docker precedence.
 
-tests/test_iron_proxy.py              Hermetic tests (~70).  Binary install
+tests/agent/test_iron_proxy.py              Hermetic tests (~70).  Binary install
                                        path, config build, mappings I/O,
                                        subprocess lifecycle, docker arg builder,
                                        deny CIDR defaults, bind policy, CA
                                        TOCTOU, ensure_audit_log behaviour, etc.
 
-tests/test_iron_proxy_cli.py          CLI handler unit tests (~20).  Argparse
+tests/reign_cli/test_iron_proxy_cli.py          CLI handler unit tests (~20).  Argparse
                                        wiring, fail-loud paths, BWS refresh
                                        wire-up, dest='egress_command'
                                        regression guard.
 
-tests/test_iron_proxy_e2e.py          Live E2E (gated on REIGN_RUN_E2E=1).
+tests/agent/test_iron_proxy_e2e.py          Live E2E (gated on REIGN_RUN_E2E=1).
                                        Real iron-proxy binary, real curl,
                                        end-to-end token swap verified.
 ```
@@ -297,14 +298,14 @@ iron-proxy writes line-delimited JSON to `~/.reign/proxy/iron-proxy.log` on the 
 
 ```bash
 # Hermetic suite (no network, no real binary)
-scripts/run_tests.sh tests/test_iron_proxy.py tests/test_iron_proxy_cli.py
+scripts/run_tests.sh tests/agent/test_iron_proxy.py tests/reign_cli/test_iron_proxy_cli.py
 
 # Live E2E (real binary, real curl, real CONNECT tunnel)
-REIGN_RUN_E2E=1 scripts/run_tests.sh tests/test_iron_proxy_e2e.py
+REIGN_RUN_E2E=1 scripts/run_tests.sh tests/agent/test_iron_proxy_e2e.py
 
 # Live PTY smoke against `reign egress`
-REIGN_HOME=/tmp/reign-egress-test python3 -m reign_cli.main egress --help
-REIGN_HOME=/tmp/reign-egress-test python3 -m reign_cli.main egress setup --help
+REIGN_HOME=$HOME/.reign/cache/scratch/reign-egress-test python3 -m reign_cli.main egress --help
+REIGN_HOME=$HOME/.reign/cache/scratch/reign-egress-test python3 -m reign_cli.main egress setup --help
 ```
 
 The CLI uses argparse, so `--help` is a good first probe for "did my new flag register correctly".
