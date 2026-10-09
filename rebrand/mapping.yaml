@@ -618,6 +618,15 @@ post_replace:
     - plain: "    const dark = await importThemeWithCleanEnv()\n    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })\n\n    const cases: Array<[string, string, string]> = ["
       with: "    //\n    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped\n    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the\n    // ladder knobs are still the ones fitted against these literals.\n    const { buildPalette } = await importThemeWithCleanEnv()\n    const dark = {\n      DARK_THEME: {\n        color: buildPalette(\n          {\n            accent: '#FFBF00',\n            activeRow: '#333355',\n            bg: '#101014',\n            border: '#CD7F32',\n            error: '#ef5350',\n            ok: '#4caf50',\n            primary: '#FFD700',\n            prompt: '#FFF8DC',\n            selection: '#3a3a55',\n            shellDollar: '#4dabf7',\n            statusBad: '#FF8C00',\n            statusCritical: '#FF6B6B',\n            statusGood: '#8FBC8F',\n            statusWarn: '#FFD700',\n            surface: '#1a1a2e',\n            text: '#FFF8DC',\n            warn: '#ffa726'\n          },\n          false\n        )\n      }\n\
         \    }\n    const light = {\n      LIGHT_THEME: {\n        color: buildPalette(\n          {\n            accent: '#956E00',\n            bg: '#ffffff',\n            border: '#A56628',\n            error: '#C14240',\n            ok: '#367E39',\n            primary: '#867000',\n            prompt: '#2B2014',\n            shellDollar: '#377BB3',\n            statusBad: '#A65A00',\n            statusCritical: '#B94D4D',\n            statusGood: '#5C7A5C',\n            statusWarn: '#867000',\n            text: '#3D2F13',\n            warn: '#956115'\n          },\n          true\n        )\n      }\n    }\n\n    const cases: Array<[string, string, string]> = ["
+  # Last, after the ci.yaml rule that keys on `runs-on: ubuntu-latest`: the account's included
+  # hosted minutes ran out (2026-10-09) and every short ubuntu job bills a whole minute, so all
+  # Linux jobs run on reign1 too. Windows and macOS lanes have no self-hosted equivalent.
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+    replace:
+      - regex: '(runs-on|runner|default): ubuntu-latest\b(?!-)'
+        with:  '\1: self-hosted'
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
