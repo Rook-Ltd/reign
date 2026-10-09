@@ -9,7 +9,7 @@ prerequisites:
   env_vars: [MSGRAPH_TENANT_ID, MSGRAPH_CLIENT_ID, MSGRAPH_CLIENT_SECRET]
   commands: [reign]
 metadata:
-  reign:
+  hermes:
     tags: [Teams, Microsoft Graph, Meetings, Productivity, Operations]
     # Channel-gated: this pipeline only makes sense on the Teams gateway
     # channel (and in cron jobs, where its scheduled summary/replay work

@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [macos]
 metadata:
-  reign:
+  hermes:
     tags: [Reminders, tasks, todo, macOS, Apple]
 prerequisites:
   commands: [remindctl]

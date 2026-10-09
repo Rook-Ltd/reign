@@ -6,7 +6,7 @@ author: Memento AI
 license: MIT
 platforms: [macos, linux]
 metadata:
-  reign:
+  hermes:
     tags: [Education, Flashcards, Spaced Repetition, Learning, Quiz, YouTube]
     requires_toolsets: [terminal]
     category: productivity

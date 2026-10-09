@@ -7,7 +7,7 @@ license: MIT
 dependencies: []
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [ASCII, Art, Banners, Creative, Unicode, Text-Art, pyfiglet, figlet, cowsay, boxes]
     related_skills: [excalidraw]
 
@@ -234,14 +234,14 @@ Large collection of classic ASCII art organized by subject. Art is inside HTML `
 **Step 1 — Fetch the page:**
 
 ```bash
-curl -s 'https://ascii.co.uk/art/cat' -o /tmp/ascii_art.html
+curl -s 'https://ascii.co.uk/art/cat' -o ~/.reign/cache/scratch/ascii_art.html
 ```
 
 **Step 2 — Extract art from pre tags:**
 
 ```python
-import re, html
-with open('/tmp/ascii_art.html') as f:
+import os, re, html
+with open(os.path.expanduser('~/.reign/cache/scratch/ascii_art.html')) as f:
     text = f.read()
 arts = re.findall(r'<pre[^>]*>(.*?)</pre>', text, re.DOTALL)
 for art in arts:

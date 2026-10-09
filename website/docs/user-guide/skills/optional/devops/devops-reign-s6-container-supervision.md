@@ -15,13 +15,13 @@ Modify or debug s6 services in the Reign Docker image.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/devops/reign-s6-container-supervision` |
-| Path | `optional-skills/devops\reign-s6-container-supervision` |
+| Path | `optional-skills/devops/reign-s6-container-supervision` |
 | Version | `1.0.0` |
 | Author | Reign |
 | License | MIT |
 | Platforms | linux |
 | Tags | `docker`, `s6`, `supervision`, `gateway`, `profiles` |
-| Related skills | [`reign`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-reign) |
+| Related skills | [`reign`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-reign.md) |
 
 ## Reference: full SKILL.md
 

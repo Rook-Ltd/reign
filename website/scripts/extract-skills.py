@@ -288,7 +288,7 @@ def extract_local_skills():
             tags = []
             metadata = fm.get("metadata")
             if isinstance(metadata, dict):
-                reign_meta = metadata.get("reign", {})
+                reign_meta = metadata.get("hermes", {})
                 if isinstance(reign_meta, dict):
                     tags = reign_meta.get("tags", [])
             if not tags:

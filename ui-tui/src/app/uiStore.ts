@@ -33,6 +33,7 @@ const buildUiState = (): UiState => ({
   sid: null,
   status: 'summoning reign…',
   statusBar: 'top',
+  storedSid: null,
   statusBarFields: null,
   streaming: true,
   timestamps: false,

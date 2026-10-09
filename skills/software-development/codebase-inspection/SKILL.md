@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [LOC, Code Analysis, pygount, Codebase, Metrics, Repository]
     related_skills: [github]
 prerequisites:

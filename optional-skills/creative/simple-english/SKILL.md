@@ -6,7 +6,7 @@ author: AminBlg (https://github.com/AminBlg/SimpleEnglish), ported by Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [writing, documentation, ste, asd-ste100, technical-writing, editing, anti-ai-slop]
     category: creative
     homepage: https://github.com/AminBlg/SimpleEnglish

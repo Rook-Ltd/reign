@@ -15,13 +15,13 @@ Rewrite text to ASD-STE100 Simplified Technical English.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/creative/simple-english` |
-| Path | `optional-skills/creative\simple-english` |
+| Path | `optional-skills/creative/simple-english` |
 | Version | `1.2.0` |
 | Author | AminBlg (https://github.com/AminBlg/SimpleEnglish), ported by Reign |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `writing`, `documentation`, `ste`, `asd-ste100`, `technical-writing`, `editing`, `anti-ai-slop` |
-| Related skills | [`humanizer`](/docs/user-guide/skills/bundled/creative/creative-humanizer) |
+| Related skills | [`humanizer`](../../bundled/creative/creative-humanizer.md) |
 
 ## Reference: full SKILL.md
 

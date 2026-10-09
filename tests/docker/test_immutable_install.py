@@ -3,10 +3,11 @@
 Build the real image and verify at runtime:
 
   1. /opt/reign is not writable by the reign user (immutable install tree)
-  2. PYTHONDONTWRITEBYTECODE and REIGN_DISABLE_LAZY_INSTALLS are set
-  3. /opt/reign/.install_method contains "docker" (code-scoped stamp)
-  4. $REIGN_HOME/.install_method is NOT stamped as "docker" by stage2
-  5. A stale "docker" stamp in $REIGN_HOME is healed (removed) on boot
+  2. A stale "docker" stamp in $REIGN_HOME is healed (removed) on boot
+
+The hosted write-policy env (PYTHONDONTWRITEBYTECODE,
+REIGN_DISABLE_LAZY_INSTALLS, ...) is covered by
+test_immutable_install_permissions.py.
 """
 from __future__ import annotations
 
@@ -53,25 +54,6 @@ def test_install_tree_not_writable_by_reign(
     )
 
 
-def test_reign_disable_lazy_installs_and_dont_write_bytecode(
-    built_image: str, container_name: str,
-) -> None:
-    """The container must set PYTHONDONTWRITEBYTECODE and
-    REIGN_DISABLE_LAZY_INSTALLS=1 so no .pyc files are written to the
-    immutable install tree and no lazy installs attempt to modify it."""
-    start_container(built_image, container_name)
-
-    r = docker_exec_sh(
-        container_name,
-        'test "$PYTHONDONTWRITEBYTECODE" = "1" && '
-        'test "$REIGN_DISABLE_LAZY_INSTALLS" = "1" && '
-        'echo ENV_OK || echo ENV_MISSING',
-        timeout=10,
-    )
-    assert "ENV_OK" in r.stdout, (
-        f"expected PYTHONDONTWRITEBYTECODE=1 and "
-        f"REIGN_DISABLE_LAZY_INSTALLS=1, got: {r.stdout} stderr={r.stderr}"
-    )
 
 
 

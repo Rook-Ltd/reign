@@ -18,11 +18,13 @@
  * dispatch at all for a row whose connection is gone.
  */
 
+import type * as ReignSdk from '@reign/plugin-sdk'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { translateBots } from './i18n-test-helper'
 import { ModelPicker } from './model-picker'
 import type { RosterRow } from './types'
 
@@ -36,6 +38,7 @@ const { hostMock } = vi.hoisted(() => ({
 
 vi.mock('@reign/plugin-sdk', async () => {
   const { useQuery } = await import('@tanstack/react-query')
+  const { useI18n } = await vi.importActual<typeof ReignSdk>('@reign/plugin-sdk')
 
   return {
     Button: (props: React.ComponentProps<'button'>) => <button {...props} />,
@@ -47,6 +50,8 @@ vi.mock('@reign/plugin-sdk', async () => {
     SelectItem: ({ children }: { children: ReactNode }) => <div>{children}</div>,
     SelectTrigger: ({ children }: { children: ReactNode }) => <div>{children}</div>,
     SelectValue: () => null,
+    useI18n,
+    usePluginI18n: () => translateBots,
     useQuery
   }
 })

@@ -9,7 +9,7 @@ import pytest
 import yaml
 
 from reign_cli.config import migrate_config
-from reign_cli.doctor import collect_relay_plugin_cutover_findings
+from reign_cli.doctor_config import collect_relay_plugin_cutover_findings
 from reign_cli.relay_plugin_cutover import RELAY_PLUGINS_CONFIG_ENV
 
 

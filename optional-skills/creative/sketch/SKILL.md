@@ -6,7 +6,7 @@ author: Reign (adapted from gsd-build/get-shit-done)
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [sketch, mockup, design, ui, prototype, html, variants, exploration, wireframe, comparison]
     related_skills: [spike, claude-design, popular-web-designs, excalidraw]
 ---
