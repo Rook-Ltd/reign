@@ -3,7 +3,7 @@
 # callPackage auto-wires nixpkgs args; flake inputs are passed explicitly.
 # Users override via:
 #   pkgs.reign.override { extraPythonPackages = [...]; }
-#   pkgs.reign.override { extraDependencyGroups = [ "hindsight" ]; }
+#   pkgs.reign.override { extraDependencyGroups = [ "honcho" ]; }
 {
   lib,
   stdenv,

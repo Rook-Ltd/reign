@@ -6,7 +6,7 @@ author: "Rafael Zendron (rafaumeu) + Matt Pocock (mattpocock/skills, grilling) +
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [planning, adversarial, interview, decision-tree, pre-implementation, review, alignment]
     related_skills: [requesting-code-review, subagent-driven-development, test-driven-development]
 ---

@@ -1,5 +1,9 @@
 import { contextBridge, ipcRenderer, webFrame, webUtils } from 'electron'
 
+import type { DesktopProfileRoute } from './desktop-profile'
+import type { HudModifierApi, HudModifierStatus } from './hud-modifier-types'
+import { customWindowControlsEnabled } from './window-controls'
+
 // Which translucency the OS can back. Asked synchronously because the renderer
 // needs it before its first paint, and answered by main because deciding it
 // needs `os.release()` — a sandboxed preload may only require electron, events,
@@ -18,12 +22,21 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   // Launch-flag fact: the app was started with --local, so the renderer may
   // show the local-models surfaces. Static for the window's lifetime.
   localModelsEnabled: launchFlags?.localModels === true,
-  getConnection: profile => ipcRenderer.invoke('reign:connection', profile),
+  // Launch-flag fact: the Nous free tier is on for this launch
+  // (REIGN_GUEST_ONBOARDING=1 or --guest-onboarding). Read-only; the same
+  // decision is stamped onto every backend the app spawns.
+  guestOnboardingEnabled: launchFlags?.guestOnboarding === true,
+  // Launch-flag fact: skip the first-run film (REIGN_SKIP_INTRO=1 or
+  // --skip-intro). Rehearsal aid for the guided chat behind it.
+  skipIntro: launchFlags?.skipIntro === true,
+  getConnection: (profile, opts) => ipcRenderer.invoke('reign:connection', profile, opts),
   // Registry-scoped backend resolution: { connectionId, profile } → descriptor.
   getConnectionFor: payload => ipcRenderer.invoke('reign:connection:for', payload),
   getProfileRoutes: profiles => ipcRenderer.invoke('reign:plugin-profile-routes', profiles),
   revalidateConnection: () => ipcRenderer.invoke('reign:connection:revalidate'),
-  touchBackend: profile => ipcRenderer.invoke('reign:backend:touch', profile),
+  touchBackend: (profile, options) => ipcRenderer.invoke('reign:backend:touch', profile, options),
+  getPoolLimits: () => ipcRenderer.invoke('reign:pool-limits:get'),
+  setPoolLimits: limits => ipcRenderer.invoke('reign:pool-limits:set', limits),
   getGatewayWsUrl: profile => ipcRenderer.invoke('reign:gateway:ws-url', profile),
   // Registry-scoped fresh WS URL: { connectionId, profile } → result shape of
   // getGatewayWsUrl, minted against that connection's backend.
@@ -32,7 +45,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   getAgentRoster: () => ipcRenderer.invoke('reign:agents:roster'),
   openSessionWindow: (sessionId, opts) => ipcRenderer.invoke('reign:window:openSession', sessionId, opts),
   openSessionInTerminal: (sessionId, opts) => ipcRenderer.invoke('reign:window:openInTerminal', sessionId, opts),
-  openWindow: () => ipcRenderer.invoke('reign:window:openInstance'),
+  openWindow: (options?: DesktopProfileRoute) => ipcRenderer.invoke('reign:window:openInstance', options),
   openBrowserWindow: tabId => ipcRenderer.invoke('reign:window:openBrowser', tabId),
   onBrowserPopoutClosed: callback => {
     const listener = (_event, tabId) => callback(tabId)
@@ -41,6 +54,12 @@ contextBridge.exposeInMainWorld('reignDesktop', {
     return () => ipcRenderer.removeListener('reign:browser-popout:closed', listener)
   },
   claimAmbientCue: key => ipcRenderer.invoke('reign:ambient:claim', key),
+  windowControls: {
+    custom: customWindowControlsEnabled(),
+    minimize: () => ipcRenderer.send('reign:window-control', 'minimize'),
+    toggleMaximize: () => ipcRenderer.send('reign:window-control', 'toggle-maximize'),
+    close: () => ipcRenderer.send('reign:window-control', 'close')
+  },
   wakeIndicator: {
     getState: () => ipcRenderer.invoke('reign:wake-indicator:get'),
     setState: state => ipcRenderer.send('reign:wake-indicator:set', state),
@@ -49,6 +68,30 @@ contextBridge.exposeInMainWorld('reignDesktop', {
       ipcRenderer.on('reign:wake-indicator:state', listener)
 
       return () => ipcRenderer.removeListener('reign:wake-indicator:state', listener)
+    }
+  },
+  chatOnboarding: {
+    grow: request => ipcRenderer.send('reign:chat-onboarding:grow', request),
+    soloBoot: () => ipcRenderer.send('reign:chat-onboarding:solo-boot')
+  },
+  introReveal: {
+    open: (payload?: { hideMain?: boolean }) => ipcRenderer.invoke('reign:intro-reveal:open', payload),
+    close: (payload?: { showMain?: boolean }) => ipcRenderer.invoke('reign:intro-reveal:close', payload),
+    skip: () => ipcRenderer.send('reign:intro-reveal:skip'),
+    ready: () => ipcRenderer.send('reign:intro-reveal:ready'),
+    onSkip: callback => {
+      const listener = () => callback()
+
+      ipcRenderer.on('reign:intro-reveal:skip', listener)
+
+      return () => ipcRenderer.removeListener('reign:intro-reveal:skip', listener)
+    },
+    onClosed: callback => {
+      const listener = () => callback()
+
+      ipcRenderer.on('reign:intro-reveal:closed', listener)
+
+      return () => ipcRenderer.removeListener('reign:intro-reveal:closed', listener)
     }
   },
   petOverlay: {
@@ -139,6 +182,51 @@ contextBridge.exposeInMainWorld('reignDesktop', {
       return () => ipcRenderer.removeListener('reign:hud:game-overlay', listener)
     }
   },
+  hudModifier: {
+    getSettings: () => ipcRenderer.invoke('reign:hud-modifier:settings:get'),
+    setEnabled: enabled => ipcRenderer.invoke('reign:hud-modifier:settings:set', enabled),
+    openPermissionSettings: () => ipcRenderer.invoke('reign:hud-modifier:permission'),
+    onStatus: callback => {
+      const listener = (_event: Electron.IpcRendererEvent, status: HudModifierStatus) => callback(status)
+      ipcRenderer.on('reign:hud-modifier:status', listener)
+
+      return () => ipcRenderer.removeListener('reign:hud-modifier:status', listener)
+    }
+  } satisfies HudModifierApi,
+  // macOS native screenshot gesture; captures require a main-issued request.
+  screenshot:
+    process.platform === 'darwin'
+      ? {
+          getSettings: () => ipcRenderer.invoke('reign:screenshot:settings:get'),
+          setEnabled: enabled => ipcRenderer.invoke('reign:screenshot:settings:set', enabled),
+          openPermissionSettings: kind => ipcRenderer.invoke('reign:screenshot:permission', kind),
+          capture: requestId => ipcRenderer.invoke('reign:screenshot:capture', requestId),
+          onStatus: callback => {
+            const listener = (_event, status) => callback(status)
+            ipcRenderer.on('reign:screenshot:status', listener)
+
+            return () => ipcRenderer.removeListener('reign:screenshot:status', listener)
+          },
+          onRequest: callback => {
+            const channel = 'reign:screenshot:request'
+            const listener = (_event, requestId) => callback(requestId)
+
+            if (ipcRenderer.listenerCount(channel) === 0) {
+              ipcRenderer.send('reign:screenshot:subscribe', true)
+            }
+
+            ipcRenderer.on(channel, listener)
+
+            return () => {
+              ipcRenderer.removeListener(channel, listener)
+
+              if (ipcRenderer.listenerCount(channel) === 0) {
+                ipcRenderer.send('reign:screenshot:subscribe', false)
+              }
+            }
+          }
+        }
+      : undefined,
   // Quick Entry: the global-hotkey mini composer window. Main owns the OS
   // shortcut + the persisted preference; the quick window only captures text
   // and hands it back, and the primary renderer submits it through the normal
@@ -221,6 +309,14 @@ contextBridge.exposeInMainWorld('reignDesktop', {
     agentSignIn: dashboardUrl => ipcRenderer.invoke('reign:cloud:agent-sign-in', dashboardUrl)
   },
   profile: {
+    getDefault: () => ipcRenderer.invoke('reign:profile:default:get'),
+    setDefault: (route: DesktopProfileRoute) => ipcRenderer.invoke('reign:profile:default:set', route),
+    onDefaultChanged: (callback: (route: DesktopProfileRoute | null) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, route: DesktopProfileRoute | null) => callback(route)
+      ipcRenderer.on('reign:profile:default:changed', listener)
+
+      return () => ipcRenderer.removeListener('reign:profile:default:changed', listener)
+    },
     get: () => ipcRenderer.invoke('reign:profile:get'),
     remember: name => ipcRenderer.invoke('reign:profile:remember', name),
     set: name => ipcRenderer.invoke('reign:profile:set', name)
@@ -255,6 +351,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   },
   saveImageBuffer: (data, ext, name) => ipcRenderer.invoke('reign:saveImageBuffer', { data, ext, name }),
   capturePreview: payload => ipcRenderer.invoke('reign:capturePreview', payload),
+  savePastedText: text => ipcRenderer.invoke('reign:savePastedText', { text }),
   saveClipboardImage: () => ipcRenderer.invoke('reign:saveClipboardImage'),
   getPathForFile: file => {
     try {
@@ -272,7 +369,24 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   setNativeTheme: mode => ipcRenderer.send('reign:native-theme', mode),
   setTranslucency: payload => ipcRenderer.send('reign:translucency', payload),
   setKeepAwake: on => ipcRenderer.send('reign:keep-awake', on),
+  minimizeToTray: {
+    get: () => ipcRenderer.invoke('reign:minimize-to-tray:get'),
+    set: on => ipcRenderer.invoke('reign:minimize-to-tray:set', on),
+    onChanged: callback => {
+      const listener = (_event, status) => callback(status)
+      ipcRenderer.on('reign:minimize-to-tray:changed', listener)
+
+      return () => ipcRenderer.removeListener('reign:minimize-to-tray:changed', listener)
+    }
+  },
   setDisableF12: blocked => ipcRenderer.send('reign:devtools:disable-f12', blocked),
+  setF12ShortcutActive: active => ipcRenderer.send('reign:f12ShortcutActive', Boolean(active)),
+  onF12Shortcut: callback => {
+    const listener = (_event, input) => callback(input)
+    ipcRenderer.on('reign:f12-shortcut', listener)
+
+    return () => ipcRenderer.removeListener('reign:f12-shortcut', listener)
+  },
   setPreviewShortcutActive: active => ipcRenderer.send('reign:previewShortcutActive', Boolean(active)),
   openExternal: url => ipcRenderer.invoke('reign:openExternal', url),
   mcpOauth: {
@@ -320,8 +434,8 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   revealPath: targetPath => ipcRenderer.invoke('reign:fs:reveal', targetPath),
   openDir: dirPath => ipcRenderer.invoke('reign:fs:openDir', dirPath),
   desktopPluginsRoot: () => ipcRenderer.invoke('reign:fs:desktopPluginsRoot'),
+  reconcileDesktopPlugins: () => ipcRenderer.invoke('reign:fs:reconcileDesktopPlugins'),
   logsRoot: () => ipcRenderer.invoke('reign:fs:logsRoot'),
-  agentPluginsRoot: () => ipcRenderer.invoke('reign:fs:agentPluginsRoot'),
   renamePath: (targetPath, newName) => ipcRenderer.invoke('reign:fs:rename', targetPath, newName),
   writeTextFile: (filePath, content) => ipcRenderer.invoke('reign:fs:writeText', filePath, content),
   trashPath: targetPath => ipcRenderer.invoke('reign:fs:trash', targetPath),
@@ -350,7 +464,6 @@ contextBridge.exposeInMainWorld('reignDesktop', {
       shipInfo: repoPath => ipcRenderer.invoke('reign:git:review:shipInfo', repoPath),
       prList: (repoPath, branches, numbers) =>
         ipcRenderer.invoke('reign:git:review:prList', repoPath, branches, numbers),
-      fetchPrComment: (repoPath, url) => ipcRenderer.invoke('reign:git:review:fetchPrComment', repoPath, url),
       createPr: repoPath => ipcRenderer.invoke('reign:git:review:createPr', repoPath)
     }
   },
@@ -409,6 +522,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   signalDeepLinkReady: () => ipcRenderer.invoke('reign:deep-link-ready'),
   probePluginRepo: payload => ipcRenderer.invoke('reign:plugin:probe', payload),
   installDesktopPlugin: payload => ipcRenderer.invoke('reign:plugin:installDesktop', payload),
+  removeDesktopPlugin: payload => ipcRenderer.invoke('reign:plugin:removeDesktop', payload),
   onWindowStateChanged: callback => {
     const listener = (_event, payload) => callback(payload)
     ipcRenderer.on('reign:window-state-changed', listener)
@@ -444,6 +558,15 @@ contextBridge.exposeInMainWorld('reignDesktop', {
     ipcRenderer.on('reign:backend-exit', listener)
 
     return () => ipcRenderer.removeListener('reign:backend-exit', listener)
+  },
+  // Cooperative pool retirement (main → renderer): the pooled backend under
+  // `poolKey` is being stopped for a foreground open. Park that scope; do not
+  // redial into the slot it vacated.
+  onPoolBackendRetiring: callback => {
+    const listener = (_event, payload) => callback(payload)
+    ipcRenderer.on('reign:pool:retiring', listener)
+
+    return () => ipcRenderer.removeListener('reign:pool:retiring', listener)
   },
   // Soft gateway-mode apply finished tearing down the primary backend. Renderer
   // should wipe session lists + re-dial without a window reload.
@@ -491,13 +614,15 @@ contextBridge.exposeInMainWorld('reignDesktop', {
     return () => ipcRenderer.removeListener('reign:bootstrap:event', listener)
   },
   getVersion: () => ipcRenderer.invoke('reign:version'),
+  relaunchApp: () => ipcRenderer.invoke('reign:app:relaunch'),
+  getMachineProfile: () => ipcRenderer.invoke('reign:machine:profile'),
   getRemoteDisplayReason: () => ipcRenderer.invoke('reign:get-remote-display-reason'),
   uninstall: {
     summary: () => ipcRenderer.invoke('reign:uninstall:summary'),
     run: mode => ipcRenderer.invoke('reign:uninstall:run', { mode })
   },
   updates: {
-    check: () => ipcRenderer.invoke('reign:updates:check'),
+    check: opts => ipcRenderer.invoke('reign:updates:check', opts),
     apply: opts => ipcRenderer.invoke('reign:updates:apply', opts),
     getBranch: () => ipcRenderer.invoke('reign:updates:branch:get'),
     setBranch: name => ipcRenderer.invoke('reign:updates:branch:set', name),

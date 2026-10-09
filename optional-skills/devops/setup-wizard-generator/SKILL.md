@@ -6,7 +6,7 @@ author: "Matt Pocock (mattpocock/skills, wizard) + Reign"
 license: MIT
 platforms: [linux, macos]
 metadata:
-  reign:
+  hermes:
     tags: [wizard, setup, onboarding, credentials, secrets, migration, bash, human-in-the-loop]
     related_skills: []
 ---

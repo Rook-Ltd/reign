@@ -259,7 +259,7 @@ npm start
 6. Click **Save** to write the skin YAML to `~/.reign/skins/`.
 7. Click **Activate** to set it as the current skin (updates `display.skin` in `config.yaml`).
 
-Reign Mod respects the `REIGN_HOME` environment variable, so it works with [profiles](/user-guide/profiles) too.
+Reign Mod respects the `REIGN_HOME` environment variable, so it works with [profiles](../profiles.md) too.
 
 ## Operational notes
 

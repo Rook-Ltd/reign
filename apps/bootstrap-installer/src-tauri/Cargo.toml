@@ -1,6 +1,6 @@
 [package]
 name = "reign-bootstrap"
-version = "0.0.1"
+version = "0.21.1"
 description = "Reign Setup — signed installer that drives scripts/install.ps1"
 authors = ["Rook <info@nousresearch.com>"]
 edition = "2021"

@@ -6,7 +6,7 @@ author: Matt Maximo (MattMaximo), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Coding-Agent, Grok, xAI, Code-Review, Refactoring, Automation]
     related_skills: [codex, claude-code, reign]
 ---
@@ -182,7 +182,7 @@ Obsidian or a repo) without mutating anything:
 3. Save Grok's stdout straight into the destination note with `write_file()`.
 
 ```
-grok --no-auto-update -p "Read /tmp/current.md and /tmp/inventory.md. Produce markdown only, no preamble. Output a clean note titled 'Cleanup Review'." --output-format plain
+grok --no-auto-update -p "Read ~/.reign/cache/scratch/current.md and ~/.reign/cache/scratch/inventory.md. Produce markdown only, no preamble. Output a clean note titled 'Cleanup Review'." --output-format plain
 ```
 
 **Pitfall (same as Claude Code):** for document rewrites, a loose "rewrite this"
@@ -215,22 +215,22 @@ terminal(command="gh pr comment 42 --body '<review text>'", workdir="/path/to/re
 
 ```
 # Create worktrees
-terminal(command="git worktree add -b fix/issue-78 /tmp/issue-78 main", workdir="~/project")
-terminal(command="git worktree add -b fix/issue-99 /tmp/issue-99 main", workdir="~/project")
+terminal(command="git worktree add -b fix/issue-78 ~/.reign/cache/scratch/issue-78 main", workdir="~/project")
+terminal(command="git worktree add -b fix/issue-99 ~/.reign/cache/scratch/issue-99 main", workdir="~/project")
 
 # Launch Grok headless in each (background)
-terminal(command="grok --no-auto-update --always-approve -p 'Fix issue #78: <description>. Commit when done.'", workdir="/tmp/issue-78", background=true, notify_on_complete=true)
-terminal(command="grok --no-auto-update --always-approve -p 'Fix issue #99: <description>. Commit when done.'", workdir="/tmp/issue-99", background=true, notify_on_complete=true)
+terminal(command="grok --no-auto-update --always-approve -p 'Fix issue #78: <description>. Commit when done.'", workdir="~/.reign/cache/scratch/issue-78", background=true, notify_on_complete=true)
+terminal(command="grok --no-auto-update --always-approve -p 'Fix issue #99: <description>. Commit when done.'", workdir="~/.reign/cache/scratch/issue-99", background=true, notify_on_complete=true)
 
 # Monitor
 process(action="list")
 
 # After completion: push and open PRs
-terminal(command="cd /tmp/issue-78 && git push -u origin fix/issue-78")
+terminal(command="cd ~/.reign/cache/scratch/issue-78 && git push -u origin fix/issue-78")
 terminal(command="gh pr create --repo user/repo --head fix/issue-78 --title 'fix: ...' --body '...'")
 
 # Cleanup
-terminal(command="git worktree remove /tmp/issue-78", workdir="~/project")
+terminal(command="git worktree remove ~/.reign/cache/scratch/issue-78", workdir="~/project")
 ```
 
 ## Useful Subcommands & TUI Commands

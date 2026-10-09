@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [desktop, electron, cdp, dom, ui-verification, self-inspection]
     related_skills: [node-inspect-debugger, systematic-debugging, dogfood]
 ---
@@ -122,10 +122,10 @@ When there is no port, or you must not disturb the user's window:
 
 ```bash
 cd apps/desktop
-REIGN_HOME=/tmp/cdp-probe-home \
+REIGN_HOME=$HOME/.reign/cache/scratch/cdp-probe-home \
 REIGN_DESKTOP_DEV_SERVER=http://127.0.0.1:5174 \
 REIGN_DESKTOP_CDP_PORT=9333 \
-  npx electron . --user-data-dir=/tmp/cdp-probe-userdata
+  npx electron . --user-data-dir=$HOME/.reign/cache/scratch/cdp-probe-userdata
 ```
 
 The separate `--user-data-dir` dodges Electron's single-instance lock, so it

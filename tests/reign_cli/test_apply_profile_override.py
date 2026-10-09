@@ -34,6 +34,7 @@ def _run_apply_profile_override(
 
     if active_profile and active_profile != "default":
         (reign_root / "profiles" / active_profile).mkdir(parents=True, exist_ok=True)
+        (reign_root / "profiles" / active_profile / "config.yaml").write_text("{}\n")  # identity marker
 
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     if reign_home is not None:
@@ -105,6 +106,7 @@ class TestApplyProfileOverrideReignHomeGuard:
         user_home = tmp_path / "home" / "reign"
         profile_dir = user_home / ".reign" / "profiles" / "elias"
         profile_dir.mkdir(parents=True, exist_ok=True)
+        (profile_dir / "config.yaml").write_text("{}\n")  # identity marker: a bare dir does not resolve
         (root_home / ".reign").mkdir(parents=True, exist_ok=True)
 
         monkeypatch.setattr(Path, "home", lambda: root_home)
@@ -117,11 +119,14 @@ class TestApplyProfileOverrideReignHomeGuard:
 
         monkeypatch.setattr(pwd, "getpwnam", lambda name: SimpleNamespace(pw_dir=str(user_home)))
 
-        from reign_cli.main import _apply_profile_override
+        from reign_cli.main import _apply_profile_override, _resolve_sudo_user_profile_env
         _apply_profile_override()
 
         assert os.environ.get("REIGN_HOME") == str(profile_dir)
         assert sys.argv == ["reign", "gateway", "install", "--system"]
+        # Same identity gate as ``-p`` without sudo: a marker-less shell is not a profile.
+        (user_home / ".reign" / "profiles" / "ghost" / "cron").mkdir(parents=True)
+        assert _resolve_sudo_user_profile_env("ghost") is None
 
 
 
@@ -162,8 +167,9 @@ class TestSupervisedChildIgnoresStickyProfile:
         reign_root = tmp_path / ".reign"
         reign_root.mkdir(parents=True, exist_ok=True)
         (reign_root / "active_profile").write_text("briefer")
-        (reign_root / "profiles" / "briefer").mkdir(parents=True, exist_ok=True)
-        (reign_root / "profiles" / "coder").mkdir(parents=True, exist_ok=True)
+        for name in ("briefer", "coder"):
+            (reign_root / "profiles" / name).mkdir(parents=True, exist_ok=True)
+            (reign_root / "profiles" / name / "config.yaml").write_text("{}\n")  # identity marker
 
         monkeypatch.setattr(Path, "home", lambda: tmp_path)
         monkeypatch.delenv("REIGN_HOME", raising=False)
@@ -265,6 +271,21 @@ class TestGeneralizedSupervisorMarkers:
         )
         assert result == str(reign_root)
 
+    def test_desktop_ssh_serve_child_skips_active_profile(self, tmp_path, monkeypatch):
+        """A Desktop-owned `serve --ssh-session-token-file` child names its profile explicitly
+        (or none for the root home); the remote host's sticky active_profile must not re-home
+        it, or Settings read one profile's config.yaml while the user edits another."""
+        reign_root = self._root_home(tmp_path)
+        result = _run_apply_profile_override(
+            tmp_path,
+            monkeypatch,
+            reign_home=str(reign_root),
+            active_profile="telegram_nick",
+            argv=["reign", "serve", "--isolated", "--host", "127.0.0.1", "--port", "0",
+                  "--ssh-session-token-file", "/tmp/x/y.token"],
+        )
+        assert result == str(reign_root)
+
     def test_generated_systemd_unit_exports_supervised_marker(
         self, tmp_path, monkeypatch
     ):
@@ -286,3 +307,31 @@ class TestGeneralizedSupervisorMarkers:
 
         plist = generate_launchd_plist()
         assert "<key>REIGN_SUPERVISED_CHILD</key>" in plist
+
+
+class TestS6ContainerGatewayRun:
+    """Inside the s6 image a bare ``gateway run`` (the image's CMD) redirects to the supervised
+    ``gateway-default`` slot. It must keep that root identity whatever ``active_profile`` says;
+    otherwise every container boot starts the named slot the reconciler registered down."""
+
+    def test_the_redirected_run_keeps_the_root_home_despite_the_active_profile(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("reign_cli.service_manager._s6_running", lambda: True)
+        root = tmp_path / ".reign"
+        result = _run_apply_profile_override(
+            tmp_path, monkeypatch, reign_home=str(root), active_profile="coder",
+            argv=["reign", "gateway", "run"],
+        )
+        assert result == str(root)
+
+    def test_a_foreground_run_and_other_verbs_still_follow_the_active_profile(
+        self, tmp_path, monkeypatch
+    ):
+        monkeypatch.setattr("reign_cli.service_manager._s6_running", lambda: True)
+        root = tmp_path / ".reign"
+        for argv in (["reign", "gateway", "run", "--no-supervise"], ["reign", "chat"]):
+            result = _run_apply_profile_override(
+                tmp_path, monkeypatch, reign_home=str(root), active_profile="coder", argv=argv,
+            )
+            assert result == str(root / "profiles" / "coder"), argv

@@ -6,7 +6,7 @@ description: "External memory provider plugins — Honcho, OpenViking, Mem0, Hin
 
 # Memory Providers
 
-Reign ships with 8 external memory provider plugins that give the agent persistent, cross-session knowledge beyond the built-in MEMORY.md and USER.md. Only **one** external provider can be active at a time — the built-in memory is always active alongside it.
+Reign ships with 7 external memory provider plugins that give the agent persistent, cross-session knowledge beyond the built-in MEMORY.md and USER.md, and more (such as Hindsight) are available from the [plugin catalog](./plugins.md). Only **one** external provider can be active at a time — the built-in memory is always active alongside it.
 
 ## Quick Start
 
@@ -22,7 +22,8 @@ Or set manually in `~/.reign/config.yaml`:
 
 ```yaml
 memory:
-  provider: openviking   # or honcho, mem0, hindsight, holographic, retaindb, byterover, supermemory
+  provider: openviking   # or honcho, mem0, holographic, retaindb, byterover, supermemory,
+                         # or hindsight (plugin catalog — run `reign plugins install hindsight` first)
 ```
 
 ## How It Works
@@ -414,6 +415,7 @@ The plugin authenticates with `X-API-Key` and uses the server's `/search` / `/me
 | `user_id` | `reign-user` | User identifier |
 | `agent_id` | `reign` | Agent identifier |
 | `rerank` | `false` | Rerank search results for relevance (platform mode only) |
+| `sync_max_chars` | `450` | Per-message character cap applied before each turn is sent for fact extraction, cut at the last sentence boundary. The default fits 512-token embedders (Ollama `bge-small-zh-v1.5`, `all-minilm`); raise it (e.g. `6000`) for 8k-token embedders such as `text-embedding-3-small`, `jina-embeddings-v3` or `bge-m3` |
 
 **OSS supported providers:**
 
@@ -429,26 +431,31 @@ The plugin authenticates with `X-API-Key` and uses the server's `/search` / `/me
 
 ### Hindsight
 
+:::info Plugin catalog
+Hindsight is maintained by [vectorize-io](https://github.com/vectorize-io/hindsight) and installed from the [plugin catalog](./plugins.md) rather than bundled with Reign. Setup details live in the upstream docs: [hindsight.vectorize.io/sdks/integrations/reign](https://hindsight.vectorize.io/sdks/integrations/hermes).
+:::
+
 Long-term memory with knowledge graph, entity resolution, and multi-strategy retrieval. The `hindsight_reflect` tool provides cross-memory synthesis that no other provider offers. Automatically retains full conversation turns (including tool calls) with session-level document tracking.
 
 | | |
 |---|---|
 | **Best for** | Knowledge graph-based recall with entity relationships |
-| **Requires** | Cloud: API key from [ui.hindsight.vectorize.io](https://ui.hindsight.vectorize.io). Local: LLM API key (OpenAI, Groq, OpenRouter, etc.) |
-| **Data storage** | Hindsight Cloud or local embedded PostgreSQL |
+| **Requires** | `reign plugins install hindsight`. Cloud: API key from [ui.hindsight.vectorize.io](https://ui.hindsight.vectorize.io). Local: LLM API key (OpenAI, Groq, OpenRouter, etc.) |
+| **Data storage** | Hindsight Cloud, local embedded PostgreSQL, or an external local Hindsight server |
 | **Cost** | Hindsight pricing (cloud) or free (local) |
 
 **Tools:** `hindsight_retain` (store with entity extraction), `hindsight_recall` (multi-strategy search), `hindsight_reflect` (cross-memory synthesis)
 
 **Setup:**
 ```bash
-reign memory setup    # select "hindsight"
+reign plugins install hindsight   # from the plugin catalog
+reign memory setup                # select "hindsight"
 # Or manually:
 reign config set memory.provider hindsight
 echo "HINDSIGHT_API_KEY=your-key" >> ~/.reign/.env
 ```
 
-The setup wizard installs dependencies automatically and only installs what's needed for the selected mode (`hindsight-client` for cloud, `hindsight-all` for local). Requires `hindsight-client >= 0.4.22` (auto-upgraded on session start if outdated).
+The plugin lands in `~/.reign/plugins/hindsight/` (per profile home) and is enabled under `plugins.enabled` in `config.yaml`. `reign memory setup`, `reign memory status`, `reign plugins list` and the dashboard Memory settings all work with the catalog-installed plugin. In local embedded mode the plugin installs `hindsight-all` on first use through Reign' lazy-install path, which honours `security.allow_lazy_installs`.
 
 **Local mode UI:** `hindsight-embed -p reign ui start`
 
@@ -470,7 +477,17 @@ The setup wizard installs dependencies automatically and only installs what's ne
 | `retain_assistant_prefix` | `Assistant` | Label used before assistant turns in auto-retained transcripts |
 | `recall_tags` | — | Tags to filter on recall |
 
-See [plugin README](https://github.com/NousResearch/hermes-agent/blob/main/plugins/memory/hindsight/README.md) for the full configuration reference.
+See the [upstream Reign integration docs](https://hindsight.vectorize.io/sdks/integrations/hermes) for the full configuration reference.
+
+#### Migrating from bundled Hindsight
+
+Hindsight used to ship inside the Reign tree (and as the `reign[hindsight]` pip extra). If your `config.yaml` already has `memory.provider: hindsight`, there is nothing to do for most users:
+
+- `reign update` installs the catalog plugin into every profile home that names the provider (this runs even when `security.allow_lazy_installs` is `false`).
+- If the plugin is still missing on the first agent start (`reign chat`, the gateway, …), Reign installs it and prints `✓ Memory provider 'hindsight' moved out of core — installed its plugin from the catalog (your memory.hindsight settings and data are unchanged).`
+- With `security.allow_lazy_installs: false`, the agent-start path instead logs one line — ``Memory provider 'hindsight' is not installed; security.allow_lazy_installs is off — run `reign plugins install hindsight`.`` — and you run `reign plugins install hindsight` yourself.
+
+What changes on disk: the plugin appears in `~/.reign/plugins/hindsight/` and `config.yaml` gains `plugins.enabled: [hindsight]`. `memory.provider`, `memory.hindsight.*`, `$REIGN_HOME/hindsight/config.json`, `HINDSIGHT_API_KEY` in `.env` and your memory bank data are untouched. Verify with `reign memory status` (provider active) and `reign plugins list` (plugin installed and enabled).
 
 ---
 
@@ -566,7 +583,7 @@ reign config set memory.provider byterover
 
 ### Supermemory
 
-Semantic long-term memory with profile recall, semantic search, explicit memory tools, and session-end conversation ingest via the Supermemory graph API.
+Semantic long-term memory with profile recall, semantic search, explicit memory tools, and per-turn conversation capture (one document per session per 4-hour window).
 
 | | |
 |---|---|
@@ -616,17 +633,17 @@ stays local.
 | `profile_frequency` | `50` | Include profile facts on first turn and every N turns |
 | `capture_mode` | `all` | Skip tiny or trivial turns by default |
 | `search_mode` | `hybrid` | Search mode: `hybrid`, `memories`, or `documents` |
-| `api_timeout` | `5.0` | Timeout for SDK and ingest requests |
+| `api_timeout` | `5.0` | Timeout for SDK requests |
 
 **Environment variables:** `SUPERMEMORY_API_KEY` (required), `SUPERMEMORY_BASE_URL` (compatibility fallback when `base_url` is not configured), `SUPERMEMORY_CONTAINER_TAG` (overrides config).
 
-Base URL precedence is `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https://api.supermemory.ai`. SDK operations, setup/status probes, and conversation ingest all use the resolved endpoint.
+Base URL precedence is `supermemory.json` → `SUPERMEMORY_BASE_URL` → `https://api.supermemory.ai`. SDK operations and setup/status probes all use the resolved endpoint.
 
 **Key features:**
 - Automatic context fencing — strips recalled memories from captured turns to prevent recursive memory pollution
-- Full-session ingest — the entire conversation is sent once at session boundaries
-- Session-end conversation ingest (to `/v4/conversations`) for richer profile + graph building in Supermemory
-- End-to-end self-hosted routing — SDK, probe, and conversation-ingest requests use the same configured endpoint
+- Per-turn capture — each completed turn is written as it happens, one document per session per 4-hour window
+- Failed turn writes are retried (at-least-once) on the next turn, session end, `/reset`, or shutdown
+- End-to-end self-hosted routing — SDK and probe requests use the same configured endpoint
 - Profile facts injected on first turn and at configurable intervals
 - **Profile-scoped containers** — use `{identity}` in `container_tag` (e.g. `reign-{identity}` → `reign-coder`) to isolate memories per Reign profile
 - **Multi-container mode** — enable `enable_custom_container_tags` with a `custom_containers` list to let the agent read/write across named containers. Automatic operations stay on the primary container.
@@ -677,7 +694,7 @@ reign memory setup
 | **Honcho** | Cloud | Paid | 5 | `honcho-ai` | Dialectic user modeling + session-scoped context |
 | **OpenViking** | Self-hosted | Free | 6 | `openviking` + server | Filesystem hierarchy + tiered loading |
 | **Mem0** | Cloud/Self-hosted | Free/Paid | 4 | `mem0ai` | Server-side LLM extraction + self-hosted/OSS modes |
-| **Hindsight** | Cloud/Local | Free/Paid | 3 | `hindsight-client` | Knowledge graph + reflect synthesis |
+| **Hindsight** (plugin catalog) | Cloud/Local | Free/Paid | 3 | `reign plugins install hindsight` | Knowledge graph + reflect synthesis |
 | **Holographic** | Local | Free | 2 | None | HRR algebra + trust scoring |
 | **RetainDB** | Cloud | $20/mo | 10 | `requests` | Delta compression |
 | **ByteRover** | Local/Cloud | Free/Paid | 3 | `brv` CLI | Pre-compression extraction |
@@ -686,13 +703,24 @@ reign memory setup
 
 ## Profile Isolation
 
-Each provider's data is isolated per [profile](/user-guide/profiles):
+Each provider's data is isolated per [profile](../profiles.md):
 
 - **Local storage providers** (Holographic, ByteRover) use `$REIGN_HOME/` paths which differ per profile
 - **Config file providers** (Honcho, Mem0, Hindsight, Supermemory) store config in `$REIGN_HOME/` so each profile has its own credentials
 - **Cloud providers** (RetainDB) auto-derive profile-scoped project names
 - **Env var providers** (OpenViking) are configured via each profile's `.env` file
 
+## Providers Moving to the Plugin Catalog
+
+Memory providers are moving out of the Reign tree into their maintainers' own repositories,
+published through the [plugin catalog](./plugins.md) — Hindsight is the first (see
+[Migrating from bundled Hindsight](#migrating-from-bundled-hindsight)). Nothing changes for you: the
+provider name, your `memory.<name>` settings, its data directory and its tools stay the same.
+When a provider you have configured stops shipping with Reign, `reign update` installs its
+catalog plugin for every profile that names it; if you update through the Desktop app, the
+agent does the same the first time it starts (unless `security.allow_lazy_installs` is
+`false`, in which case it logs the `reign plugins install <name>` one-liner instead).
+
 ## Building a Memory Provider
 
-See the [Developer Guide: Memory Provider Plugins](/developer-guide/memory-provider-plugin) for how to create your own.
+See the [Developer Guide: Memory Provider Plugins](../../developer-guide/memory-provider-plugin.md) for how to create your own.

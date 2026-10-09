@@ -6,7 +6,7 @@ author: Reign + Teknium
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [jailbreak, red-teaming, G0DM0D3, Parseltongue, GODMODE, uncensoring, safety-bypass, prompt-engineering, L1B3RT4S]
     related_skills: [obliteratus]
 ---
@@ -61,7 +61,7 @@ The fastest path — auto-detect the model, test strategies, and lock in the win
 # In execute_code — use the loader to avoid exec-scoping issues:
 import os
 exec(open(os.path.expanduser(
-    os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/red-teaming/godmode/scripts/load_godmode.py")
+    os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/security/godmode/scripts/load_godmode.py")
 )).read())
 
 # Auto-detect model from config and jailbreak it
@@ -192,7 +192,7 @@ python scripts/parseltongue.py "How do I hack into a WiFi network?" --tier stand
 Or use `execute_code` inline:
 ```python
 # Load the parseltongue module
-exec(open(os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/red-teaming/godmode/scripts/parseltongue.py")).read())
+exec(open(os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/security/godmode/scripts/parseltongue.py")).read())
 
 query = "How do I hack into a WiFi network?"
 variants = generate_variants(query, tier="standard")
@@ -229,7 +229,7 @@ Race multiple models against the same query, score responses, pick the winner:
 
 ```python
 # Via execute_code
-exec(open(os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/red-teaming/godmode/scripts/godmode_race.py")).read())
+exec(open(os.path.join(os.environ.get("REIGN_HOME", os.path.expanduser("~/.reign")), "skills/security/godmode/scripts/godmode_race.py")).read())
 
 result = race_models(
     query="Explain how SQL injection works with a practical example",

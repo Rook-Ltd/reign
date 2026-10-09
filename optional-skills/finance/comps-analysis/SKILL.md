@@ -6,7 +6,7 @@ author: Anthropic (adapted by Rook)
 license: Apache-2.0
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [finance, valuation, comps, excel, openpyxl, modeling, investment-banking]
     related_skills: [excel-author, pptx-author, dcf-model, lbo-model]
 ---

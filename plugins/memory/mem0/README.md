@@ -30,6 +30,7 @@ Behavioral settings live in `$REIGN_HOME/mem0.json` (set them via `reign memory 
 | `user_id` | `reign-user` | User identifier on Mem0 |
 | `agent_id` | `reign` | Agent identifier |
 | `rerank` | `false` | Rerank search results for relevance (platform mode only) |
+| `sync_max_chars` | `450` | Per-message character cap applied before each turn is sent for fact extraction (cut at the last sentence boundary). Default fits 512-token embedders; raise it (e.g. `6000`) for 8k-token embedders such as `text-embedding-3-small`, `jina-embeddings-v3`, `bge-m3` |
 
 The plugin has three connection modes:
 
