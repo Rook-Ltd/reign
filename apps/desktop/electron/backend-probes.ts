@@ -233,9 +233,9 @@ export {
   canImportReignCli,
   DEFAULT_PROBE_TIMEOUT_MS,
   execProbe,
-  reignRuntimeImportProbe,
   isTimeoutError,
   PROBE_TIMEOUT_MS,
+  reignRuntimeImportProbe,
   resolveProbeTimeoutMs,
   shouldTrustReignOverride,
   verifyReignCli

@@ -2,8 +2,8 @@ import { useStore } from '@nanostores/react'
 import { useEffect, useState } from 'react'
 
 import { LogTail } from '@/components/chat/log-tail'
-import { getLogs } from '@/reign'
 import { startCompletionPoll } from '@/lib/completion-poll'
+import { getLogs } from '@/reign'
 import { $activeGatewayProfile } from '@/store/profile'
 
 export const LOG_POLL_MS = 2000

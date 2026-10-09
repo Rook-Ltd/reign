@@ -1,6 +1,6 @@
 import type { McpCatalogResponse, McpServerSummary } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, profileScoped } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, reignApi } from './client'
 
 export interface McpTestResult {
   ok: boolean

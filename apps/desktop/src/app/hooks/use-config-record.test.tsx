@@ -3,9 +3,9 @@ import { cleanup, renderHook, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
 import { afterEach, expect, it, vi } from 'vitest'
 
+import { queryClient } from '@/lib/query-client'
 import type * as ReignApi from '@/reign'
 import { bindConfigReadOrigin, getReignConfigRecord } from '@/reign'
-import { queryClient } from '@/lib/query-client'
 
 import { REIGN_CONFIG_KEY, useReignConfigRecord } from './use-config-record'
 

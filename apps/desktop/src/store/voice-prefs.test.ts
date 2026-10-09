@@ -5,8 +5,8 @@ vi.mock('@/reign', () => ({
   saveReignConfig: vi.fn(async () => undefined)
 }))
 
-import { saveReignConfig } from '@/reign'
 import { isVoiceStopCommand } from '@/lib/voice-stop-word'
+import { saveReignConfig } from '@/reign'
 
 import {
   $bargeInThresholdMultiplier,

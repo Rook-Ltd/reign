@@ -10,7 +10,9 @@ Steps (all in a throwaway git worktree at the upstream ref):
   2. run rebrand/rebrand.py            (stages 1-5: delete, protect, replace, rename, post_replace)
   3. git apply --3way rebrand/overlay/hand-edits.patch   (Phase 3/4 hand edits)
   4. run rebrand/place_images.py, then website/scripts/generate-skill-docs.py
-  5. regenerate uv.lock and npm lockfiles (--no-lockfiles to skip; the overlay never carries them)
+  5. regenerate uv.lock and npm lockfiles (--no-lockfiles to skip; the overlay never carries them),
+     then eslint --fix the JS workspaces: hermes->reign renames reorder sorted imports/keys, which
+     the perfectionist rules reject (--no-lint-fix to skip)
   6. gates: rebrand.py --check residual delta vs. rebrand/audit/residual-after-phase4.txt,
             upstream image hashes, conflict markers left by step 3
   7. git commit-tree with parents (current Reign HEAD, upstream commit) -> branch sync/upstream-<date>
@@ -53,6 +55,7 @@ def main() -> None:
     ap.add_argument("--ref", default="upstream/main")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--no-lockfiles", dest="lockfiles", action="store_false", help="skip regenerating uv.lock and npm lockfiles")
+    ap.add_argument("--no-lint-fix", dest="lint_fix", action="store_false", help="skip eslint --fix on the JS workspaces")
     ap.add_argument("--keep-worktree", action="store_true")
     ap.add_argument("--ci", action="store_true", help="exit 2 when blocked, 3 when nothing to sync; write report to $GITHUB_STEP_SUMMARY-style file rebrand/audit/sync-report.md")
     ap.add_argument("--branch", default=None, help="name for the sync branch (default sync/upstream-<date>)")
@@ -119,6 +122,15 @@ def main() -> None:
                            cwd=wt / d, env=env, check=True)
         subprocess.run(["npx", "-y", "npm@12", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
                        cwd=wt / "website", env=env, check=True)
+
+    if args.lint_fix:
+        print("→ eslint --fix (renames change sort order)")
+        env = dict(os.environ, PATH="/opt/homebrew/bin:" + os.environ.get("PATH", ""))
+        subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=env, check=True)
+        for d, paths in (("apps/shared", ["src/"]), ("apps/desktop", ["src/", "electron/"]), ("ui-tui", ["src/", "packages/"])):
+            r = subprocess.run(["npx", "eslint", "--fix", *paths], cwd=wt / d, env=env, text=True, capture_output=True)
+            if r.returncode:
+                print(f"   {d}: errors eslint cannot fix remain (JS & TS checks will fail)")
 
     up = wt / "rebrand" / "UPSTREAM.md"
     txt = [l for l in up.read_text().splitlines() if not l.startswith("- Synced at:")]

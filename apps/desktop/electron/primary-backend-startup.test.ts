@@ -116,7 +116,7 @@ test('primary remote descriptor keeps legacy unregistered routes unqualified', (
 
 test('remote apply re-resolves the saved connection without ensuring a local runtime', async () => {
   const gate = createFirstRunSetupGate({ stuckAfterMs: 0 })
-  const savedRemote = { baseUrl: 'https://gateway.example.com/hermes' }
+  const savedRemote = { baseUrl: 'https://gateway.example.com/reign' }
   let configuredRemote: typeof savedRemote | null = null
 
   const options = startupOptions({
@@ -140,7 +140,7 @@ test('remote apply re-resolves the saved connection without ensuring a local run
 })
 
 test('an already-saved remote bypasses every local startup step', async () => {
-  const savedRemote = { baseUrl: 'https://gateway.example.com/hermes' }
+  const savedRemote = { baseUrl: 'https://gateway.example.com/reign' }
   const options = startupOptions({ resolveRemote: vi.fn(async () => savedRemote) })
 
   assert.deepEqual(await runPrimaryBackendStartup(options), {

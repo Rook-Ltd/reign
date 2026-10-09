@@ -1,5 +1,5 @@
-import { Text } from '@reign/ink'
 import { useStore } from '@nanostores/react'
+import { Text } from '@reign/ink'
 import type { ReactNode } from 'react'
 
 import { $uiState } from '../app/uiStore.js'

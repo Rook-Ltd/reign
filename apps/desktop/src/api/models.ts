@@ -9,7 +9,7 @@ import type {
   ModelInfoResponse
 } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, reignApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 export function getGlobalModelInfo(profile?: null | string): Promise<ModelInfoResponse> {
   return reignApi<ModelInfoResponse>({

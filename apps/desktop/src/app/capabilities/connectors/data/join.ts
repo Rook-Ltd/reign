@@ -9,9 +9,9 @@ import type {
   McpServerSummary
 } from '@reign/shared'
 
-import type { McpCatalogEntry } from '@/reign'
 import { connectorTitle } from '@/lib/connector-tools'
 import { type McpServers, serverEnabled } from '@/lib/mcp-servers'
+import type { McpCatalogEntry } from '@/reign'
 
 import { canAuthenticate } from '../../mcp/mcp-status'
 import { toolRows } from '../derive-tools'
