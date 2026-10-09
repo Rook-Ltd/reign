@@ -15,13 +15,13 @@ Operate the Antigravity CLI (agy): plugins, auth, sandbox.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/autonomous-ai-agents/antigravity-cli` |
-| Path | `optional-skills/autonomous-ai-agents\antigravity-cli` |
+| Path | `optional-skills/autonomous-ai-agents/antigravity-cli` |
 | Version | `0.2.0` |
 | Author | Tony Simons (asimons81), Reign |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `Coding-Agent`, `Antigravity`, `CLI`, `Auth`, `Plugins`, `Sandbox` |
-| Related skills | [`grok`](/docs/user-guide/skills/optional/autonomous-ai-agents/autonomous-ai-agents-grok), [`codex`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-codex), [`claude-code`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code), [`reign`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-reign) |
+| Related skills | [`grok`](../../optional/autonomous-ai-agents/autonomous-ai-agents-grok.md), [`codex`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-codex.md), [`claude-code`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-claude-code.md), [`reign`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-reign.md) |
 
 ## Reference: full SKILL.md
 

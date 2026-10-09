@@ -90,7 +90,7 @@ function makeDeps(overrides: Partial<Parameters<typeof resolveVenvReignCommand>[
     isCommandScript: () => false,
     fileExists: () => true,
     directoryExists: () => false,
-    canImportReignCli: () => true,
+    canImportReignCli: async () => true,
     getVenvPython: (venvRoot: string) => `${venvRoot}/Scripts/python.exe`,
     getVenvSitePackagesEntries: () => [],
     buildDesktopBackendEnv: () => ({ FAKE_ENV: '1' }),
@@ -103,41 +103,41 @@ function makeDeps(overrides: Partial<Parameters<typeof resolveVenvReignCommand>[
   }
 }
 
-test('resolveVenvReignCommand: returns null off Windows', () => {
+test('resolveVenvReignCommand: returns null off Windows', async () => {
   const deps = makeDeps({ isWindows: false })
 
-  assert.equal(resolveVenvReignCommand('/root/venv/Scripts/reign.exe', [], deps), null)
+  assert.equal(await resolveVenvReignCommand('/root/venv/Scripts/reign.exe', [], deps), null)
 })
 
-test('resolveVenvReignCommand: returns null for a .cmd/.bat script command', () => {
+test('resolveVenvReignCommand: returns null for a .cmd/.bat script command', async () => {
   const deps = makeDeps({ isCommandScript: () => true })
 
-  assert.equal(resolveVenvReignCommand('/root/venv/Scripts/reign.cmd', [], deps), null)
+  assert.equal(await resolveVenvReignCommand('/root/venv/Scripts/reign.cmd', [], deps), null)
 })
 
-test('resolveVenvReignCommand: returns null when the basename is not reign/reign.exe', () => {
+test('resolveVenvReignCommand: returns null when the basename is not reign/reign.exe', async () => {
   const deps = makeDeps()
 
-  assert.equal(resolveVenvReignCommand('/root/venv/Scripts/python.exe', [], deps), null)
+  assert.equal(await resolveVenvReignCommand('/root/venv/Scripts/python.exe', [], deps), null)
 })
 
-test('resolveVenvReignCommand: returns null when the parent dir is not Scripts', () => {
+test('resolveVenvReignCommand: returns null when the parent dir is not Scripts', async () => {
   const deps = makeDeps()
 
-  assert.equal(resolveVenvReignCommand('/root/venv/bin/reign.exe', [], deps), null)
+  assert.equal(await resolveVenvReignCommand('/root/venv/bin/reign.exe', [], deps), null)
 })
 
-test('resolveVenvReignCommand: returns null when the venv python does not exist on disk', () => {
+test('resolveVenvReignCommand: returns null when the venv python does not exist on disk', async () => {
   const deps = makeDeps({ fileExists: () => false })
 
-  assert.equal(resolveVenvReignCommand('/root/venv/Scripts/reign.exe', [], deps), null)
+  assert.equal(await resolveVenvReignCommand('/root/venv/Scripts/reign.exe', [], deps), null)
 })
 
-test('resolveVenvReignCommand: probes the venv python before trusting it (returns null on failed probe)', () => {
+test('resolveVenvReignCommand: probes the venv python before trusting it (returns null on failed probe)', async () => {
   let probed = false
 
   const deps = makeDeps({
-    canImportReignCli: (python: string) => {
+    canImportReignCli: async (python: string) => {
       probed = true
       assert.equal(python, '/root/venv/Scripts/python.exe')
 
@@ -145,15 +145,15 @@ test('resolveVenvReignCommand: probes the venv python before trusting it (return
     }
   })
 
-  const result = resolveVenvReignCommand('/root/venv/Scripts/reign.exe', ['serve'], deps)
+  const result = await resolveVenvReignCommand('/root/venv/Scripts/reign.exe', ['serve'], deps)
 
   assert.equal(probed, true, 'must probe the venv interpreter; a broken venv must not be re-selected forever')
   assert.equal(result, null, 'a failed probe must fall through (return null) so the resolver reaches bootstrap')
 })
 
-test('resolveVenvReignCommand: returns the resolved python backend descriptor when the probe passes', () => {
+test('resolveVenvReignCommand: returns the resolved python backend descriptor when the probe passes', async () => {
   const deps = makeDeps()
-  const result = resolveVenvReignCommand('/root/venv/Scripts/reign.exe', ['serve', '--port', '0'], deps)
+  const result = await resolveVenvReignCommand('/root/venv/Scripts/reign.exe', ['serve', '--port', '0'], deps)
 
   assert.ok(result, 'a passing probe must return a backend descriptor, not null')
   assert.equal(result.command, '/root/venv/Scripts/python.exe')
@@ -164,11 +164,11 @@ test('resolveVenvReignCommand: returns the resolved python backend descriptor wh
   assert.deepEqual(result.env, { FAKE_ENV: '1' })
 })
 
-test('resolveVenvReignCommand: is case-insensitive on reign.exe and the Scripts dir name', () => {
+test('resolveVenvReignCommand: is case-insensitive on reign.exe and the Scripts dir name', async () => {
   const deps = makeDeps()
 
-  assert.ok(resolveVenvReignCommand('/root/venv/Scripts/REIGN.EXE', [], deps))
-  assert.ok(resolveVenvReignCommand('/root/venv/SCRIPTS/reign.exe', [], deps))
+  assert.ok(await resolveVenvReignCommand('/root/venv/Scripts/REIGN.EXE', [], deps))
+  assert.ok(await resolveVenvReignCommand('/root/venv/SCRIPTS/reign.exe', [], deps))
 })
 
 // ── getVenvSitePackagesEntries ─────────────────────────────────────────────
@@ -194,13 +194,15 @@ test('getVenvSitePackagesEntries: returns empty on Windows when site-packages do
 })
 
 test('getVenvSitePackagesEntries: reads pyvenv.cfg version on POSIX and resolves lib/pythonX.Y/site-packages', () => {
+  const expected = path.join('/venv', 'lib', 'python3.12', 'site-packages')
+
   const result = getVenvSitePackagesEntries('/venv', {
     isWindows: false,
-    directoryExists: p => p === '/venv/lib/python3.12/site-packages',
+    directoryExists: p => p === expected,
     readFile: () => 'version_info = 3.12.1\n'
   })
 
-  assert.deepEqual(result, ['/venv/lib/python3.12/site-packages'])
+  assert.deepEqual(result, [expected])
 })
 
 test('getVenvSitePackagesEntries: returns empty on POSIX when pyvenv.cfg is missing', () => {

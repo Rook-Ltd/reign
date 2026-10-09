@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Documents, OCR, Action-Items, Deadlines, Extraction]
     related_skills: [pdf, pdf, docx, notion]
 ---

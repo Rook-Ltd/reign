@@ -72,7 +72,9 @@ def invert_black_to_white(img: Image.Image) -> Image.Image:
 
 
 def main():
-    if not shutil.which("pdftocairo"):
+    try:
+        subprocess.run(["pdftocairo", "-v"], capture_output=True, check=False)
+    except FileNotFoundError:
         sys.exit("pdftocairo not found (brew install poppler)")
 
     # --- circle mark (primary: black disc, white rook) ---
@@ -97,8 +99,10 @@ def main():
     for s in (16, 32, 128, 256, 512):
         mark.resize((s, s), Image.LANCZOS).save(iconset / f"icon_{s}x{s}.png")
         mark.resize((s * 2, s * 2), Image.LANCZOS).save(iconset / f"icon_{s}x{s}@2x.png")
-    if shutil.which("iconutil"):
+    try:
         run("iconutil", "-c", "icns", iconset, "-o", OUT / "icon.icns")
+    except FileNotFoundError:
+        pass  # not macOS
     # windows .ico for electron
     mark.resize((256, 256), Image.LANCZOS).save(
         OUT / "icon.ico", sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])

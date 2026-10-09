@@ -6,7 +6,7 @@ author: shl0ms + Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [actual, actual-inc, provider, local-inference, relay, gguf, setup]
     category: devops
 ---

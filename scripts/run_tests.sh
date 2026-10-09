@@ -17,7 +17,7 @@
 #   scripts/run_tests.sh                            # full suite
 #   scripts/run_tests.sh -j 4                       # cap parallelism
 #   scripts/run_tests.sh tests/agent/               # discover only here
-#   scripts/run_tests.sh tests/agent/ tests/acp/    # multiple roots
+#   scripts/run_tests.sh tests/agent/ tests/acp_adapter/    # multiple roots
 #   scripts/run_tests.sh tests/foo.py               # single file
 #   scripts/run_tests.sh tests/foo.py -q            # path + bare pytest flag
 #   scripts/run_tests.sh tests/foo.py -v --tb=long  # bare flags "just work"
@@ -136,14 +136,20 @@ done
 #     subprocess rebuild the 5GB image from a cold builder cache instead
 #     (~4 min per worker per run, and the rebuilt image lacked the
 #     REIGN_GIT_SHA build-arg the workflow bakes in).
+#   * REIGN_E2E_REQUIRE_TUI turns a missing Ink TUI build into a failure in
+#     tests/e2e/core/terminal instead of a skip (set by the e2e CI job).
+#   * CI / GITHUB_ACTIONS tell suites they run on a disposable runner (e.g.
+#     tests/e2e/core/upgrade runs the real updater unsandboxed only there).
 #
 # These are test-infrastructure knobs, not credentials — same class as the
-# REIGN_RUN_SLOW_PET_TESTS / REIGN_E2E_BROWSER opt-ins already forwarded.
+# REIGN_RUN_SLOW_PET_TESTS / REIGN_E2E_BROWSER / REIGN_RUN_E2E opt-ins
+# forwarded below.
 # Keep this an explicit allowlist (no REIGN_TEST_* glob) so the "no
 # credential can leak" property stays auditable at a glance.
 TEST_ENV=()
 for _test_var in REIGN_TEST_IMAGE REIGN_TEST_WORKERS REIGN_TEST_PATHS \
-  REIGN_TEST_FILE_TIMEOUT REIGN_TEST_FILE_RETRIES REIGN_TEST_SLICE; do
+  REIGN_TEST_FILE_TIMEOUT REIGN_TEST_FILE_RETRIES REIGN_TEST_SLICE \
+  REIGN_GATEWAY_LOCK_DIR REIGN_E2E_REQUIRE_TUI CI GITHUB_ACTIONS; do
   if [ -n "${!_test_var:-}" ]; then
     TEST_ENV+=("$_test_var=${!_test_var}")
   fi
@@ -178,6 +184,7 @@ exec env -i \
   PYTHONUTF8=1 \
   ${REIGN_RUN_SLOW_PET_TESTS:+REIGN_RUN_SLOW_PET_TESTS="$REIGN_RUN_SLOW_PET_TESTS"} \
   ${REIGN_E2E_BROWSER:+REIGN_E2E_BROWSER="$REIGN_E2E_BROWSER"} \
+  ${REIGN_RUN_E2E:+REIGN_RUN_E2E="$REIGN_RUN_E2E"} \
   ${EXTRA_PYTHONPATH:+PYTHONPATH="$EXTRA_PYTHONPATH"} \
   ${EXTRA_PYTEST_PLUGINS:+PYTEST_PLUGINS="$EXTRA_PYTEST_PLUGINS"} \
   "$PYTHON" "$SCRIPT_DIR/run_tests_parallel.py" "$@"

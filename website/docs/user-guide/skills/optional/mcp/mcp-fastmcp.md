@@ -15,13 +15,13 @@ Build, test, and deploy Python MCP servers.
 | | |
 |---|---|
 | Source | Optional — install with `reign skills install official/mcp/fastmcp` |
-| Path | `optional-skills/mcp\fastmcp` |
+| Path | `optional-skills/mcp/fastmcp` |
 | Version | `1.0.0` |
 | Author | Reign |
 | License | MIT |
 | Platforms | linux, macos, windows |
 | Tags | `MCP`, `FastMCP`, `Python`, `Tools`, `Resources`, `Prompts`, `Deployment` |
-| Related skills | [`reign`](/docs/user-guide/skills/bundled/autonomous-ai-agents/autonomous-ai-agents-reign), [`mcporter`](/docs/user-guide/skills/optional/mcp/mcp-mcporter) |
+| Related skills | [`reign`](../../bundled/autonomous-ai-agents/autonomous-ai-agents-reign.md), [`mcporter`](../../optional/mcp/mcp-mcporter.md) |
 
 ## Reference: full SKILL.md
 

@@ -31,12 +31,12 @@ def curator_env(tmp_path, monkeypatch, capsys):
     importlib.reload(reign_constants)
     from agent import curator
     importlib.reload(curator)
-    from reign_cli import main as reign_main
-    importlib.reload(reign_main)
+    from reign_cli import update_cmd_maint
+    importlib.reload(update_cmd_maint)
 
     yield {
         "curator": curator,
-        "main": reign_main,
+        "main": update_cmd_maint,
         "capsys": capsys,
     }
 

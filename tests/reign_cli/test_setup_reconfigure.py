@@ -177,7 +177,7 @@ class TestFreshInstall:
             m = _enter_fresh_install_patches(
                 stack,
                 prompt=("reign_cli.setup.prompt_choice", {"return_value": 0}),
-                first="reign_cli.setup._run_first_time_quick_setup",
+                first="reign_cli.setup_quick._run_first_time_quick_setup",
             )
             from reign_cli.setup import run_setup_wizard
             from reign_cli import setup as setup_mod
@@ -199,7 +199,7 @@ class TestFreshInstall:
             m = _enter_fresh_install_patches(
                 stack,
                 prompt=("reign_cli.setup.prompt_choice", {"return_value": 2}),
-                blank="reign_cli.setup._run_blank_slate_setup",
+                blank="reign_cli.setup_quick._run_blank_slate_setup",
             )
             from reign_cli import setup as setup_mod
 

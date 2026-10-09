@@ -6,7 +6,7 @@ author: Ben Barclay (benbarclay), Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [Weekly-Review, Planning, Tasks, Calendar, Productivity]
     related_skills: [obsidian, notion, airtable, google-workspace, email-inbox-triage]
 ---

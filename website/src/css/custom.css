@@ -1,13 +1,15 @@
 /**
  * Reign — Custom Docusaurus Theme
- * Rook branding: monochrome, black on white / white on near-black
+ * Matches the landing page branding: amber-on-dark, terminal aesthetic
+ * Colors from landingpage/style.css
  */
 
 /* Import fonts to match landing page */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-  /* Light mode: near-black primary on white */
+  /* Dark amber palette for light mode — readable on white (WCAG AA compliant)
+     Current gold #FFFFFF has only 1.4:1 contrast on white; these tones pass 4.5:1+ */
   --ifm-color-primary: #1A1A1A;
   --ifm-color-primary-dark: #111111;
   --ifm-color-primary-darker: #0A0A0A;

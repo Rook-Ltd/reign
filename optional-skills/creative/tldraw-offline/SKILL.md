@@ -6,7 +6,7 @@ author: Teknium + Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [tldraw, canvas, whiteboard, document-script, diagramming]
     category: creative
     related_skills: []

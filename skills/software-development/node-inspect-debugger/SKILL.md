@@ -6,7 +6,7 @@ author: Reign
 license: MIT
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [debugging, nodejs, node-inspect, cdp, breakpoints, ui-tui]
     related_skills: [systematic-debugging, python-debugpy]
 ---
@@ -111,7 +111,7 @@ npm i -g chrome-remote-interface        # or project-local
 node --inspect-brk=9229 target.js &
 ```
 
-Driver script (save as `/tmp/cdp-debug.js`):
+Driver script (save as `~/.reign/cache/scratch/cdp-debug.js`):
 
 ```javascript
 const CDP = require('chrome-remote-interface');
@@ -164,14 +164,14 @@ const CDP = require('chrome-remote-interface');
 Run it:
 
 ```bash
-node /tmp/cdp-debug.js
+node ~/.reign/cache/scratch/cdp-debug.js
 ```
 
 Reign-specific note: `chrome-remote-interface` is NOT in `ui-tui/package.json`. Install it to a throwaway location if you don't want to dirty the project:
 
 ```bash
-mkdir -p /tmp/cdp-tools && cd /tmp/cdp-tools && npm i chrome-remote-interface
-NODE_PATH=/tmp/cdp-tools/node_modules node /tmp/cdp-debug.js
+mkdir -p ~/.reign/cache/scratch/cdp-tools && cd ~/.reign/cache/scratch/cdp-tools && npm i chrome-remote-interface
+NODE_PATH=~/.reign/cache/scratch/cdp-tools/node_modules node ~/.reign/cache/scratch/cdp-debug.js
 ```
 
 ## Debugging Reign ui-tui
@@ -246,8 +246,8 @@ await client.Profiler.enable();
 await client.Profiler.start();
 await new Promise(r => setTimeout(r, 5000));
 const { profile } = await client.Profiler.stop();
-require('fs').writeFileSync('/tmp/cpu.cpuprofile', JSON.stringify(profile));
-// Open /tmp/cpu.cpuprofile in Chrome DevTools → Performance tab
+require('fs').writeFileSync('~/.reign/cache/scratch/cpu.cpuprofile', JSON.stringify(profile));
+// Open ~/.reign/cache/scratch/cpu.cpuprofile in Chrome DevTools → Performance tab
 ```
 
 ```javascript
@@ -256,7 +256,7 @@ await client.HeapProfiler.enable();
 const chunks = [];
 client.HeapProfiler.addHeapSnapshotChunk(({ chunk }) => chunks.push(chunk));
 await client.HeapProfiler.takeHeapSnapshot({ reportProgress: false });
-require('fs').writeFileSync('/tmp/heap.heapsnapshot', chunks.join(''));
+require('fs').writeFileSync('~/.reign/cache/scratch/heap.heapsnapshot', chunks.join(''));
 ```
 
 ## Common Pitfalls

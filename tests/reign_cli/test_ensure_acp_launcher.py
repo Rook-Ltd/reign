@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 import pytest
 
-from reign_cli.main import _ensure_acp_launcher
+from reign_cli.update_cmd import _ensure_acp_launcher
 
 
 @pytest.fixture

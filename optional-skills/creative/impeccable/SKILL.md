@@ -6,7 +6,7 @@ author: Paul Bakaus (pbakaus)
 license: Apache-2.0
 platforms: [linux, macos, windows]
 metadata:
-  reign:
+  hermes:
     tags: [design, frontend, ui, ux, web-design, anti-slop]
     category: creative
     related_skills: [claude-design, popular-web-designs]

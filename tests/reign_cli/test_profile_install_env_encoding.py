@@ -18,7 +18,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from reign_cli.main import _render_distribution_plan
+from reign_cli.profile_cmd import _render_distribution_plan
 
 
 def _make_plan(target_dir, env_requires):
