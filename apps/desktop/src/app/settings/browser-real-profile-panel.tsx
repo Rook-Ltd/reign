@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 
-import { type ProfileScope, saveReignConfigRecord } from '@/reign'
 import { useI18n } from '@/i18n'
+import { type ProfileScope, saveReignConfigRecord } from '@/reign'
 import { notify, notifyError } from '@/store/notifications'
 
 import { reignConfigCacheWriter, useReignConfigRecord } from '../hooks/use-config-record'

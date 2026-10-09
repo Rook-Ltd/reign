@@ -13,7 +13,7 @@ import type {
   WebhooksResponse
 } from '@/types/reign'
 
-import { reignApi, profileScoped } from './client'
+import { profileScoped, reignApi } from './client'
 
 export function getMessagingPlatforms(profile?: null | string): Promise<MessagingPlatformsResponse> {
   return reignApi<MessagingPlatformsResponse>({

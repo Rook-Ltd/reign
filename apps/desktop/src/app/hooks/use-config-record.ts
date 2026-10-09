@@ -1,5 +1,6 @@
 import { replaceEqualDeep, useQuery } from '@tanstack/react-query'
 
+import { queryClient } from '@/lib/query-client'
 import {
   getReignConfigRecord,
   peekConfigReadOrigin,
@@ -7,7 +8,6 @@ import {
   profileScopeKey,
   retainConfigReadOrigin
 } from '@/reign'
-import { queryClient } from '@/lib/query-client'
 import type { ReignConfigRecord } from '@/types/reign'
 
 // One shared cache for the whole profile config record (`GET /api/config`).

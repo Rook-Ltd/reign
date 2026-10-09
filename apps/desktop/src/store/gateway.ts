@@ -11,7 +11,6 @@ import {
 import { atom } from 'nanostores'
 
 import type { ReignConnection } from '@/global'
-import { ReignGateway, setApiRequestConnection } from '@/reign'
 import { translateNow } from '@/i18n'
 import {
   decideLivenessForceClose,
@@ -20,6 +19,7 @@ import {
 } from '@/lib/gateway-liveness-policy'
 import { isMissingRpcMethod } from '@/lib/gateway-rpc'
 import { isTimeoutError, RECONNECT_ATTEMPT_TIMEOUT_MS, withTimeout } from '@/lib/with-timeout'
+import { ReignGateway, setApiRequestConnection } from '@/reign'
 import { notifyError, RECOVERY_ACTIONS } from '@/store/notifications'
 import { markNativeNotifyBaseline } from '@/store/notify-baseline'
 import { setConnection, setGatewayState } from '@/store/session'

@@ -14,12 +14,12 @@ import './kanban.css'
 import {
   cn,
   Codicon,
-  type ReignPlugin,
   host,
   type KeybindContribution,
   KEYBINDS_AREA,
   PALETTE_AREA,
   type PaletteContribution,
+  type ReignPlugin,
   type RouteContribution,
   ROUTES_AREA,
   SIDEBAR_NAV_AREA,

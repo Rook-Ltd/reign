@@ -1,6 +1,6 @@
 import type { LocalCatalogModel, LocalHardware, LocalModelsStatus, LocalRuntimeJob } from '@/types/reign'
 
-import { reignApi, profileScoped } from './client'
+import { profileScoped, reignApi } from './client'
 
 // The desktop surface of the managed llama.cpp runtime: status/catalog
 // reads, download/install/activate jobs, and server control.

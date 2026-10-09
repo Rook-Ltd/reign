@@ -36,7 +36,7 @@ from reign_cli.dashboard_auth import (
     assert_protocol_compliance,
 )
 
-_ISSUER = "https://auth.example.com/application/o/hermes"
+_ISSUER = "https://auth.example.com/application/o/reign"
 _CLIENT_ID = "reign-dashboard"
 
 _DISCOVERY_DOC = {
@@ -272,7 +272,7 @@ class TestDiscovery:
         p = self._provider()
         resp = self._mock_get(
             200, dict(_DISCOVERY_DOC),
-            url="https://auth.example.com/.well-known/openid-configuration/application/o/hermes",
+            url="https://auth.example.com/.well-known/openid-configuration/application/o/reign",
         )
         with patch(
             "plugins.dashboard_auth.self_hosted.httpx.get", return_value=resp

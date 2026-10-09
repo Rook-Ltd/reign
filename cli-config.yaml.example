@@ -1046,7 +1046,7 @@ group_sessions_per_user: true
 # must use HTTPS.
 #
 # gateway:
-#   room_link_url: "https://hermes.example.net"
+#   room_link_url: "https://reign.example.net"
 #
 # The equivalent environment override is REIGN_ROOM_LINK_URL. After changing
 # it, restart the gateway and reopen New Group Chat > Advanced; Reign will
@@ -2164,7 +2164,7 @@ updates:
 #   # full proxy header chains).
 #   #
 #   # When set, the value is the complete authority: scheme + host +
-#   # optional path prefix (e.g. "https://example.com/hermes"). The OAuth
+#   # optional path prefix (e.g. "https://example.com/reign"). The OAuth
 #   # callback URL becomes "<public_url>/auth/callback" — X-Forwarded-Prefix
 #   # is IGNORED on this code path because the operator has explicitly
 #   # declared the public URL and we no longer need to guess.
@@ -2172,7 +2172,7 @@ updates:
 #   # Leave empty to use the existing proxy-header reconstruction (the
 #   # default — works on Fly.io out of the box).
 #   #
-#   #   public_url: "https://example.com/hermes"
+#   #   public_url: "https://example.com/reign"
 #   #
 #   # Reverse proxies connecting from another container or host are not
 #   # trusted by default. Add only the proxy's exact IP address, or a bounded
@@ -2199,7 +2199,7 @@ updates:
 #   oauth:
 #     provider: self-hosted
 #     self_hosted:
-#       issuer: "https://auth.example.com/application/o/hermes/"  # required
+#       issuer: "https://auth.example.com/application/o/reign/"  # required
 #       client_id: "reign-dashboard"                             # required
 #       scopes: "openid profile email"                            # optional
 #

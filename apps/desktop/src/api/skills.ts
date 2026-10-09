@@ -9,7 +9,7 @@ import type {
 } from '@/types/reign'
 import type { ActionResponse } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, profileScoped } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, reignApi } from './client'
 
 export function getSkills(profile?: ProfileScope): Promise<SkillInfo[]> {
   return window.reignDesktop.api<SkillInfo[]>({

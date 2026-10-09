@@ -1728,7 +1728,7 @@ export const ar = defineLocale({
       title: (profile: string) => `ربط ${profile} بمضيف بعيد`,
       description: 'ستعمل جلسات هذا الملف الشخصي على خادم Reign البعيد الذي تحدده، بدلاً من هذا الجهاز.',
       urlLabel: 'العنوان البعيد',
-      urlPlaceholder: 'https://hermes.example.com',
+      urlPlaceholder: 'https://reign.example.com',
       urlInvalid: 'أدخل عنواناً كاملاً يبدأ بـ http:// أو https://',
       tokenLabel: 'رمز الوصول',
       tokenPlaceholder: 'الصق رمز الجلسة البعيد',

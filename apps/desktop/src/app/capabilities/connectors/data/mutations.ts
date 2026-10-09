@@ -1,9 +1,9 @@
 import type { ConnectionAnswer, ConnectorPolicyGetResult } from '@reign/shared'
 import { useCallback, useRef, useState } from 'react'
 
-import type { ProfileScope } from '@/reign'
 import { translateNow } from '@/i18n'
 import { queryClient } from '@/lib/query-client'
+import type { ProfileScope } from '@/reign'
 import { notifyError } from '@/store/notifications'
 
 import type { SaveResult } from '../use-tools-editor'

@@ -1,5 +1,5 @@
-import { type ProfileScope, setModelAssignment } from '@/reign'
 import { translateNow } from '@/i18n'
+import { type ProfileScope, setModelAssignment } from '@/reign'
 import { dismissNotification, notify } from '@/store/notifications'
 import type { ModelAssignmentRequest, ModelAssignmentResponse } from '@/types/reign'
 
