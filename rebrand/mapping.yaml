@@ -568,6 +568,13 @@ post_replace:
       - plain: "REIGN_TEST_WORKERS: 96"
         with:  'REIGN_TEST_WORKERS: ""'
   - files:
+      - ".github/workflows/tests.yml"
+    replace:
+      # GitHub's hosted images ship Node; reign1 does not, and the photon sidecar tests shell
+      # out to `node`.
+      - regex: '(\n    name: Run tests\n(?:(?!      - name: Checkout code).*\n)*?      - name: Checkout code\n        uses: [^\n]+\n)(?!\n      - name: Set up Node)'
+        with:  '\1\n      - name: Set up Node\n        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4\n        with:\n          node-version: 26\n'
+  - files:
       - ".github/workflows/ci.yaml"
     replace:
       # A large sync diff takes the classifier over a minute (68s on the first sync).
