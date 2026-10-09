@@ -6,7 +6,7 @@ import type {
   ProfilesResponse
 } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, reignApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 export function getProfiles(scope?: ProfileScope): Promise<ProfilesResponse> {
   return reignApi<ProfilesResponse>({

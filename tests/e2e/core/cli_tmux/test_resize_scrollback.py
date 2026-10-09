@@ -59,7 +59,11 @@ def test_resizes_keep_each_transcript_line_once_in_tmux_scrollback(tmp_path: Pat
 
     def ask(turn: int) -> None:
         tmux("send-keys", "-t", "p", "-l", f"question zq{turn}q please")
-        time.sleep(0.5)  # typed text + Enter in one write is a paste, not a submit
+        # An Enter read within 50 ms of the last text change is a pasted newline, not a submit. On
+        # a busy runner the UI loop can stall long enough to read text and Enter as one batch, so
+        # wait until the text has been processed (drawn), then leave a real gap.
+        wait_for(f"zq{turn}q please")
+        time.sleep(0.5)
         tmux("send-keys", "-t", "p", "Enter")
 
     def reply_done(turn: int) -> None:

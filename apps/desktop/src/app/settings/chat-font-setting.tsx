@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { saveReignConfig } from '@/reign'
 import { useI18n } from '@/i18n'
+import { saveReignConfig } from '@/reign'
 import { notifyError } from '@/store/notifications'
 import {
   CHAT_FONT_SUGGESTIONS,

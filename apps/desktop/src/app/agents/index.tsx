@@ -1,5 +1,5 @@
-import { compactNumber } from '@reign/shared'
 import { useStore } from '@nanostores/react'
+import { compactNumber } from '@reign/shared'
 import { type ReactNode, useEffect, useMemo, useState } from 'react'
 
 import { useElapsedSeconds } from '@/components/chat/activity-timer'

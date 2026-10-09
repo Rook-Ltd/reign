@@ -1875,7 +1875,7 @@ Register this install as a self-hosted dashboard with your Nous Portal account. 
 | Option | Description |
 |--------|-------------|
 | `--name` | Human-readable label for the dashboard (default: auto-generated). |
-| `--redirect-uri` | Public HTTPS OAuth redirect URI (e.g. `https://hermes.example.com/auth/callback`). Omit for localhost-only use. |
+| `--redirect-uri` | Public HTTPS OAuth redirect URI (e.g. `https://reign.example.com/auth/callback`). Omit for localhost-only use. |
 | `--portal-url` | Override the Nous Portal base URL for registration (default: the portal you logged into). Also settable via `REIGN_DASHBOARD_PORTAL_URL`. |
 
 ```bash

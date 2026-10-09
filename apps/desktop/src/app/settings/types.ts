@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 
-import type { ReignGateway } from '@/reign'
 import type { IconComponent } from '@/lib/icons'
+import type { ReignGateway } from '@/reign'
 import type { EnvVarInfo } from '@/types/reign'
 
 export type SettingsView =

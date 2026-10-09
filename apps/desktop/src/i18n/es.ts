@@ -3560,7 +3560,7 @@ export const es = defineLocale({
       description:
         'Las sesiones de este perfil se ejecutarán en el Reign remoto que indiques, en lugar de en este equipo.',
       urlLabel: 'Dirección remota',
-      urlPlaceholder: 'https://hermes.example.com',
+      urlPlaceholder: 'https://reign.example.com',
       urlInvalid: 'Introduce una dirección completa que empiece por http:// o https://',
       tokenLabel: 'Token de acceso',
       tokenPlaceholder: 'Pega el token de sesión remota',
@@ -4644,7 +4644,7 @@ export const es = defineLocale({
       'Introduce la URL de tu gateway. Reign Desktop detectará si necesita un token o iniciar sesión en el navegador.',
     remoteUrlTitle: 'URL del gateway',
     remoteUrlDesc: 'Usa la URL base del gateway de Reign e incluye https:// si es remoto.',
-    remoteUrlPlaceholder: 'https://gateway.example.com/hermes',
+    remoteUrlPlaceholder: 'https://gateway.example.com/reign',
     probing: 'Detectando la autenticación del gateway…',
     probeError:
       'Reign no puede llegar a esa dirección. Comprueba la URL y que el otro equipo esté ejecutando Reign; las opciones de inicio de sesión aparecen cuando responde.',

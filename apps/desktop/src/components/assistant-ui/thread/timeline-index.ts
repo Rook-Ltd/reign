@@ -1,4 +1,4 @@
-import { capabilityScoped, reignApi, type ProfileScope } from '@/api/client'
+import { capabilityScoped, type ProfileScope, reignApi } from '@/api/client'
 
 import type { TimelineEntry } from './timeline-data'
 
