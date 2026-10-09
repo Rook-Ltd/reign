@@ -4,17 +4,17 @@ import type {
   CustomEndpointUpdate,
   CustomEndpointValidationResponse,
   EnvVarInfo,
-  ReignConfig,
-  ReignConfigRecord,
   LogsResponse,
   OAuthPollResponse,
   OAuthProvidersResponse,
   OAuthStartResponse,
   OAuthSubmitResponse,
+  ReignConfig,
+  ReignConfigRecord,
   StatusResponse
 } from '@/types/reign'
 
-import { capabilityScoped, reignApi, type ProfileScope, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { capabilityScoped, type ProfileScope, profileScoped, reignApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 type ConfigReadOrigin = { connectionId?: string; priority?: 'foreground'; profile?: string }
 

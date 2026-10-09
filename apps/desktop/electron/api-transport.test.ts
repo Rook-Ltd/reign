@@ -399,7 +399,7 @@ describe('htmlResponseError', () => {
     for (const [url, location] of [
       ['http://gateway.example.com/api/profiles', 'https://gateway.example.com/api/profiles'],
       ['https://gateway.example.com/api/profiles', '/api/profiles/'],
-      ['https://gateway.example.com/hermes/api/health', 'https://gateway.example.com/hermes/api/health/']
+      ['https://gateway.example.com/reign/api/health', 'https://gateway.example.com/reign/api/health/']
     ]) {
       const message = htmlResponseError(url, 301, location).message
 

@@ -95,6 +95,8 @@ class TestCommandTimeoutRecovery:
 
         monkeypatch.setattr(bt_install, "_find_agent_browser", lambda: "agent-browser")
         monkeypatch.setattr("tools.browser_tool_install._requires_real_termux_browser_install", lambda _cmd: False)
+        # A runner with no Chromium on disk would stop at the missing-browser guard instead.
+        monkeypatch.setattr("tools.browser_tool_install._chromium_installed", lambda: True)
         monkeypatch.setattr("tools.browser_tool_lifecycle._start_browser_cleanup_thread", lambda: None)
         monkeypatch.setattr("tools.browser_tool_cdp._ensure_cdp_supervisor", lambda _: supervisor_events.append("ensure"))
         monkeypatch.setattr("tools.browser_tool_cdp._stop_cdp_supervisor", lambda _: supervisor_events.append("stop"))

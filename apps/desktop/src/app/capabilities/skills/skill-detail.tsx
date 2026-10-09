@@ -3,8 +3,8 @@ import { useMemo } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { CountSkeleton } from '@/components/ui/skeleton'
-import { getSkillContent, type ProfileScope, profileScopeKey } from '@/reign'
 import { useI18n } from '@/i18n'
+import { getSkillContent, type ProfileScope, profileScopeKey } from '@/reign'
 import type { SkillInfo } from '@/types/reign'
 
 import { PanelPill } from '../../overlays/panel'

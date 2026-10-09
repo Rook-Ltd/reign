@@ -265,9 +265,9 @@ export {
   buildDesktopBackendEnv,
   buildDesktopBackendPath,
   delimiterForPlatform,
-  reignManagedNodePathEntries,
   normalizeReignHomeRoot,
   pathEnvKey,
   POSIX_SANE_PATH_ENTRIES,
-  profileBackendParentEnv
+  profileBackendParentEnv,
+  reignManagedNodePathEntries
 }

@@ -178,8 +178,8 @@ export {
   GatewayReauthRequiredError,
   type GatewayWsConnection,
   type GatewayWsUrlResult,
-  type ReignWebSocketUrlOptions,
   isGatewayReauthRequired,
+  type ReignWebSocketUrlOptions,
   resolveGatewayWsUrl,
   type ResolveGatewayWsUrlDeps,
   type WebSocketAuthParam

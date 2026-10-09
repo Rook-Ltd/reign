@@ -11,9 +11,9 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog'
-import { saveReignConfigRecord } from '@/reign'
 import { useI18n } from '@/i18n'
 import { Check, Globe } from '@/lib/icons'
+import { saveReignConfigRecord } from '@/reign'
 import { notify, notifyError } from '@/store/notifications'
 import {
   $realProfilePromptClaim,

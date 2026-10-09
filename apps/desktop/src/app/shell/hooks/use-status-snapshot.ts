@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-import { getStatus } from '@/reign'
 import { evaluateRuntimeReadiness, type RuntimeReadinessResult } from '@/lib/runtime-readiness'
+import { getStatus } from '@/reign'
 import { refreshFreeTierStatus, setFreeTierRoute } from '@/store/free-tier'
 import { $setupReadyTick } from '@/store/live-sync'
 import type { StatusResponse } from '@/types/reign'

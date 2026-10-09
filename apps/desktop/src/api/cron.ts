@@ -7,7 +7,7 @@ import type {
   SessionInfo
 } from '@/types/reign'
 
-import { connectionScoped, reignApi, profileScoped, STARTUP_REQUEST_TIMEOUT_MS } from './client'
+import { connectionScoped, profileScoped, reignApi, STARTUP_REQUEST_TIMEOUT_MS } from './client'
 
 // The cron trigger endpoint intentionally waits for the whole job so its
 // response reflects the persisted execution result. Agent jobs can run far
