@@ -185,3 +185,23 @@ class TestNonStreamingSibling:
         resp = agent._interruptible_api_call({"model": "m", "messages": []})
         assert resp is not None
         assert agent._consecutive_stale_streams == 0
+
+
+def test_stale_kill_counts_each_attempt_once():
+    """A worker that outlives a second stale window on the SAME attempt (slow unwind
+    on a loaded host) must not bump the breaker twice; a new attempt counts again."""
+    from agent.chat_completion_helpers import _StreamingCall
+
+    agent = _make_fallback_agent(fallback_model=[])
+    agent._consecutive_stale_streams = 0
+    call = _StreamingCall(agent, {"model": "m", "messages": []}, None)
+    call._stream_stale_timeout = 3.0
+
+    call._start_stream_attempt()
+    call._kill_stale_stream(4.0)
+    call._kill_stale_stream(4.0)  # same attempt, worker not yet unwound
+    assert agent._consecutive_stale_streams == 1
+
+    call._start_stream_attempt()
+    call._kill_stale_stream(4.0)
+    assert agent._consecutive_stale_streams == 2
