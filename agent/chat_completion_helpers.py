@@ -3594,11 +3594,16 @@ class _StreamingCall(StreamingWaitMonitor):
         # connection, so shut down the killed attempt's own socket too — still
         # shutdown-only, never close (see the helper).
         _killed_response = self._attempt_stream_response
+        # A worker slow to unwind (loaded host) can outlive another stale window on the
+        # SAME attempt; count each attempt once or the breaker trips early (#58962).
+        with self.stream_attempt_lock:
+            _recount = self.stream_attempt_state["current"] in self.stream_attempt_state["cancelled"]
         with contextlib.suppress(Exception):
             self._cancel_current_stream_attempt("stale_stream_kill")
             self.clients.close_once("stale_stream_kill")
         self._shutdown_stale_attempt_socket(_killed_response)
-        _bump_stale_streak(self.agent)  # circuit breaker, see ``_stale_streak()``
+        if not _recount:
+            _bump_stale_streak(self.agent)  # circuit breaker, see ``_stale_streak()``
         # Reset the timer so we don't kill repeatedly while the worker unwinds.
         self.last_chunk_time["t"] = time.time()
         self.agent._emit_diagnostic_wait(f"⚠ no output from provider for {int(elapsed)}s — reconnecting...")
