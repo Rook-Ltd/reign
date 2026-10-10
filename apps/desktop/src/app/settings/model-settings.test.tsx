@@ -14,6 +14,12 @@ beforeAll(() => {
   Element.prototype.releasePointerCapture = vi.fn()
 })
 
+// Load the page's module graph once under hookTimeout, so the first test is not
+// charged the cold import against testTimeout (it timed out on a slow runner).
+beforeAll(async () => {
+  await import('./model-settings')
+})
+
 const getGlobalModelInfo = vi.fn()
 const getGlobalModelOptions = vi.fn()
 const getAuxiliaryModels = vi.fn()
