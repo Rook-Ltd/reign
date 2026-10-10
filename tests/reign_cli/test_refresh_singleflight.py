@@ -207,7 +207,9 @@ def test_cookie_gate_burst_with_stale_rt_rotates_once(gated_web_app):
 
     with ThreadPoolExecutor(max_workers=4) as pool:
         futures = [pool.submit(call) for _ in range(4)]
-        assert provider.entered.wait(3)
+        # Each request first runs the app lifespan in its own TestClient; on a loaded runner that
+        # alone can exceed a few seconds, and the stuck leader then 401s every sibling.
+        assert provider.entered.wait(30)
         provider.release.set()
         statuses = sorted(f.result(timeout=10).status_code for f in futures)
     assert statuses == [200, 200, 200, 200]
