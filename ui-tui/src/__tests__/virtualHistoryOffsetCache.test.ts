@@ -528,17 +528,20 @@ describe('useVirtualHistory offset cache reuse', () => {
     })
 
     try {
-      await delay(20)
+      await vi.waitFor(() => expect(expose.current?.scroll).toBeTruthy())
       const scroll = expose.current!.scroll!
 
       scroll.scrollTo(0)
-      await delay(20)
+      // The stale row must still be mounted when the rerender lands, or nothing is measured
+      // at unmount; a fixed delay is too short on a loaded runner.
+      await vi.waitFor(() => expect(expose.current!.virtualHistory.start).toBe(0))
       scroll.scrollTo(5)
       const adjustScrollTop = vi.spyOn(scroll, 'adjustScrollTop')
       const staleHeights = new Map(initialHeights)
 
       staleHeights.set(items[0]!.key, 1)
       instance.rerender(React.createElement(Harness, { expose, initialHeights: staleHeights, items }))
+      await vi.waitFor(() => expect(adjustScrollTop).toHaveBeenCalled())
       await delay(40)
 
       expect(adjustScrollTop).toHaveBeenCalledOnce()
