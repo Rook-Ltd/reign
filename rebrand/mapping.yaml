@@ -659,6 +659,17 @@ post_replace:
       - regex: "(?<!# v3\\.7\\.0\n\n)(      - name: Set up Docker Buildx\n        id: buildx\n)"
         with:  "      # reign1 is x64, so arm64 images build under QEMU emulation.\n      - name: Set up QEMU\n        if: matrix.arch == 'arm64'\n        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0\n\n\\1"
 
+  # reign1's CPU is x86-64-v2 (no AVX2), and setup-python's Ubuntu 26.04 builds need
+  # x86-64-v3 ("CPU ISA level is lower than required"). uv's Python builds run on v2, so
+  # each setup-python step becomes setup-uv plus a seeded venv on PATH (python, pip).
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/actions/**"
+    replace:
+      - regex: '(?m)^( *)- (?:name: [^\n]*\n\1  )?uses: actions/setup-python@[0-9a-f]{40}[^\n]*\n\1  with:\n\1    python-version: ["'']?([0-9.]+)["'']?\n'
+        with:  '\1- name: Install uv\n\1  uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0\n\1  with:\n\1    version: "0.9.28"\n\1- name: Set up Python \2 (uv)\n\1  shell: bash\n\1  run: |\n\1    uv venv --seed --python \2 "$RUNNER_TEMP/py"\n\1    echo "$RUNNER_TEMP/py/bin" >> "$GITHUB_PATH"\n\1    echo "VIRTUAL_ENV=$RUNNER_TEMP/py" >> "$GITHUB_ENV"\n'
+
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
 overlay_exclude:
