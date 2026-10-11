@@ -51,6 +51,9 @@ def test_profile_local_mcp_tool_is_visible_in_slash_worker(tmp_path):
     (profile_home / "config.yaml").write_text(
         yaml.safe_dump(
             {
+                # The 1.5 s default bounds a real session's startup; a loaded runner can take
+                # longer than that just to spawn the probe server and import the MCP SDK.
+                "mcp_discovery_timeout": 60,
                 "mcp_servers": {
                     "profileprobe": {
                         "enabled": True,
@@ -99,9 +102,9 @@ def test_profile_local_mcp_tool_is_visible_in_slash_worker(tmp_path):
         proc.stdin.write(json.dumps({"id": 1, "command": "/tools"}) + "\n")
         proc.stdin.flush()
         try:
-            line = output.get(timeout=10)
+            line = output.get(timeout=90)
         except queue.Empty:
-            pytest.fail("slash worker produced no /tools response within 10 seconds")
+            pytest.fail("slash worker produced no /tools response within 90 seconds")
         response = json.loads(line)
         assert response["ok"] is True
         assert "mcp__profileprobe__reign_61922_profile_probe" in response["output"]
