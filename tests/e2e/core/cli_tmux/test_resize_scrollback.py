@@ -12,13 +12,17 @@ decided by how the terminal re-wraps the rows prompt_toolkit already wrote.
 
 from __future__ import annotations
 
+import base64
+import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
 import time
 import uuid
+import zlib
 from collections import Counter
 from pathlib import Path
 
@@ -30,6 +34,10 @@ pytestmark = pytest.mark.skipif(shutil.which("tmux") is None, reason="needs tmux
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 WORDS = {1: 60, 2: 260, 3: 130}
+# pipe-pane target: every byte the CLI wrote to the pane, stamped with the system-wide monotonic clock.
+RECORDER = ("import base64, os, sys, time\n"
+            "while chunk := os.read(0, 65536):\n"
+            "    sys.stdout.write(f'{time.monotonic():.6f} {base64.b64encode(chunk).decode()}\\n'); sys.stdout.flush()\n")
 
 
 def _reply(turn: int) -> str:
@@ -39,6 +47,7 @@ def _reply(turn: int) -> str:
 
 def test_resizes_keep_each_transcript_line_once_in_tmux_scrollback(tmp_path: Path) -> None:
     sock = f"reign-e2e-{uuid.uuid4().hex[:8]}"
+    tmux_version = subprocess.run(["tmux", "-V"], capture_output=True, text=True, timeout=30).stdout.strip()
     home = tmp_path / "home"
     (tmp_path / "work").mkdir()
 
@@ -54,8 +63,18 @@ def test_resizes_keep_each_transcript_line_once_in_tmux_scrollback(tmp_path: Pat
             assert time.monotonic() < end, f"{needle!r} never appeared:\n{transcript()[-3000:]}"
             time.sleep(0.1)
 
+    resizes: list[tuple[float, int]] = []
+
     def resize(cols: int) -> None:
+        resizes.append((time.monotonic(), cols))
         tmux("resize-window", "-t", "p", "-x", str(cols), "-y", "24")
+
+    def report(text: str) -> str:
+        """*text* plus what a replay needs: the CLI's output stream and the resizes, timed alike."""
+        raw = (tmp_path / "pane.raw").read_text() if (tmp_path / "pane.raw").exists() else ""
+        blob = json.dumps({"tmux": tmux_version, "resizes": resizes, "output": raw}).encode()
+        return f"{text}\n--- replay ({tmux_version}): zlib+base64 JSON ---\n" + base64.b64encode(
+            zlib.compress(blob, 9)).decode()
 
     def ask(turn: int) -> None:
         tmux("send-keys", "-t", "p", "-l", f"question zq{turn}q please")
@@ -81,6 +100,8 @@ def test_resizes_keep_each_transcript_line_once_in_tmux_scrollback(tmp_path: Pat
                         "-y", "24", "-c", str(tmp_path / "work"), *argv], env=env, check=True, timeout=30)
         try:
             tmux("set", "-g", "window-size", "manual")
+            tmux("pipe-pane", "-o", "-t", "p",
+                 f"{sys.executable} -c {shlex.quote(RECORDER)} > {shlex.quote(str(tmp_path / 'pane.raw'))}")
             wait_for("Welcome to Reign", timeout=120)
             time.sleep(2.0)
 
@@ -109,11 +130,11 @@ def test_resizes_keep_each_transcript_line_once_in_tmux_scrollback(tmp_path: Pat
     # at most one per mid-stream recovery: the drag's and each step's (#95375).
     lines = final.split("\n")
     stale_preview = [line for line in lines if line.lstrip().startswith("\u2026")]
-    assert len(stale_preview) <= 3, final
+    assert len(stale_preview) <= 3, report(final)
     words = Counter(re.findall(r"\bt\dw\d{3}\b", "\n".join(ln for ln in lines if ln not in stale_preview)))
     expected = {f"t{t}w{i:03d}" for t, n in WORDS.items() for i in range(n)}
-    assert sorted(w for w in expected if words[w] != 1) == [], final
-    assert [final.count(f"zq{t}q") for t in WORDS] == [1, 1, 1], final
-    assert sum(1 for line in final.split("\n") if line.lstrip().startswith("❯")) == 1, final
+    assert sorted(w for w in expected if words[w] != 1) == [], report(final)
+    assert [final.count(f"zq{t}q") for t in WORDS] == [1, 1, 1], report(final)
+    assert sum(1 for line in final.split("\n") if line.lstrip().startswith("❯")) == 1, report(final)
     blank_runs = [len(run) for run in re.findall(r"(?:^[ \t]*\n)+", final, flags=re.M)]
-    assert max(blank_runs, default=0) <= 2, final  # the reply panel's own spacing, nothing more
+    assert max(blank_runs, default=0) <= 2, report(final)  # the reply panel's own spacing, nothing more
