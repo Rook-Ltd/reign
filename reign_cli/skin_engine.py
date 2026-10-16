@@ -345,23 +345,23 @@ _BUILTIN_SKINS: Dict[str, Dict[str, Any]] = {
 _active_skin: Optional[SkinConfig] = None
 _BUILTIN_SKINS["rook"] = {
     "name": "rook",
-    "description": "Rook — monochrome black and white (default skin)",
-    # Dark-authored. Monochrome Rook palette: white title, silver accent,
-    # grey rules. The TUI's DARK_THEME mirrors these values.
+    "description": "Rook — monochrome with forest green (default skin)",
+    # Dark-authored. Rook palette: white title and body on black, forest
+    # green accents and rules. The TUI's DARK_SEEDS mirror these values.
     "colors": {
-        "banner_border": "#5C5C5C",
+        "banner_border": "#2F6F4A",
         "banner_title": "#FFFFFF",
-        "banner_accent": "#C0C0C0",
-        "banner_dim": "#8A8A8A",
+        "banner_accent": "#4A9D6B",
+        "banner_dim": "#468F63",
         "banner_text": "#E6E6E6",
-        "ui_accent": "#C0C0C0",
-        "ui_label": "#A8A8A8",
+        "ui_accent": "#4A9D6B",
+        "ui_label": "#7DB592",
         "ui_ok": "#4caf50",
         "ui_error": "#ef5350",
         "ui_warn": "#ffa726",
         "prompt": "#FFFFFF",
-        "input_rule": "#5C5C5C",
-        "response_border": "#C0C0C0",
+        "input_rule": "#2F6F4A",
+        "response_border": "#4A9D6B",
         "status_bar_bg": "#111111",
         "status_bar_text": "#C0C0C0",
         "status_bar_strong": "#FFFFFF",
@@ -370,28 +370,28 @@ _BUILTIN_SKINS["rook"] = {
         "status_bar_warn": "#E0E0E0",
         "status_bar_bad": "#FF8C00",
         "status_bar_critical": "#FF6B6B",
-        "session_label": "#A8A8A8",
-        "session_border": "#5C5C5C",
+        "session_label": "#7DB592",
+        "session_border": "#2F6F4A",
         "completion_menu_bg": "#1A1A1A",
         "completion_menu_current_bg": "#333333",
         "selection_bg": "#3A3A3A",
         "shell_dollar": "#4dabf7",
         "voice_status_bg": "#111111",
     },
-    # Light overlay: black title, charcoal accents, grey rules on white.
+    # Light overlay: black title, deep green accents and rules on white.
     "light_colors": {
         "banner_title": "#000000",
-        "banner_accent": "#333333",
-        "banner_dim": "#6B6B6B",
+        "banner_accent": "#245F3C",
+        "banner_dim": "#2E6B45",
         "banner_text": "#1A1A1A",
-        "ui_accent": "#333333",
-        "ui_label": "#4A4A4A",
+        "ui_accent": "#245F3C",
+        "ui_label": "#2E6B45",
         "ui_ok": "#2E7D32",
         "ui_error": "#C62828",
         "ui_warn": "#D97706",
         "prompt": "#000000",
-        "response_border": "#333333",
-        "session_label": "#4A4A4A",
+        "response_border": "#245F3C",
+        "session_label": "#2E6B45",
         "status_bar_text": "#4A4A4A",
         "status_bar_strong": "#000000",
         "status_bar_dim": "#8A8A8A",
@@ -542,7 +542,7 @@ def get_active_skin_name() -> str:
     home_key = _routed_home_key()
     if home_key is not None:
         entry = _active_skin_by_home.get(home_key)
-        return entry[0] if entry else "default"
+        return entry[0] if entry else "rook"
     return _active_skin_name
 
 
@@ -550,7 +550,7 @@ def init_skin_from_config(config: dict) -> None:
     """Initialize the active skin from CLI config at startup."""
     display = config.get("display") or {}
     skin_name = display.get("skin", "rook") if isinstance(display, dict) else "rook"
-    set_active_skin(skin_name.strip() if isinstance(skin_name, str) and skin_name.strip() else "default")
+    set_active_skin(skin_name.strip() if isinstance(skin_name, str) and skin_name.strip() else "rook")
 
 
 def _active_branding(key: str, fallback: str) -> str:
