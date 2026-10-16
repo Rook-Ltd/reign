@@ -1020,11 +1020,13 @@ DEFAULT_CONFIG = {
         # no-op. Env REIGN_DASHBOARD_BASIC_AUTH_USERNAME / _PASSWORD_HASH / _PASSWORD / _SECRET /
         # _TTL_SECONDS win when non-empty. secret signs session tokens; empty = random per-process
         # key (sessions die on restart, no multi-worker) — set 32+ random bytes. Hash:
-        # plugins.dashboard_auth.basic.hash_password('PW').
+        # plugins.dashboard_auth.basic.hash_password('PW'). users = extra logins as
+        # {username: password_hash}, managed by `reign dashboard users add/remove/list`.
         "basic_auth": {
             "username": "",
             "password_hash": "",  # scrypt$...
             "password": "",
+            "users": {},
             "secret": "",
             "session_ttl_seconds": 0,  # 0 → plugin default (12h)
         },

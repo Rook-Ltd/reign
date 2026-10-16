@@ -71,8 +71,7 @@ class TestProvider:
     def _make(self, basic, **kw):
         h = basic.hash_password("hunter2")
         return basic.BasicAuthProvider(
-            username="admin",
-            password_hash=h,
+            users={"admin": h},
             secret=secrets.token_bytes(32),
             **kw,
         )
@@ -136,17 +135,13 @@ class TestProvider:
     def test_construction_validates_inputs(self, basic):
         good_hash = basic.hash_password("pw")
         with pytest.raises(ValueError):
-            basic.BasicAuthProvider(
-                username="", password_hash=good_hash, secret=b"x" * 32
-            )
+            basic.BasicAuthProvider(users={}, secret=b"x" * 32)
         with pytest.raises(ValueError):
-            basic.BasicAuthProvider(
-                username="admin", password_hash="", secret=b"x" * 32
-            )
+            basic.BasicAuthProvider(users={"": good_hash}, secret=b"x" * 32)
         with pytest.raises(ValueError):
-            basic.BasicAuthProvider(
-                username="admin", password_hash=good_hash, secret=b"short"
-            )
+            basic.BasicAuthProvider(users={"admin": ""}, secret=b"x" * 32)
+        with pytest.raises(ValueError):
+            basic.BasicAuthProvider(users={"admin": good_hash}, secret=b"short")
 
 
 # ---------------------------------------------------------------------------
@@ -214,3 +209,28 @@ class TestRegister:
         p2 = ctx2.register_dashboard_auth_provider.call_args.args[0]
         s = p1.complete_password_login(username="admin", password="hunter2")
         assert p2.verify_session(access_token=s.access_token) is not None
+
+
+class TestMultipleUsers:
+    def test_each_configured_user_logs_in_only_with_their_own_password(self, basic, monkeypatch):
+        monkeypatch.setenv("REIGN_DASHBOARD_BASIC_AUTH_USERNAME", "admin")
+        monkeypatch.setenv("REIGN_DASHBOARD_BASIC_AUTH_PASSWORD", "admin-pw")
+        monkeypatch.setattr(basic, "_load_config_basic_auth_section", lambda: {
+            "users": {"alice": basic.hash_password("alice-pw"), "bob": basic.hash_password("bob-pw")}})
+        ctx = MagicMock()
+        basic.register(ctx)
+        provider = ctx.register_dashboard_auth_provider.call_args.args[0]
+        for user in ("admin", "alice", "bob"):
+            assert provider.complete_password_login(username=user, password=f"{user}-pw").user_id == user
+        with pytest.raises(InvalidCredentialsError):
+            provider.complete_password_login(username="alice", password="bob-pw")
+
+    def test_removed_user_sessions_stop_working(self, basic):
+        secret = secrets.token_bytes(32)
+        users = {"admin": basic.hash_password("a"), "alice": basic.hash_password("b")}
+        before = basic.BasicAuthProvider(users=users, secret=secret)
+        s = before.complete_password_login(username="alice", password="b")
+        after = basic.BasicAuthProvider(users={"admin": users["admin"]}, secret=secret)
+        assert after.verify_session(access_token=s.access_token) is None
+        with pytest.raises(RefreshExpiredError):
+            after.refresh_session(refresh_token=s.refresh_token)

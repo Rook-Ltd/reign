@@ -842,3 +842,50 @@ class TestPluginRegister:
         registered = ctx.register_dashboard_auth_provider.call_args.args[0]
         assert registered._client_secret == "cfg-secret"
 
+
+
+# ---------------------------------------------------------------------------
+# Allowlist + Entra multi-tenant issuer
+# ---------------------------------------------------------------------------
+
+_ENTRA_COMMON = "https://login.microsoftonline.com/common/v2.0"
+_ENTRA_TEMPLATE = "https://login.microsoftonline.com/{tenantid}/v2.0"
+_CLIENT_TENANT = "11111111-2222-3333-4444-555555555555"
+
+
+def _entra_provider(rsa_keypair, allowed_emails=()):
+    p = oidc_plugin.SelfHostedOIDCProvider(issuer=_ENTRA_COMMON, client_id=_CLIENT_ID, allowed_emails=allowed_emails)
+    seeded = _make_provider(rsa_keypair)
+    p._discovery = dict(_DISCOVERY_DOC, issuer=_ENTRA_TEMPLATE)
+    p._discovery_fetched_at = time.time()
+    p._jwks_client = seeded._jwks_client
+    return p
+
+
+def _entra_token(rsa_keypair, *, tid=_CLIENT_TENANT, email="alice@client.com", edov=True, iss=None):
+    extra = {"tid": tid}
+    if edov is not None:
+        extra["xms_edov"] = edov
+    return _mint_id_token(
+        rsa_keypair, iss=iss or f"https://login.microsoftonline.com/{tid}/v2.0", email=email, extra_claims=extra)
+
+
+class TestAllowlist:
+    def test_only_verified_allowlisted_emails_sign_in_across_tenants(self, rsa_keypair):
+        p = _entra_provider(rsa_keypair, allowed_emails=["alice@client.com", "@partner.com"])
+        assert p.verify_session(access_token=_entra_token(rsa_keypair)).email == "alice@client.com"
+        assert p.verify_session(access_token=_entra_token(rsa_keypair, email="Bob@Partner.com")) is not None
+        # Not listed, or an address another tenant's admin could set without verifying the domain.
+        assert p.verify_session(access_token=_entra_token(rsa_keypair, email="eve@client.com")) is None
+        assert p.verify_session(access_token=_entra_token(rsa_keypair, edov=None)) is None
+        # Personal Microsoft accounts carry Microsoft-verified email without xms_edov.
+        msa = _entra_token(rsa_keypair, tid=oidc_plugin._MSA_CONSUMER_TENANT, email="bob@partner.com", edov=None)
+        assert p.verify_session(access_token=msa) is not None
+        # iss must name the token's own tenant.
+        forged = _entra_token(rsa_keypair, iss="https://login.microsoftonline.com/other-tenant/v2.0")
+        with pytest.raises(ProviderError):
+            p.verify_session(access_token=forged)
+
+    def test_multi_tenant_issuer_without_allowlist_refuses_everyone(self, rsa_keypair):
+        p = _entra_provider(rsa_keypair)
+        assert p.verify_session(access_token=_entra_token(rsa_keypair)) is None

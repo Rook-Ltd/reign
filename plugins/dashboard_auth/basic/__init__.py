@@ -4,8 +4,10 @@ Login is a credential form (``supports_password`` + ``complete_password_login``)
 verify, refresh, ws-tickets and logout are the shared framework. Sessions are stateless
 HMAC-signed tokens (no IDP, no database); passwords use stdlib scrypt and login always hashes
 even for an unknown username (no username-enumeration timing oracle). Config: ``dashboard.
-basic_auth.{username,password_hash|password,secret,session_ttl_seconds}`` or the
-``REIGN_DASHBOARD_BASIC_AUTH_*`` env vars (env wins when non-empty; see ``_settings``).
+basic_auth.{username,password_hash|password,users,secret,session_ttl_seconds}`` or the
+``REIGN_DASHBOARD_BASIC_AUTH_*`` env vars (env wins when non-empty; see ``_settings``). ``users`` maps
+extra usernames to password hashes (managed by ``reign dashboard users``); a session is only
+valid while its user is still configured, so removing a user locks them out on the next request.
 """
 
 from __future__ import annotations
@@ -18,7 +20,7 @@ import logging
 import os
 import secrets
 import time
-from typing import Optional
+from typing import Mapping, Optional
 
 from reign_cli.dashboard_auth import DashboardAuthProvider, InvalidCredentialsError, RefreshExpiredError, Session
 from plugins.dashboard_auth._shared import (
@@ -122,35 +124,36 @@ class BasicAuthProvider(NonInteractiveMixin, DashboardAuthProvider):
         "BasicAuthProvider is password-only; there is no OAuth redirect flow. "
         "The login page POSTs to /auth/password-login instead.")
 
-    def __init__(self, *, username: str, password_hash: str, secret: bytes, ttl_seconds: int = _DEFAULT_TTL_SECONDS) -> None:
-        if not username:
-            raise ValueError("username must be non-empty")
-        if not password_hash:
-            raise ValueError("password_hash must be non-empty")
+    def __init__(self, *, users: Mapping[str, str], secret: bytes, ttl_seconds: int = _DEFAULT_TTL_SECONDS) -> None:
+        if not users:
+            raise ValueError("users must contain at least one username")
+        for username, password_hash in users.items():
+            if not username:
+                raise ValueError("username must be non-empty")
+            if not password_hash:
+                raise ValueError(f"password_hash for {username!r} must be non-empty")
         if len(secret) < 16:
             raise ValueError("secret must be at least 16 bytes")
-        self._username = username
-        self._password_hash = password_hash
+        self._users = dict(users)
         self._secret = secret
         self._ttl = max(60, int(ttl_seconds))
 
     # ---- password login ----------------------------------------------------
 
     def complete_password_login(self, *, username: str, password: str) -> Session:
-        # Always run a scrypt verify (real hash if the username matches, else the dummy)
-        # and compare the username with compare_digest too, so neither the username nor
-        # its length leaks via timing.
-        username_ok = hmac.compare_digest(username.encode("utf-8"), self._username.encode("utf-8"))
-        password_ok = _verify_password(password, self._password_hash if username_ok else _DUMMY_HASH)
-        if not (username_ok and password_ok):
+        # Always run a scrypt verify (the dummy hash for an unknown username) so "no such
+        # user" and "wrong password" take comparable time.
+        password_hash = self._users.get(username)
+        password_ok = _verify_password(password, password_hash or _DUMMY_HASH)
+        if password_hash is None or not password_ok:
             raise InvalidCredentialsError("invalid username or password")
-        return self._mint_session(self._username)
+        return self._mint_session(username)
 
     # ---- session lifecycle -------------------------------------------------
 
     def verify_session(self, *, access_token: str) -> Optional[Session]:
         payload = _unsign(access_token, self._secret, "access")
-        if payload is None:
+        if payload is None or payload.get("sub") not in self._users:
             return None
         return self._session(str(payload.get("sub", "")), int(payload["exp"]), access_token, "")
 
@@ -158,9 +161,9 @@ class BasicAuthProvider(NonInteractiveMixin, DashboardAuthProvider):
         if not refresh_token:
             raise RefreshExpiredError("no refresh token present in session")
         payload = _unsign(refresh_token, self._secret, "refresh")
-        if payload is None:
+        if payload is None or payload.get("sub") not in self._users:
             raise RefreshExpiredError("refresh token expired or invalid")
-        return self._mint_session(str(payload.get("sub", self._username)))
+        return self._mint_session(str(payload["sub"]))
 
     def revoke_session(self, *, refresh_token: str) -> None:
         # Stateless tokens — nothing to revoke server-side; the session expires within its TTL. Must not raise.
@@ -210,6 +213,15 @@ def _resolve_secret(cfg_section: dict) -> bytes:
     return raw.encode("utf-8")
 
 
+def _config_users(section: dict) -> dict:
+    """``dashboard.basic_auth.users`` as ``{username: password_hash}``, dropping blank entries."""
+    raw = section.get("users") or {}
+    if not isinstance(raw, dict):
+        logger.warning("dashboard-auth-basic: dashboard.basic_auth.users must be a mapping; ignoring it.")
+        return {}
+    return {str(name).strip(): str(h).strip() for name, h in raw.items() if str(name).strip() and str(h or "").strip()}
+
+
 def _settings() -> dict:
     """Resolve BasicAuthProvider kwargs from env/config; raises ``SkipRegistration``."""
     section = _load_config_basic_auth_section()
@@ -217,40 +229,45 @@ def _settings() -> dict:
     def setting(env_name: str, cfg_key: str) -> str:
         return resolve_env_or_cfg(env_name, section.get(cfg_key, ""))
 
+    users = _config_users(section)
     username = setting("REIGN_DASHBOARD_BASIC_AUTH_USERNAME", "username")
     password_hash = setting("REIGN_DASHBOARD_BASIC_AUTH_PASSWORD_HASH", "password_hash")
     plaintext = setting("REIGN_DASHBOARD_BASIC_AUTH_PASSWORD", "password")
     ttl_raw = setting("REIGN_DASHBOARD_BASIC_AUTH_TTL_SECONDS", "session_ttl_seconds")
-    if not username:
+    if not username and not users:
         raise SkipRegistration(
             "dashboard.basic_auth.username is not set (and REIGN_DASHBOARD_BASIC_AUTH_USERNAME "
-            "is empty). Set a username and a password (or password_hash) under "
-            "dashboard.basic_auth in config.yaml to enable username/password dashboard "
-            "login, or use the OAuth provider, or pass --insecure to skip the auth gate.")
-    if not password_hash and not plaintext:
+            "is empty), and dashboard.basic_auth.users is empty. Set a username and a password "
+            "(or password_hash) under dashboard.basic_auth in config.yaml, or add users with "
+            "`reign dashboard users add`, to enable username/password dashboard login, or use "
+            "the OAuth provider, or pass --insecure to skip the auth gate.")
+    if username and not password_hash and not plaintext:
         raise SkipRegistration(
             "dashboard.basic_auth.username is set but neither password_hash nor password "
             "is configured. Provide one of them (password_hash is preferred — compute it "
             "with plugins.dashboard_auth.basic.hash_password).",
             level="warning")
-    # Precedence: env password (hashed in-memory) overrides any config password_hash so
-    # operators can rotate without editing config; a config password_hash wins over a
-    # config-only plaintext password (preferred at-rest form).
-    plaintext_from_env = os.environ.get("REIGN_DASHBOARD_BASIC_AUTH_PASSWORD", "").strip()
-    if plaintext_from_env:
-        password_hash = hash_password(plaintext_from_env)
-        logger.info("dashboard-auth-basic: hashed env-supplied password in-memory (overrides any config password_hash).")
-    elif not password_hash:
-        password_hash = hash_password(plaintext)
-        logger.info(
-            "dashboard-auth-basic: hashed plaintext password in-memory. "
-            "For production, precompute dashboard.basic_auth.password_hash "
-            "and remove the plaintext password from config.")
+    if username:
+        # Precedence: env password (hashed in-memory) overrides any config password_hash so
+        # operators can rotate without editing config; a config password_hash wins over a
+        # config-only plaintext password (preferred at-rest form).
+        plaintext_from_env = os.environ.get("REIGN_DASHBOARD_BASIC_AUTH_PASSWORD", "").strip()
+        if plaintext_from_env:
+            password_hash = hash_password(plaintext_from_env)
+            logger.info("dashboard-auth-basic: hashed env-supplied password in-memory (overrides any config password_hash).")
+        elif not password_hash:
+            password_hash = hash_password(plaintext)
+            logger.info(
+                "dashboard-auth-basic: hashed plaintext password in-memory. "
+                "For production, precompute dashboard.basic_auth.password_hash "
+                "and remove the plaintext password from config.")
+        # The primary username's credentials win over a same-named users entry.
+        users[username] = password_hash
     try:
         ttl = int(ttl_raw) if ttl_raw else _DEFAULT_TTL_SECONDS
     except ValueError:
         ttl = _DEFAULT_TTL_SECONDS
-    return {"username": username, "password_hash": password_hash, "secret": _resolve_secret(section), "ttl_seconds": ttl}
+    return {"users": users, "secret": _resolve_secret(section), "ttl_seconds": ttl}
 
 
 def register(ctx) -> None:
@@ -260,7 +277,7 @@ def register(ctx) -> None:
     LAST_SKIP_REASON = ""
     kwargs, LAST_SKIP_REASON = register_provider(ctx, logger, _TAG, BasicAuthProvider, _settings)
     if kwargs is not None:
-        logger.info("dashboard-auth-basic: registered password provider (username=%s)", kwargs["username"])
+        logger.info("dashboard-auth-basic: registered password provider (users=%s)", ", ".join(sorted(kwargs["users"])))
 
 
 # ---- BEGIN PLUGIN-COMPAT (revert-scheduled; see COMPAT_MANIFEST.md) ----

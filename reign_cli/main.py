@@ -1933,6 +1933,8 @@ cmd_debug = _forward_command("cmd_debug", "reign_cli.debug", "run_debug", doc='D
 cmd_skin = _forward_command("cmd_skin", "reign_cli.skin_cmd", "skin_command", doc='Skin management (list / use / set).')
 cmd_import = _forward_command("cmd_import", "reign_cli.backup", "run_import", doc='Restore a Reign backup from a zip file.')
 cmd_dashboard_register = _forward_command("cmd_dashboard_register", "reign_cli.dashboard_register", "cmd_dashboard_register", doc='Register a self-hosted dashboard OAuth client with Nous Portal.')
+cmd_dashboard_users = _forward_command("cmd_dashboard_users", "reign_cli.dashboard_users", "cmd_dashboard_users", doc='Manage username/password dashboard logins.')
+cmd_dashboard_allow = _forward_command("cmd_dashboard_allow", "reign_cli.dashboard_allow", "cmd_dashboard_allow", doc='Manage the OIDC sign-in allowlist.')
 cmd_gateway_enroll = _forward_command("cmd_gateway_enroll", "reign_cli.gateway_enroll", "cmd_gateway_enroll", doc='Enroll a self-hosted gateway with a relay connector.')
 cmd_prompt_size = _forward_command("cmd_prompt_size", "reign_cli.prompt_size", "cmd_prompt_size", doc='Show a byte/char breakdown of the system prompt + tool schemas.')
 cmd_pairing = _forward_command("cmd_pairing", "reign_cli.pairing", "pairing_command")
@@ -3468,6 +3470,8 @@ def _build_cli_parser():
         subparsers,
         cmd_dashboard=cmd_dashboard,
         cmd_dashboard_register=cmd_dashboard_register,
+        cmd_dashboard_users=cmd_dashboard_users,
+        cmd_dashboard_allow=cmd_dashboard_allow,
     )
     # "desktop" is canonical (Reign-Setup.exe tells users to run it, so it
     # must be the name --help shows); "gui" is a deprecated alias.

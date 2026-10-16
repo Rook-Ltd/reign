@@ -819,6 +819,21 @@ curl -s http://<host>:9119/api/status | jq '.auth_required, .auth_providers'
 
 `GET /api/auth/me` then returns the verified session (`provider: basic`). Keep this behind a VPN — see the warning above; for a public host use the [Nous Portal](#default-provider-nous-portal) or [self-hosted OIDC](#self-hosted-oidc-provider) provider instead.
 
+#### More than one login
+
+Give each person their own username and password with `reign dashboard users`. Extra logins are stored as scrypt hashes under `dashboard.basic_auth.users` in `config.yaml`, next to the primary `username` (which stays where you configured it, env or config):
+
+```bash
+reign dashboard users add alice           # prompts for the password twice; re-run to reset it
+echo 'pw' | reign dashboard users add bob --password-stdin
+reign dashboard users list                # the primary login is marked (primary)
+reign dashboard users remove bob
+```
+
+Changes apply when the dashboard (or `reign serve` service) restarts. A session is only valid while its user is still configured, so removing a user signs them out on their next request after the restart. If no signing `secret` is configured, `users add` writes one so sessions survive restarts.
+
+Every login reaches the same Reign instance — the same profiles, sessions and keys. Separate logins tell you who signed in and let you revoke one person; they do not isolate people from each other.
+
 #### Writing your own password provider
 
 `basic` is just one implementation of an extension point. Any plugin can register a password provider: set `supports_password = True` on your `DashboardAuthProvider` subclass and implement `complete_password_login(*, username, password) -> Session` (raise `InvalidCredentialsError` on rejection, `ProviderError` if your backing store is down). The OAuth `start_login` / `complete_login` methods can be left as `NotImplementedError` stubs for a pure-password provider. This is the path for LDAP-bind, a credentials database, or any other non-redirect auth scheme — the framework handles the form, the route, the cookies, and refresh for you.
@@ -857,7 +872,20 @@ dashboard:
 
 In your IDP, register a **public** application/client with the authorization-code + PKCE (S256) grant and add the dashboard's callback as an allowed redirect URI. The callback is `<dashboard public URL>/auth/callback` (see [Public URL override](#public-url-override) for how the dashboard derives its public URL behind a proxy).
 
-#### What it verifies
+#### Limiting who can sign in
+
+By default any account your IDP accepts can sign in. To limit it, list the addresses or whole `@domain`s that may sign in:
+
+```bash
+reign dashboard allow add alice@client.com @partner.com
+reign dashboard allow list
+reign dashboard allow remove alice@client.com
+```
+
+Entries are stored in `dashboard.oauth.self_hosted.allowed_emails` and apply after a restart. They are matched against the ID token's `email` claim, only when it is verified: `email_verified` must not be `false`, and a Microsoft Entra work/school account must also carry the `xms_edov` claim (add the `email` and `xms_edov` optional claims to the ID token under the app's **Token configuration**). Personal Microsoft accounts are already verified by Microsoft.
+
+**Microsoft Entra, any tenant.** For an app registered for "any organizational directory and personal accounts", set `issuer: https://login.microsoftonline.com/common/v2.0`. Its discovery document advertises a `{tenantid}` placeholder issuer; Reign checks each ID token's `iss` against the token's own `tid`. Because every Microsoft account could otherwise sign in, a multi-tenant issuer **refuses every sign-in until the allowlist has at least one entry**. For a single tenant, use `https://login.microsoftonline.com/<tenant-id>/v2.0` instead.
+
 
 The provider verifies the OpenID Connect **ID token** (RS256/ES256) against the discovered `jwks_uri`, with the `iss` and `aud` claims pinned to your configured `issuer` and `client_id`. Standard OIDC claims map onto the dashboard session:
 
