@@ -30,6 +30,7 @@ def _parser() -> argparse.ArgumentParser:
         parser.add_subparsers(dest="command"),
         cmd_dashboard=_dash,
         cmd_dashboard_register=_register,
+        cmd_dashboard_users=_register,
     )
     return parser
 

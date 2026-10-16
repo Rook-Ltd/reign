@@ -74,7 +74,8 @@ def build_serve_parser(
 
 
 def build_dashboard_parser(
-    subparsers, *, cmd_dashboard: Callable, cmd_dashboard_register: Callable) -> None:
+    subparsers, *, cmd_dashboard: Callable, cmd_dashboard_register: Callable,
+    cmd_dashboard_users: Callable) -> None:
     """Attach ``dashboard`` (browser UI) and ``serve`` (headless backend the desktop spawns)."""
     dashboard_parser = subparsers.add_parser(
         "dashboard", help="Start the web UI dashboard",
@@ -123,3 +124,19 @@ def build_dashboard_parser(
             "portal. Also settable via REIGN_DASHBOARD_PORTAL_URL. Mainly for "
             "testing against a staging/preview portal.")
     dashboard_register_parser.set_defaults(func=cmd_dashboard_register)
+
+    users_parser = dashboard_subparsers.add_parser(
+        "users",
+        help="Manage username/password dashboard logins (dashboard.basic_auth.users)",
+        description="Add, list or remove the username/password logins the dashboard and "
+            "remote backends accept. Changes apply after a dashboard/serve restart.")
+    users_sub = users_parser.add_subparsers(dest="users_action")
+    users_sub.add_parser("list", aliases=["ls"], help="List dashboard logins")
+    users_add = users_sub.add_parser("add", help="Add a login, or reset its password")
+    users_add.add_argument("username")
+    users_add.add_argument(
+        "--password-stdin", action="store_true",
+        help="Read the password from the first line of stdin instead of prompting")
+    users_rm = users_sub.add_parser("remove", aliases=["rm"], help="Remove a login")
+    users_rm.add_argument("username")
+    users_parser.set_defaults(func=cmd_dashboard_users)

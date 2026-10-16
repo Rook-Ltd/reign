@@ -1069,7 +1069,8 @@ def _no_auth_provider_message(host: str) -> str:
         cfg = _load_cfg()
         ba = (cfg.get("dashboard") or {}).get("basic_auth") or {}
         disabled = (cfg.get("plugins") or {}).get("disabled") or []
-        has_creds = bool(ba.get("username")) and bool(ba.get("password_hash") or ba.get("password"))
+        has_creds = bool(ba.get("users")) or (
+            bool(ba.get("username")) and bool(ba.get("password_hash") or ba.get("password")))
         if has_creds and (set(disabled) & _BASIC_AUTH_PLUGIN_KEYS):
             fix_hint = (
                 "The 'basic' dashboard-auth plugin is in "
