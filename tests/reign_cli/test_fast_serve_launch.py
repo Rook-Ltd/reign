@@ -16,7 +16,8 @@ def test_lean_serve_parser_matches_full_subcommand_parser() -> None:
     root = argparse.ArgumentParser()
     subparsers = root.add_subparsers(dest="command")
     build_dashboard_parser(
-        subparsers, cmd_dashboard=_capture, cmd_dashboard_register=_capture, cmd_dashboard_users=_capture)
+        subparsers, cmd_dashboard=_capture, cmd_dashboard_register=_capture, cmd_dashboard_users=_capture,
+        cmd_dashboard_allow=_capture)
     lean = build_serve_parser(cmd_dashboard=_capture)
 
     argv = [

@@ -190,8 +190,10 @@ def make_jwks_client(jwks_url: str) -> Any:
 
 
 def verify_jwt(
-    token: str, jwks_client: Any, *, algorithms: list[str], audience: str, issuer: str, label: str) -> Dict[str, Any]:
-    """Verify ``token`` against ``jwks_client`` with pinned ``aud``/``iss``.
+    token: str, jwks_client: Any, *, algorithms: list[str], audience: str, issuer: Optional[str], label: str,
+) -> Dict[str, Any]:
+    """Verify ``token`` against ``jwks_client`` with pinned ``aud``/``iss`` (``issuer=None``
+    leaves the ``iss`` check to the caller, e.g. a tenant-templated issuer; it stays required).
 
     Unreachable JWKS → ``ProviderError`` (503); a bearer that is not one of our JWTs
     (opaque peer key, foreign kid) → ``InvalidCodeError`` (None / next provider); folding

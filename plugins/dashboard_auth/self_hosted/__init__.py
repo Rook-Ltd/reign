@@ -6,6 +6,11 @@ URL, exchanges the code, and verifies the **ID token** (the access token is opaq
 against the discovered ``jwks_uri`` with ``iss``/``aud`` pinned. Public and confidential
 (``client_secret`` layered on top of PKCE, never replacing it) clients both work. Config:
 ``dashboard.oauth.self_hosted.{issuer,client_id,scopes,client_secret}`` or ``REIGN_DASHBOARD_OIDC_*``.
+
+``allowed_emails`` (config only; ``reign dashboard allow``) limits sign-in to listed addresses and
+``@domain`` entries, matched against a *verified* email. A multi-tenant Microsoft Entra issuer
+(``.../common/v2.0``, whose discovery advertises ``.../{tenantid}/v2.0``) is accepted with ``iss``
+checked against the token's own ``tid``; such an issuer refuses every login until the list is set.
 """
 
 from __future__ import annotations
@@ -15,11 +20,11 @@ import logging
 import threading
 import time
 import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Iterable, Optional
 
 import httpx
 
-from reign_cli.dashboard_auth import LoginStart, ProviderError, Session
+from reign_cli.dashboard_auth import InvalidCodeError, LoginStart, ProviderError, Session
 from plugins.dashboard_auth._shared import (
     JSON_HEADERS,
     TOKEN_ENDPOINT_TIMEOUT_SEC as _TOKEN_ENDPOINT_TIMEOUT_SEC,
@@ -46,6 +51,12 @@ _DEFAULT_SCOPES = "openid profile email"
 # HS256 is deliberately excluded: it implies a shared secret we don't hold in the
 # public-client model and is a JWT algorithm-confusion footgun.
 _ALLOWED_ID_TOKEN_ALGS = ("RS256", "ES256", "RS384", "RS512", "ES384", "ES512")
+
+# Microsoft Entra multi-tenant discovery advertises this placeholder in ``issuer``; each
+# ID token's ``iss`` carries the signing-in user's tenant id instead.
+_TENANT_PLACEHOLDER = "{tenantid}"
+# Personal Microsoft accounts (MSA) sign in from this tenant; Microsoft verifies their email.
+_MSA_CONSUMER_TENANT = "9188040d-6c67-4c5b-b112-36a304b66dad"
 
 _DISCOVERY_TIMEOUT_SEC = 10.0
 # Discovery is effectively static; a soft TTL lets a long-running dashboard
@@ -79,7 +90,10 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
     name = "self-hosted"
     display_name = "Self-Hosted OIDC"
 
-    def __init__(self, *, issuer: str, client_id: str, scopes: str = _DEFAULT_SCOPES, client_secret: str = "") -> None:
+    def __init__(
+        self, *, issuer: str, client_id: str, scopes: str = _DEFAULT_SCOPES, client_secret: str = "",
+        allowed_emails: Iterable[str] = (),
+    ) -> None:
         if not issuer:
             raise ValueError("issuer is required")
         if not client_id:
@@ -93,6 +107,9 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
         # Empty/whitespace secret ⇒ public client, so a provisioned-but-blank secret
         # can't flip us into a broken confidential mode.
         self._client_secret = (client_secret or "").strip()
+        entries = {str(e).strip().lower() for e in allowed_emails if str(e).strip()}
+        self._allowed_domains = frozenset(e[1:] for e in entries if e.startswith("@"))
+        self._allowed_emails = frozenset(e for e in entries if not e.startswith("@"))
         # Discovery + JWKS resolve lazily so registration never hits the network
         # (the IDP may be down at boot; fail per-request instead).
         self._discovery: Dict[str, Any] | None = None
@@ -169,7 +186,7 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
                 "OIDC token response missing id_token — ensure the 'openid' "
                 "scope is configured and the client is allowed to receive an "
                 "ID token."))
-        claims = self._verify_id_token(id_token)
+        claims = self._verify_id_token(id_token, denied_exc=bad_request_exc)
         # Prefer a freshly-issued RT, else keep the previous (some IDPs don't rotate).
         return self._session(id_token, refresh_token_from(payload, previous_refresh_token), claims)
 
@@ -227,7 +244,10 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
         # Issuer pin: a mismatch means the document came from the wrong place
         # (proxy/MITM/misconfig). Only a trailing-slash difference is tolerated.
         advertised_issuer = field("issuer")
-        if advertised_issuer and advertised_issuer.rstrip("/") != self._issuer:
+        # A tenant-templated issuer (Entra multi-tenant) is accepted on the issuer's own
+        # origin; _verify_id_token then pins each token's iss to its own tid.
+        templated = _TENANT_PLACEHOLDER in advertised_issuer and _origin(advertised_issuer) == _origin(self._issuer)
+        if advertised_issuer and advertised_issuer.rstrip("/") != self._issuer and not templated:
             raise ProviderError(
                 f"OIDC discovery issuer mismatch: document advertises {advertised_issuer!r} "
                 f"but configured issuer is {self._issuer!r}")
@@ -247,11 +267,33 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
     def _jwks_uri(self) -> str:
         return self._get_discovery()["jwks_uri"]
 
-    def _verify_id_token(self, id_token: str) -> Dict[str, Any]:
+    def _verify_id_token(self, id_token: str, *, denied_exc: type[Exception] = InvalidCodeError) -> Dict[str, Any]:
         issuer = self._get_discovery()["issuer"]
-        return verify_jwt(
+        templated = _TENANT_PLACEHOLDER in issuer
+        claims = verify_jwt(
             id_token, self._get_jwks_client(), algorithms=list(_ALLOWED_ID_TOKEN_ALGS),
-            audience=self._client_id, issuer=issuer, label="ID token")
+            audience=self._client_id, issuer=None if templated else issuer, label="ID token")
+        if templated:
+            tid = str(claims.get("tid") or "")
+            if not tid or claims.get("iss") != issuer.replace(_TENANT_PLACEHOLDER, tid):
+                raise ProviderError(
+                    f"ID token verification failed: iss {claims.get('iss')!r} does not match "
+                    f"{issuer!r} for tid {tid!r}")
+        self._check_allowed(claims, multi_tenant=templated, denied_exc=denied_exc)
+        return claims
+
+    def _check_allowed(self, claims: Dict[str, Any], *, multi_tenant: bool, denied_exc: type[Exception]) -> None:
+        """Enforce ``allowed_emails`` against a verified email. Raises ``denied_exc``
+        (InvalidCodeError on login/verify, RefreshExpiredError on refresh)."""
+        if not (self._allowed_emails or self._allowed_domains):
+            if multi_tenant:
+                raise denied_exc(
+                    "multi-tenant OIDC issuer without dashboard.oauth.self_hosted.allowed_emails: "
+                    "refusing every sign-in (add users with `reign dashboard allow add`)")
+            return
+        email = _verified_email(claims)
+        if not email or not (email in self._allowed_emails or email.rpartition("@")[2] in self._allowed_domains):
+            raise denied_exc(f"{email or 'an account without a verified email'} is not allowed to sign in")
 
     _claims_for = _verify_id_token
 
@@ -270,6 +312,20 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
             self.name, claims, access_token=id_token, refresh_token=refresh_token, label="ID token", email=email,
             display_name=str(claims.get("name") or claims.get("preferred_username") or claims.get("nickname") or email or ""),
             org_id=str(org_id or ""))
+
+
+def _verified_email(claims: Dict[str, Any]) -> str:
+    """Lowercased ``email`` only when the IDP vouches for it: ``email_verified`` must not be
+    false, and an Entra work/school token (``tid`` other than the personal-account tenant)
+    must carry ``xms_edov`` (email domain owner verified) — otherwise any tenant admin could
+    set an allowlisted address on their own user."""
+    email = str(claims.get("email") or "").strip().lower()
+    if not email or "@" not in email or claims.get("email_verified") is False:
+        return ""
+    tid = str(claims.get("tid") or "")
+    if tid and tid != _MSA_CONSUMER_TENANT and str(claims.get("xms_edov", "")).lower() not in ("true", "1"):
+        return ""
+    return email
 
 
 # ---- Plugin entry point ----
@@ -299,7 +355,8 @@ def _settings() -> dict:
         "issuer": issuer, "client_id": client_id,
         "scopes": setting("REIGN_DASHBOARD_OIDC_SCOPES", "scopes") or _DEFAULT_SCOPES,
         # Credential: canonical home is the env var / ~/.reign/.env. Empty ⇒ public client.
-        "client_secret": setting("REIGN_DASHBOARD_OIDC_CLIENT_SECRET", "client_secret")}
+        "client_secret": setting("REIGN_DASHBOARD_OIDC_CLIENT_SECRET", "client_secret"),
+        "allowed_emails": [str(e) for e in (oidc_cfg.get("allowed_emails") or []) if str(e).strip()]}
 
 
 def register(ctx) -> None:

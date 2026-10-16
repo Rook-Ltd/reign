@@ -75,7 +75,7 @@ def build_serve_parser(
 
 def build_dashboard_parser(
     subparsers, *, cmd_dashboard: Callable, cmd_dashboard_register: Callable,
-    cmd_dashboard_users: Callable) -> None:
+    cmd_dashboard_users: Callable, cmd_dashboard_allow: Callable) -> None:
     """Attach ``dashboard`` (browser UI) and ``serve`` (headless backend the desktop spawns)."""
     dashboard_parser = subparsers.add_parser(
         "dashboard", help="Start the web UI dashboard",
@@ -140,3 +140,16 @@ def build_dashboard_parser(
     users_rm = users_sub.add_parser("remove", aliases=["rm"], help="Remove a login")
     users_rm.add_argument("username")
     users_parser.set_defaults(func=cmd_dashboard_users)
+
+    allow_parser = dashboard_subparsers.add_parser(
+        "allow",
+        help="Manage which emails/domains may sign in via OIDC (dashboard.oauth.self_hosted.allowed_emails)",
+        description="Limit self-hosted OIDC sign-in (e.g. Microsoft Entra) to listed email "
+            "addresses or @domains. Changes apply after a dashboard/serve restart.")
+    allow_sub = allow_parser.add_subparsers(dest="allow_action")
+    allow_sub.add_parser("list", aliases=["ls"], help="List allowed emails and domains")
+    allow_add = allow_sub.add_parser("add", help="Allow emails or @domains")
+    allow_add.add_argument("entries", nargs="+", metavar="EMAIL_OR_@DOMAIN")
+    allow_rm = allow_sub.add_parser("remove", aliases=["rm"], help="Remove emails or @domains")
+    allow_rm.add_argument("entries", nargs="+", metavar="EMAIL_OR_@DOMAIN")
+    allow_parser.set_defaults(func=cmd_dashboard_allow)

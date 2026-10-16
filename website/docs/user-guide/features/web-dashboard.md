@@ -872,7 +872,20 @@ dashboard:
 
 In your IDP, register a **public** application/client with the authorization-code + PKCE (S256) grant and add the dashboard's callback as an allowed redirect URI. The callback is `<dashboard public URL>/auth/callback` (see [Public URL override](#public-url-override) for how the dashboard derives its public URL behind a proxy).
 
-#### What it verifies
+#### Limiting who can sign in
+
+By default any account your IDP accepts can sign in. To limit it, list the addresses or whole `@domain`s that may sign in:
+
+```bash
+reign dashboard allow add alice@client.com @partner.com
+reign dashboard allow list
+reign dashboard allow remove alice@client.com
+```
+
+Entries are stored in `dashboard.oauth.self_hosted.allowed_emails` and apply after a restart. They are matched against the ID token's `email` claim, only when it is verified: `email_verified` must not be `false`, and a Microsoft Entra work/school account must also carry the `xms_edov` claim (add the `email` and `xms_edov` optional claims to the ID token under the app's **Token configuration**). Personal Microsoft accounts are already verified by Microsoft.
+
+**Microsoft Entra, any tenant.** For an app registered for "any organizational directory and personal accounts", set `issuer: https://login.microsoftonline.com/common/v2.0`. Its discovery document advertises a `{tenantid}` placeholder issuer; Reign checks each ID token's `iss` against the token's own `tid`. Because every Microsoft account could otherwise sign in, a multi-tenant issuer **refuses every sign-in until the allowlist has at least one entry**. For a single tenant, use `https://login.microsoftonline.com/<tenant-id>/v2.0` instead.
+
 
 The provider verifies the OpenID Connect **ID token** (RS256/ES256) against the discovered `jwks_uri`, with the `iss` and `aud` claims pinned to your configured `issuer` and `client_id`. Standard OIDC claims map onto the dashboard session:
 
