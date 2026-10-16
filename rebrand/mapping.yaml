@@ -462,6 +462,29 @@ post_replace:
       with: "// The Rook imagemark, masked so it renders in the theme's foreground.\nconst ROOK_MARK_MASK = `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`\nconst ROOK_MARK_STYLE = { mask: ROOK_MARK_MASK, WebkitMask: ROOK_MARK_MASK }\n"
     - plain: '<Wordmark className="mb-1" text={WORDMARK} />'
       with: "<span\n          aria-label=\"Reign\"\n          className=\"mx-auto mb-6 block size-28 bg-foreground/20 sm:size-36\"\n          role=\"img\"\n          style={ROOK_MARK_STYLE}\n        />"
+  # Desktop bot chat empty state: the same quiet Rook mark as the home screen, with the
+  # bot's name under it, instead of the bot face over giant name lettering.
+  - files:
+    - apps/desktop/src/plugins/reign-bots/chat-empty.tsx
+    replace:
+    - plain: " * Core's splash is Reign' own wordmark and belongs to a fresh draft; a bot\n * chat is neither. It gets the same lettering with the bot's name in it, over\n * the same face the roster row and tab carry, so an empty conversation still\n * says whose it is.\n"
+      with: " * The quiet Rook imagemark core's splash uses, with the bot's name under it,\n * so an empty conversation still says whose it is.\n"
+    - plain: "import { host, useValue, Wordmark } from '@reign/plugin-sdk'\n\nimport { avatarColor, botAppearance, BotFace } from './avatar'\nimport { isBackfilledFacePng } from './avatar-image'\n"
+      with: "import { host, useValue } from '@reign/plugin-sdk'\n\n"
+    - plain: "const FACE_SIZE = 96\nconst FACE_GAP = 16\n/** What the face costs the stack in height — the offset that puts the name on\n *  the center line is derived from it, so the two can never drift apart. */\nconst FACE_BLOCK = FACE_SIZE + FACE_GAP\n"
+      with: "// The Rook imagemark, masked so it renders in the theme's foreground.\nconst ROOK_MARK_MASK = `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`\nconst ROOK_MARK_STYLE = { mask: ROOK_MARK_MASK, WebkitMask: ROOK_MARK_MASK }\n"
+    - plain: "  const name = displayName(bot, meta)\n  const { color, image, shape } = botAppearance(bot.name, meta)\n  // Same rule the rows use: keep a real photo or pet, drop the SVG backfill so\n  // the math face can animate.\n  const photo = Boolean(image && !isBackfilledFacePng(image))\n"
+      with: "  const name = displayName(bot, meta)\n"
+    - plain: "      data-slot=\"bot_chat_empty\"\n      // The name reads as the title of the chat, so it — not the stack as a\n      // whole — is what should sit on the optical center line. Lifting the\n      // stack by half the face's block does exactly that: the face hangs above\n      // the line and the text lands on it, the same balance the splash strikes\n      // with nothing above its lettering.\n      style={{ transform: `translateY(-${FACE_BLOCK / 2}px)` }}\n    >\n      <div className=\"w-full min-w-0\">\n        <div className=\"flex justify-center\" style={{ marginBottom: FACE_GAP }}>\n          <BotFace\n            color={avatarColor(color, bot.name)}\n            image={photo ? image : null}\n            mood=\"idle\"\n            name={bot.name}\n            shape={shape}\n            size={FACE_SIZE}\n          />\n        </div>\n\n        <Wordmark className=\"mb-1\" text={name} width=\"calc(80% - 1rem)\" />\n"
+      with: "      data-slot=\"bot_chat_empty\"\n    >\n      <div className=\"w-full min-w-0\">\n        <span\n          aria-hidden=\"true\"\n          className=\"mx-auto mb-6 block size-28 bg-foreground/20 sm:size-36\"\n          style={ROOK_MARK_STYLE}\n        />\n\n        <h2 className=\"m-0 mb-1 truncate text-lg font-medium tracking-tight text-foreground/80\">{name}</h2>\n"
+  # Primary bot avatar: Rook green squircle instead of upstream violet.
+  - files:
+    - apps/desktop/src/plugins/reign-bots/avatar.tsx
+    replace:
+    - plain: "/** The friendly violet the primary profile has always worn, and the last\n *  resort for a draft that has no name to derive a hue from yet. */\nconst PRIMARY_AVATAR_COLOR = '#8b5cf6'"
+      with: "/** Rook green for the primary profile, and the last resort for a draft that\n *  has no name to derive a hue from yet. */\nconst PRIMARY_AVATAR_COLOR = '#4A9D6B'"
+    - plain: "primary a nice fixed generic look (a friendly violet squircle)."
+      with: "primary a nice fixed generic look (a Rook green squircle)."
   # Dashboard sidebar header: the Rook outline mark (masked, takes the theme's midground)
   # beside "Reign", replacing the two-line "Reign / Agent" lettering.
   - files:
