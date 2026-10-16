@@ -1,27 +1,21 @@
 /**
  * What a bot's chat shows before it has said anything.
  *
- * Core's splash is Reign' own wordmark and belongs to a fresh draft; a bot
- * chat is neither. It gets the same lettering with the bot's name in it, over
- * the same face the roster row and tab carry, so an empty conversation still
- * says whose it is.
+ * The quiet Rook imagemark core's splash uses, with the bot's name under it,
+ * so an empty conversation still says whose it is.
  */
 
-import { host, useValue, Wordmark } from '@reign/plugin-sdk'
+import { host, useValue } from '@reign/plugin-sdk'
 
-import { avatarColor, botAppearance, BotFace } from './avatar'
-import { isBackfilledFacePng } from './avatar-image'
 import { $botMeta, $lastRoster } from './data'
 import { useBots } from './i18n'
 import { displayName } from './labels'
 import { botRosterMeta } from './routing'
 import type { RosterRow } from './types'
 
-const FACE_SIZE = 96
-const FACE_GAP = 16
-/** What the face costs the stack in height — the offset that puts the name on
- *  the center line is derived from it, so the two can never drift apart. */
-const FACE_BLOCK = FACE_SIZE + FACE_GAP
+// The Rook imagemark, masked so it renders in the theme's foreground.
+const ROOK_MARK_MASK = `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`
+const ROOK_MARK_STYLE = { mask: ROOK_MARK_MASK, WebkitMask: ROOK_MARK_MASK }
 
 /** The bot whose canonical chat this session is, if it is one. Matches the
  *  durable registry id or the compression-lineage tip, the same pair the
@@ -74,35 +68,20 @@ export function BotChatEmpty({ sessionId }: { sessionId: string }) {
   // source-scoped bot's avatar actually lives under.
   const meta = botRosterMeta(bot, allMeta)
   const name = displayName(bot, meta)
-  const { color, image, shape } = botAppearance(bot.name, meta)
-  // Same rule the rows use: keep a real photo or pet, drop the SVG backfill so
-  // the math face can animate.
-  const photo = Boolean(image && !isBackfilledFacePng(image))
 
   return (
     <div
       className="pointer-events-none flex w-full min-w-0 flex-col items-center justify-center px-0.5 py-6 text-center text-muted-foreground sm:px-6 lg:px-8"
       data-slot="bot_chat_empty"
-      // The name reads as the title of the chat, so it — not the stack as a
-      // whole — is what should sit on the optical center line. Lifting the
-      // stack by half the face's block does exactly that: the face hangs above
-      // the line and the text lands on it, the same balance the splash strikes
-      // with nothing above its lettering.
-      style={{ transform: `translateY(-${FACE_BLOCK / 2}px)` }}
     >
       <div className="w-full min-w-0">
-        <div className="flex justify-center" style={{ marginBottom: FACE_GAP }}>
-          <BotFace
-            color={avatarColor(color, bot.name)}
-            image={photo ? image : null}
-            mood="idle"
-            name={bot.name}
-            shape={shape}
-            size={FACE_SIZE}
-          />
-        </div>
+        <span
+          aria-hidden="true"
+          className="mx-auto mb-6 block size-28 bg-foreground/20 sm:size-36"
+          style={ROOK_MARK_STYLE}
+        />
 
-        <Wordmark className="mb-1" text={name} width="calc(80% - 1rem)" />
+        <h2 className="m-0 mb-1 truncate text-lg font-medium tracking-tight text-foreground/80">{name}</h2>
 
         <p className="m-0 text-center leading-normal tracking-tight">{b.bot.chatEmpty}</p>
       </div>
