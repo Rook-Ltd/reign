@@ -22,7 +22,7 @@ def test_check_via_local_git_ssh_fastpath_ahead_not_behind(tmp_path):
 
     def fake_git_stdout(args, *, cwd, timeout=5, network=False):
         if args == ["remote", "get-url", "origin"]:
-            return "git@github.com:asxi9832/reign.git"
+            return "git@github.com:rook-ltd/reign.git"
         if args == ["rev-parse", "HEAD"]:
             return "b" * 40  # carried commit, differs from upstream tip
         raise AssertionError(f"unexpected git call: {args}")
@@ -48,7 +48,7 @@ def test_check_via_local_git_ssh_fastpath_genuinely_behind(tmp_path):
 
     def fake_git_stdout(args, *, cwd, timeout=5, network=False):
         if args == ["remote", "get-url", "origin"]:
-            return "git@github.com:asxi9832/reign.git"
+            return "git@github.com:rook-ltd/reign.git"
         if args == ["rev-parse", "HEAD"]:
             return "b" * 40
         raise AssertionError(f"unexpected git call: {args}")
@@ -75,7 +75,7 @@ def test_check_via_local_git_ssh_fastpath_offline_keeps_sentinel(tmp_path):
 
     def fake_git_stdout(args, *, cwd, timeout=5, network=False):
         if args == ["remote", "get-url", "origin"]:
-            return "git@github.com:asxi9832/reign.git"
+            return "git@github.com:rook-ltd/reign.git"
         if args == ["rev-parse", "HEAD"]:
             return "b" * 40
         raise AssertionError(f"unexpected git call: {args}")
@@ -116,7 +116,7 @@ def test_check_via_local_git_insteadof_rewrite_routes_to_ssh_fastpath(tmp_path, 
         # hostname makes git's auto-detected ident "user@host.(none)" reject the commit.
         ["git", "-c", "user.email=t@t", "-c", "user.name=t",
          "commit", "--allow-empty", "-q", "-m", "init"],
-        ["git", "remote", "add", "origin", "git@github.com:asxi9832/reign.git"],
+        ["git", "remote", "add", "origin", "git@github.com:rook-ltd/reign.git"],
         ["git", "rev-parse", "HEAD"],
     ]
     head_sha = None

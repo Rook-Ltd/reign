@@ -79,7 +79,7 @@ describe('local desktop pack stays out of the publish path', () => {
 
     assert.ok(Array.isArray(configs) && configs.length > 0)
     assert.equal(configs[0].provider, 'github')
-    assert.equal(configs[0].owner, 'asxi9832')
+    assert.equal(configs[0].owner, 'rook-ltd')
     assert.equal(configs[0].repo, 'reign')
   })
 

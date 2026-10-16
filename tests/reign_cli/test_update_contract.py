@@ -28,7 +28,7 @@ def _valid_marker(tmp_path: Path) -> Path:
         "schema": 1,
         "deployment_kind": "image",
         "manager": "docker",
-        "image": "asxi9832/reign",
+        "image": "rook-ltd/reign",
         "version": "1.0.0",
         "revision": "a" * 40,
     }))

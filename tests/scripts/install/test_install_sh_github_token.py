@@ -19,8 +19,8 @@ INSTALL_SH = (
     Path(__file__).resolve().parent.parent.parent.parent / "scripts" / "install.sh"
 )
 TOKEN = "github_pat_test0123456789"
-TOKEN_URL = f"https://x-access-token:{TOKEN}@github.com/asxi9832/reign.git"
-PLAIN_URL = "https://github.com/asxi9832/reign.git"
+TOKEN_URL = f"https://x-access-token:{TOKEN}@github.com/rook-ltd/reign.git"
+PLAIN_URL = "https://github.com/rook-ltd/reign.git"
 
 
 def _git(*args, cwd=None, env=None):
@@ -34,7 +34,7 @@ def _env(tmp_path: Path, remote: Path) -> dict:
     home.mkdir(exist_ok=True)
     rewrites = {
         f"file://{remote}": TOKEN_URL,
-        f"file://{tmp_path}/no-ssh": "git@github.com:asxi9832/reign.git",
+        f"file://{tmp_path}/no-ssh": "git@github.com:rook-ltd/reign.git",
     }
     env = {
         "PATH": os.environ["PATH"],

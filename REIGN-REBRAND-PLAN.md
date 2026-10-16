@@ -110,11 +110,11 @@ inline SVG/base64 in React components, and text-art spinner faces in
 - [x] Brand sources in `brand/`.
 - [x] Convert `.ai` → SVG; generate derivative set (section 4) via `rebrand/gen_assets.py` → `brand/generated/`.
 - [x] Tooling: `uv` 0.12.8 and `poppler` 26.08 installed with the **native ARM Homebrew** (`/opt/homebrew/bin/brew`). Note: this Mac also has an Intel Homebrew at `/usr/local` that shadows `brew` on PATH and compiles from source under Rosetta — always call `/opt/homebrew/bin/brew` explicitly. `pyfiglet` + Pillow live in a scratch venv, not system Python.
-- [x] Target repo confirmed: `asxi9832/reign` (private, only a stub README on `main`; will be replaced at Phase 5).
+- [x] Target repo confirmed: `rook-ltd/reign` (private, only a stub README on `main`; will be replaced at Phase 5).
 
 ### Phase 1 — Clone and audit (DONE 2026-09-01)
 Results in `rebrand/audit.md` (summary) and `rebrand/audit/` (raw data). Provenance in `rebrand/UPSTREAM.md`.
-Upstream history kept (26,982 commits); remotes: `upstream` = Nous, `origin` = asxi9832/reign.
+Upstream history kept (26,982 commits); remotes: `upstream` = Nous, `origin` = rook-ltd/reign.
 
 Baseline environment: Python 3.11.15 venv via `uv sync --locked --python 3.11 --extra all --extra dev --extra anthropic --extra mistral --extra fal --extra modal --extra daytona --extra hindsight --extra parallel-web` (same set as upstream CI). `ui-tui` `npm ci && npm run build` OK.
 
@@ -216,7 +216,7 @@ Original Phase 4 checklist:
 
 ### Phase 5 — Handoff and distribution model (decided 2026-09-19)
 
-**Distribution: Rook is the distributor.** Clients install from and `reign update` against `asxi9832/reign`. Rook re-cuts Reign from upstream on a cadence with a test gate (weekly or biweekly), never by `git merge upstream/main`: upstream moves ~600 commits/day and touched 8,111 files in the 18 days after the fork, 1,557 of them under renamed paths and 5,801 containing Hermes/Nous text, so a merge is not viable.
+**Distribution: Rook is the distributor.** Clients install from and `reign update` against `rook-ltd/reign`. Rook re-cuts Reign from upstream on a cadence with a test gate (weekly or biweekly), never by `git merge upstream/main`: upstream moves ~600 commits/day and touched 8,111 files in the 18 days after the fork, 1,557 of them under renamed paths and 5,801 containing Hermes/Nous text, so a merge is not viable.
 
 **Sync mechanics (to build next):** `rebrand/sync_upstream.py` takes a fresh `upstream/main` checkout, runs `rebrand.py` (all five stages), replays the hand-edit overlay (Phase 3/4 changes as a patch set plus `place_images.py`), runs the residual and image-hash gates, then records the result as a merge commit whose parents are the previous Reign head and the upstream commit (`git commit-tree`). Client installs fast-forward on every sync; mechanical branding cannot come back because the codemod runs every time; new *kinds* of branding surface on the residual list for review.
 
@@ -242,7 +242,7 @@ Original Phase 4 checklist:
 - Procedure that worked, for the next operator: sync → full suite → run the failing *files* on a pristine upstream worktree (`git worktree add … <tag>`, `uv sync`, `scripts/run_tests.sh <files>`) → anything that passes upstream is a Reign bug; fix it as a mapping rule, `rederive`, rerun those files. Never hand-edit the synced tree for a class of problem; hand-edit only one-offs, and put those in the overlay.
 - Local quirk: a `uv sync` that reuses an old `.venv` may copy the interpreter instead of symlinking it; one upstream test (`test_update_import_guard`) symlinks that interpreter into a fake venv and then fails with a bogus `/install` prefix. `rm -rf .venv && uv venv --python 3.11` fixes it. CI is unaffected.
 
-**Open: repo visibility.** `asxi9832/reign` is private. Every client install and update needs a GitHub credential until it is public or a deploy key / token scheme exists.
+**Open: repo visibility.** `rook-ltd/reign` is private. Every client install and update needs a GitHub credential until it is public or a deploy key / token scheme exists.
 
 Original Phase 5 checklist:
 - Push to the Rook GitHub repo (link to be provided). Tag `v0.1.0`.
@@ -278,6 +278,6 @@ Scale: 6,566 files / 93k lines mention hermes or nous; 637 distinct `HERMES_*` e
 - D5. `apps/desktop/public/ds-assets/filler-bg0.jpg` (3.9 MB) is a blue-tinted classical Greek engraving (statue and swordsman on steps). No Hermes mark, but it carries the Greek-mythology theme. **DECIDED: replace with a subdued white Rook imagemark** (large, low-opacity white mark on the dark background, generated from `brand/generated/rook-mark-white-2048.png` at ~6-8% opacity, same 1440×1440 dimensions so the CSS needs no change). The four `src/assets/tiers/feature-*.webp` tiles (128 px) are the same blue-engraving style, no Hermes marks [default: keep in v0.1, restyle later]. `components/pet/pet-egg-sheet.png` is a generic egg-hatch sprite with no branding [keep].
 
 ## 6. Remaining open items
-- GitHub repo URL for push: https://github.com/asxi9832/reign (provided 2026-09-01).
+- GitHub repo URL for push: https://github.com/rook-ltd/reign (provided 2026-09-01).
 - In-product Nous links: decide keep vs. replace once the audit lists them (section 1 caveat).
 - Brand hex colors / typeface: none supplied; proceeding monochrome. Supply if Rook has an official accent color for the `rook` skin.

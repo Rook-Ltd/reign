@@ -1982,7 +1982,7 @@ export const fr = defineLocale({
       sshErrHostKey:
         "La clé de l'hôte a changé depuis votre dernière connexion. Vérifiez que ce changement est attendu, puis exécutez ssh-keygen -R <host> et reconnectez-vous.",
       sshErrNotInstalled:
-        "Reign n'est pas installé sur l'hôte distant. Installez-le là-bas (curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | sh) ou définissez le chemin Reign.",
+        "Reign n'est pas installé sur l'hôte distant. Installez-le là-bas (curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | sh) ou définissez le chemin Reign.",
       sshErrPlatform:
         'Plateforme distante non prise en charge. Le mode SSH de Reign Desktop supporte les hôtes distants Linux, macOS et Windows.',
       sshErrTimeout: "Expiration de la connexion SSH. L'hôte peut être inaccessible ou en veille.",

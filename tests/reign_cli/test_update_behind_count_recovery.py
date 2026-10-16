@@ -142,7 +142,7 @@ def test_check_via_rev_local_ahead_reports_up_to_date():
 def _local_git(head_sha):
     def fake_run(cmd, **kwargs):
         if cmd[:4] == ["git", "remote", "get-url", "origin"]:
-            return MagicMock(returncode=0, stdout="https://github.com/asxi9832/reign.git\n")
+            return MagicMock(returncode=0, stdout="https://github.com/rook-ltd/reign.git\n")
         if cmd[:3] == ["git", "rev-parse", "HEAD"]:
             return MagicMock(returncode=0, stdout=f"{head_sha}\n")
         if cmd[:3] == ["git", "merge-base", "--is-ancestor"]:

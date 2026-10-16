@@ -24,7 +24,7 @@ By default every profile is seeded with the bundled skill catalog, and each `rei
 **At install time** (applies to the default `~/.reign` profile):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash -s -- --no-skills
+curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash -s -- --no-skills
 ```
 
 **At profile-create time** (named profiles):

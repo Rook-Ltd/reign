@@ -209,7 +209,7 @@ stdenv.mkDerivation {
 
   meta = with lib; {
     description = "Native Electron desktop shell for Reign";
-    homepage = "https://github.com/asxi9832/reign";
+    homepage = "https://github.com/rook-ltd/reign";
     license = licenses.mit;
     platforms = platforms.unix;
     mainProgram = "reign-desktop";

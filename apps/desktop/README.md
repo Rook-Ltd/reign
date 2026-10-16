@@ -249,7 +249,7 @@ Remove-Item -Recurse -Force "$env:LOCALAPPDATA\reign\reign\venv"
 
 - 💬 [Discord](https://discord.gg/NousResearch)
 - 📖 [Documentation](https://hermes-agent.nousresearch.com/docs/)
-- 🐛 [Issues](https://github.com/NousResearch/hermes-agent/issues)
+- 🐛 [Issues](https://github.com/rook-ltd/reign/issues)
 
 ---
 

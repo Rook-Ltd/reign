@@ -6,7 +6,7 @@
 # Uses uv for desktop/server installs and Python's stdlib venv + pip on Termux.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --no-venv --skip-setup
@@ -43,12 +43,12 @@ NC='\033[0m' # No Color
 BOLD='\033[1m'
 
 # Configuration
-REPO_URL_SSH="git@github.com:asxi9832/reign.git"
-REPO_URL_HTTPS="https://github.com/asxi9832/reign.git"
+REPO_URL_SSH="git@github.com:rook-ltd/reign.git"
+REPO_URL_HTTPS="https://github.com/rook-ltd/reign.git"
 # Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.
 # It stays in origin's URL so later `reign update` fetches authenticate too.
 if [ -n "${REIGN_GITHUB_TOKEN:-}" ]; then
-    REPO_URL_HTTPS="https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/asxi9832/reign.git"
+    REPO_URL_HTTPS="https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/rook-ltd/reign.git"
 fi
 REIGN_HOME="${REIGN_HOME:-$HOME/.reign}"
 # INSTALL_DIR is resolved AFTER arg parsing and OS detection so we can pick an
@@ -571,7 +571,7 @@ detect_os() {
             OS="windows"
             DISTRO="windows"
             log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)"
+            log_info "  iex (irm https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1)"
             exit 1
             ;;
         *)

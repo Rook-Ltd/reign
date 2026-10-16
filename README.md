@@ -34,17 +34,17 @@ Use any model you want — [Nous Portal](https://portal.nousresearch.com), OpenR
 ### Linux, macOS, WSL2, Termux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash
 ```
 
 ### Windows (native, PowerShell)
 
-> **Heads up:** Native Windows runs Reign without WSL — CLI, gateway, TUI, and tools all work natively. If you'd rather use WSL2, the Linux/macOS one-liner above works there too. Found a bug? Please [file issues](https://github.com/NousResearch/hermes-agent/issues).
+> **Heads up:** Native Windows runs Reign without WSL — CLI, gateway, TUI, and tools all work natively. If you'd rather use WSL2, the Linux/macOS one-liner above works there too. Found a bug? Please [file issues](https://github.com/rook-ltd/reign/issues).
 
 Run this in PowerShell:
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)
+iex (irm https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1)
 ```
 
 The installer handles everything: uv, Python 3.11, Node.js, ripgrep, ffmpeg, **and a portable Git Bash** (MinGit, unpacked to `%LOCALAPPDATA%\reign\git` — no admin required, completely isolated from any system Git install). Reign uses this bundled Git Bash to run shell commands.
@@ -221,7 +221,7 @@ full git checkout it creates at `$REIGN_HOME/reign` (usually
 managed venv, lazy dependencies, gateway, and docs tooling.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash
 cd "${REIGN_HOME:-$HOME/.reign}/reign"
 uv pip install -e ".[all,dev]"
 scripts/run_tests.sh
@@ -248,7 +248,7 @@ scripts/run_tests.sh
 
 - 💬 [Discord](https://discord.gg/NousResearch)
 - 📚 [Skills Hub](https://agentskills.io)
-- 🐛 [Issues](https://github.com/NousResearch/hermes-agent/issues)
+- 🐛 [Issues](https://github.com/rook-ltd/reign/issues)
 - 🔌 [computer-use-linux](https://github.com/avifenesh/computer-use-linux) — Linux desktop-control MCP server for Reign and other MCP hosts, with AT-SPI accessibility trees, Wayland/X11 input, screenshots, and compositor window targeting.
 - 🔌 [ReignClaw](https://github.com/AaronWong1999/hermesclaw) — Community WeChat bridge: Run Reign and OpenClaw on the same WeChat account.
 

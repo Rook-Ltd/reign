@@ -5,7 +5,7 @@
 # Uses uv for fast Python provisioning and package management.
 #
 # Usage:
-#   iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)
+#   iex (irm https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1)
 #
 # Or download and run with options:
 #   .\install.ps1 -NoVenv -SkipSetup
@@ -383,12 +383,12 @@ $script:ResolvedPathReport = @{
 # Configuration
 # ============================================================================
 
-$RepoUrlSsh = "git@github.com:asxi9832/reign.git"
-$RepoUrlHttps = "https://github.com/asxi9832/reign.git"
+$RepoUrlSsh = "git@github.com:rook-ltd/reign.git"
+$RepoUrlHttps = "https://github.com/rook-ltd/reign.git"
 # Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.
 # It stays in origin's URL so later `reign update` fetches authenticate too.
 if ($env:REIGN_GITHUB_TOKEN) {
-    $RepoUrlHttps = "https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/asxi9832/reign.git"
+    $RepoUrlHttps = "https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/rook-ltd/reign.git"
 }
 $PythonVersion = "3.11"
 # Minor versions the installer accepts when the requested $PythonVersion isn't
@@ -2545,13 +2545,13 @@ function Install-Repository {
                 # for.  GitHub supports archive URLs for commits, tags, and
                 # branches; we honour Commit > Tag > Branch.
                 if ($Commit) {
-                    $zipUrl = "https://github.com/asxi9832/reign/archive/$Commit.zip"
+                    $zipUrl = "https://github.com/rook-ltd/reign/archive/$Commit.zip"
                     $zipLabel = $Commit
                 } elseif ($Tag) {
-                    $zipUrl = "https://github.com/asxi9832/reign/archive/refs/tags/$Tag.zip"
+                    $zipUrl = "https://github.com/rook-ltd/reign/archive/refs/tags/$Tag.zip"
                     $zipLabel = $Tag
                 } else {
-                    $zipUrl = "https://github.com/asxi9832/reign/archive/refs/heads/$Branch.zip"
+                    $zipUrl = "https://github.com/rook-ltd/reign/archive/refs/heads/$Branch.zip"
                     $zipLabel = $Branch
                 }
                 $zipPath = "$env:TEMP\reign-$zipLabel.zip"
@@ -5190,7 +5190,7 @@ try {
     Write-Err "Installation failed: $_"
     Write-Host ""
     Write-Info "If the error is unclear, try downloading and running the script directly:"
-    Write-Host "  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1' -OutFile install.ps1" -ForegroundColor Yellow
+    Write-Host "  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1' -OutFile install.ps1" -ForegroundColor Yellow
     Write-Host "  .\install.ps1" -ForegroundColor Yellow
     Write-Host ""
 }

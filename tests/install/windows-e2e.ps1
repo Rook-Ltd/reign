@@ -133,8 +133,8 @@ $ProofRoot   = Join-Path $WorkRoot "proof"
 $AhkDir      = Join-Path $WorkRoot "ahk"
 $AssetsDir   = Join-Path $PSScriptRoot "e2e-assets"
 
-$RepoUrlHttps = "https://github.com/asxi9832/reign.git"
-$RepoUrlSsh   = "git@github.com:asxi9832/reign.git"
+$RepoUrlHttps = "https://github.com/rook-ltd/reign.git"
+$RepoUrlSsh   = "git@github.com:rook-ltd/reign.git"
 
 function Write-Step([string]$Message) {
     Write-Host ""

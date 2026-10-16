@@ -7,7 +7,7 @@
   "author": "Rook",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/asxi9832/reign.git"
+    "url": "git+https://github.com/rook-ltd/reign.git"
   },
   "type": "module",
   "main": "dist/electron-main.mjs",

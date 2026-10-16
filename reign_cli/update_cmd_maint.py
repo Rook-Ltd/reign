@@ -31,8 +31,8 @@ _PRE_UPDATE_SNAPSHOT_MAX_FILE_SIZE = 1 << 30  # 1 GiB
 #: Reinstalling through the official installer swaps in a Python whose SQLite is safe; the
 #: one-liner differs per OS (mirrors ``uninstall._REINSTALL_HINT``). windows -> command
 _REINSTALL_ONE_LINER = {
-    True: "iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)",
-    False: "curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash",
+    True: "iex (irm https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1)",
+    False: "curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash",
 }
 
 

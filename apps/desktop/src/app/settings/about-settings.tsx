@@ -23,7 +23,7 @@ import { SETTING_IDS, settingElementId } from './settings-manifest'
 import { UninstallSection } from './uninstall-section'
 import { useSettingDeepLink } from './use-setting-deep-link'
 
-const RELEASE_NOTES_URL = 'https://github.com/asxi9832/reign/releases'
+const RELEASE_NOTES_URL = 'https://github.com/rook-ltd/reign/releases'
 const INSTALLER_URL = 'https://hermes-agent.nousresearch.com/'
 
 function relativeTime(ms: number | undefined, a: Translations['settings']['about']) {

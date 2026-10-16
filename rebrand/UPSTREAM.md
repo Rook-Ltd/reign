@@ -6,7 +6,7 @@
 - Synced at: f97608f178d1ffeca59860195ab7da295f7c8e5f (v2026.9.24, 2026-10-06)
 - Upstream commit date: 2026-09-01 21:46:46 -0500
 - Cloned: 2026-09-02T02:52Z
-- Remotes: `upstream` = Nous, `origin` = https://github.com/asxi9832/reign
+- Remotes: `upstream` = Nous, `origin` = https://github.com/rook-ltd/reign
 
 ## Re-syncing with upstream (future)
 ```

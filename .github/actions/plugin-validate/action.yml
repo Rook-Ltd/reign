@@ -43,7 +43,7 @@ runs:
         set -euo pipefail
         # CI-context install from git; the ref lets plugin authors validate
         # against a pinned reign release instead of main.
-        pip install "git+https://github.com/asxi9832/reign@${_REIGN_REF}"
+        pip install "git+https://github.com/rook-ltd/reign@${_REIGN_REF}"
 
     - name: Validate plugin
       shell: bash

@@ -83,7 +83,7 @@ Packaging/repository/signing problems for this option should be reported to the 
 Reign now ships a Termux-aware installer path:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | bash
 ```
 
 On Termux, the installer automatically:

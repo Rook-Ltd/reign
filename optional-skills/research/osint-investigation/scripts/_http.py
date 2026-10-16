@@ -13,7 +13,7 @@ import urllib.request
 
 DEFAULT_UA = (
     "reign-osint-investigation/0.2 "
-    "(+https://github.com/asxi9832/reign; "
+    "(+https://github.com/rook-ltd/reign; "
     "set REIGN_OSINT_UA env var to identify yourself per "
     "Wikimedia / SEC fair-use guidance)"
 )

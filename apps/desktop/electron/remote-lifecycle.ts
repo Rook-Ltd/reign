@@ -237,7 +237,7 @@ async function locateReign(ssh, remoteReignPath) {
 
   const err: any = new Error(
     'Reign is not installed on the remote host (could not find a `reign` executable). ' +
-      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | sh  ' +
+      'Install it on the remote with:  curl -fsSL https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh | sh  ' +
       '— or set the Reign path explicitly in the SSH connection settings.'
   )
 

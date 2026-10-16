@@ -239,29 +239,29 @@ post_replace:
       - "tests/reign_cli/test_cmd_update.py"
     replace:
       - plain: "https://github.com/NousResearch/hermes-agent.git"
-        with:  "https://github.com/asxi9832/reign.git"
+        with:  "https://github.com/rook-ltd/reign.git"
       - plain: "git@github.com:NousResearch/hermes-agent.git"
-        with:  "git@github.com:asxi9832/reign.git"
+        with:  "git@github.com:rook-ltd/reign.git"
       - plain: "https://github.com/NousResearch/hermes-agent"
-        with:  "https://github.com/asxi9832/reign"
+        with:  "https://github.com/rook-ltd/reign"
       - plain: "git@github.com:NousResearch/hermes-agent"
-        with:  "git@github.com:asxi9832/reign"
+        with:  "git@github.com:rook-ltd/reign"
       - plain: "https://raw.githubusercontent.com/NousResearch/hermes-agent"
-        with:  "https://raw.githubusercontent.com/asxi9832/reign"
+        with:  "https://raw.githubusercontent.com/rook-ltd/reign"
       - plain: "ssh://git@github.com/NousResearch/hermes-agent"
-        with:  "ssh://git@github.com/asxi9832/reign"
+        with:  "ssh://git@github.com/rook-ltd/reign"
       - plain: "git@github.com:nousresearch/hermes-agent"
-        with:  "git@github.com:asxi9832/reign"
+        with:  "git@github.com:rook-ltd/reign"
       - plain: "github.com/nousresearch/hermes-agent"
-        with:  "github.com/asxi9832/reign"
+        with:  "github.com/rook-ltd/reign"
       - plain: "updates from NousResearch/hermes-agent"
-        with:  "updates from asxi9832/reign"
+        with:  "updates from rook-ltd/reign"
       - plain: "canonical NousResearch/hermes-agent repo"
-        with:  "canonical asxi9832/reign repo"
+        with:  "canonical rook-ltd/reign repo"
       - plain: "_HERMES_REF"
         with:  "_REIGN_REF"
       - plain: '"nousresearch/hermes-agent"'
-        with:  '"asxi9832/reign"'
+        with:  '"rook-ltd/reign"'
   - files:
       - "scripts/install.sh"
       - "**/test_install_sh_acp_launcher.py"
@@ -700,18 +700,20 @@ post_replace:
       - regex: '(?s)(_REIGN_BRANDING: Dict\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
         with:  '\1\n_REIGN_BRANDING["agent_name"] = "Reign"\n_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."'
 
-  # CI runs on Rook's self-hosted runner (reign1). Upstream's 32/96-core larger runners
-  # don't exist on this account, so their jobs queued for a day and were cancelled.
-  # reign1 has far fewer cores, so those jobs get longer limits and the test runner
-  # picks its worker count from the machine instead of upstream's 96.
+  # Upstream's 32/96-core larger runners don't exist on this account (their jobs queued for a
+  # day and were cancelled), so those jobs run on standard GitHub-hosted runners, which are
+  # free on a public repo. Those have far fewer cores, so the jobs get longer limits and the
+  # test runner picks its worker count from the machine instead of upstream's 96.
+  # The repo is public: never map a job to a self-hosted runner, since any fork PR could then
+  # run its code on that machine.
   - files:
       - ".github/workflows/*.yml"
       - ".github/workflows/*.yaml"
     replace:
       - regex: 'runs-on: ubuntu-latest-(?:32|96)-core\n(\s+)timeout-minutes: \d+'
-        with:  'runs-on: self-hosted\n\1timeout-minutes: 120'
+        with:  'runs-on: ubuntu-latest\n\1timeout-minutes: 120'
       - regex: '(runs-on|runner): ubuntu-latest-(?:32|96)-core\b'
-        with:  '\1: self-hosted'
+        with:  '\1: ubuntu-latest'
       - plain: "runner: windows-latest-32-core"
         with:  "runner: windows-latest"
       - plain: "REIGN_TEST_WORKERS: 96"
@@ -765,7 +767,7 @@ post_replace:
     replace:
       # package.json's repository URL points at the fork (rule above); the owner follows it.
       - plain: "configs[0].owner, 'NousResearch')"
-        with:  "configs[0].owner, 'asxi9832')"
+        with:  "configs[0].owner, 'rook-ltd')"
   # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
   # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
   - files:
@@ -774,18 +776,9 @@ post_replace:
     - plain: "    const dark = await importThemeWithCleanEnv()\n    const light = await importThemeWithEnv({ REIGN_TUI_BACKGROUND: '#ffffff' })\n\n    const cases: Array<[string, string, string]> = ["
       with: "    //\n    // The classic (pre-Reign) gold seeds are the FIXTURE here — the shipped\n    // DARK_SEEDS/LIGHT_SEEDS are now the Rook monochrome palette, but the\n    // ladder knobs are still the ones fitted against these literals.\n    const { buildPalette } = await importThemeWithCleanEnv()\n    const dark = {\n      DARK_THEME: {\n        color: buildPalette(\n          {\n            accent: '#FFBF00',\n            activeRow: '#333355',\n            bg: '#101014',\n            border: '#CD7F32',\n            error: '#ef5350',\n            ok: '#4caf50',\n            primary: '#FFD700',\n            prompt: '#FFF8DC',\n            selection: '#3a3a55',\n            shellDollar: '#4dabf7',\n            statusBad: '#FF8C00',\n            statusCritical: '#FF6B6B',\n            statusGood: '#8FBC8F',\n            statusWarn: '#FFD700',\n            surface: '#1a1a2e',\n            text: '#FFF8DC',\n            warn: '#ffa726'\n          },\n          false\n        )\n      }\n\
         \    }\n    const light = {\n      LIGHT_THEME: {\n        color: buildPalette(\n          {\n            accent: '#956E00',\n            bg: '#ffffff',\n            border: '#A56628',\n            error: '#C14240',\n            ok: '#367E39',\n            primary: '#867000',\n            prompt: '#2B2014',\n            shellDollar: '#377BB3',\n            statusBad: '#A65A00',\n            statusCritical: '#B94D4D',\n            statusGood: '#5C7A5C',\n            statusWarn: '#867000',\n            text: '#3D2F13',\n            warn: '#956115'\n          },\n          true\n        )\n      }\n    }\n\n    const cases: Array<[string, string, string]> = ["
-  # Last, after the ci.yaml rule that keys on `runs-on: ubuntu-latest`: the account's included
-  # hosted minutes ran out (2026-10-09) and every short ubuntu job bills a whole minute, so all
-  # Linux jobs run on reign1 too. Windows and macOS lanes have no self-hosted equivalent.
-  - files:
-      - ".github/workflows/*.yml"
-      - ".github/workflows/*.yaml"
-    replace:
-      - regex: '(runs-on|runner|default): ubuntu-latest\b(?!-)'
-        with:  '\1: self-hosted'
-  # Windows and macOS have no self-hosted runner, and hosted minutes on a private repo bill
-  # Windows at 2x and macOS at 10x. Joel's call (2026-10-09): those lanes run only on a manual
-  # dispatch, and arm64 images build on reign1 under QEMU instead of the paid arm64 runner.
+  # Joel's call (2026-10-09, when hosted minutes on the private repo had run out): the Windows
+  # and macOS lanes run only on a manual dispatch. arm64 images build on GitHub's standard arm64
+  # runner (free on a public repo) instead of upstream's 32-core arm64 larger runner.
   - files:
       - ".github/workflows/ci.yaml"
     replace:
@@ -804,9 +797,7 @@ post_replace:
       - ".github/workflows/docker.yml"
     replace:
       - plain: "runner: ubuntu-latest-32-arm-core"
-        with:  "runner: self-hosted"
-      - regex: "(?<!# v3\\.7\\.0\n\n)(      - name: Set up Docker Buildx\n        id: buildx\n)"
-        with:  "      # reign1 is x64, so arm64 images build under QEMU emulation.\n      - name: Set up QEMU\n        if: matrix.arch == 'arm64'\n        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0\n\n\\1"
+        with:  "runner: ubuntu-24.04-arm"
 
   # reign1's CPU is x86-64-v2 (no AVX2), and setup-python's Ubuntu 26.04 builds need
   # x86-64-v3 ("CPU ISA level is lower than required"). uv's Python builds run on v2, so
@@ -836,9 +827,9 @@ post_replace:
       - "website/docs/**"
     replace:
       - plain: "https://hermes-agent.nousresearch.com/install.sh"
-        with:  "https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh"
+        with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh"
       - plain: "https://hermes-agent.nousresearch.com/install.ps1"
-        with:  "https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1"
+        with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1"
 
   # The repo is private: REIGN_GITHUB_TOKEN (a read-only fine-grained token) authenticates
   # the installer's clone, and stays in origin's URL so `reign update` fetches keep working.
@@ -846,17 +837,33 @@ post_replace:
   - files:
       - "scripts/install.sh"
     replace:
-      - plain: "REPO_URL_HTTPS=\"https://github.com/asxi9832/reign.git\"\nREIGN_HOME="
-        with:  "REPO_URL_HTTPS=\"https://github.com/asxi9832/reign.git\"\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\n# It stays in origin's URL so later `reign update` fetches authenticate too.\nif [ -n \"${REIGN_GITHUB_TOKEN:-}\" ]; then\n    REPO_URL_HTTPS=\"https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/asxi9832/reign.git\"\nfi\nREIGN_HOME="
+      - plain: "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\nREIGN_HOME="
+        with:  "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\n# It stays in origin's URL so later `reign update` fetches authenticate too.\nif [ -n \"${REIGN_GITHUB_TOKEN:-}\" ]; then\n    REPO_URL_HTTPS=\"https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/rook-ltd/reign.git\"\nfi\nREIGN_HOME="
       - regex: "(?<=stall the installer.\n)            git remote set-branches origin \"\\$BRANCH\""
         with:  "            [ -z \"${REIGN_GITHUB_TOKEN:-}\" ] || git remote set-url origin \"$REPO_URL_HTTPS\"\n            git remote set-branches origin \"$BRANCH\""
   - files:
       - "scripts/install.ps1"
     replace:
-      - plain: "$RepoUrlHttps = \"https://github.com/asxi9832/reign.git\"\r\n$PythonVersion"
-        with:  "$RepoUrlHttps = \"https://github.com/asxi9832/reign.git\"\r\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\r\n# It stays in origin's URL so later `reign update` fetches authenticate too.\r\nif ($env:REIGN_GITHUB_TOKEN) {\r\n    $RepoUrlHttps = \"https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/asxi9832/reign.git\"\r\n}\r\n$PythonVersion"
+      - plain: "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n$PythonVersion"
+        with:  "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\r\n# It stays in origin's URL so later `reign update` fetches authenticate too.\r\nif ($env:REIGN_GITHUB_TOKEN) {\r\n    $RepoUrlHttps = \"https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/rook-ltd/reign.git\"\r\n}\r\n$PythonVersion"
       - plain: "                }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
         with:  "                }\r\n                if ($env:REIGN_GITHUB_TOKEN) { git -c windows.appendAtomically=false remote set-url origin $RepoUrlHttps }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
+
+  # Public repo: issues and vulnerability reports come to Rook, not Nous (upstream's links
+  # survive the nousresearch protect rules otherwise).
+  - files:
+      - "README.md"
+      - "apps/desktop/README.md"
+      - "CONTRIBUTING.md"
+      - ".github/ISSUE_TEMPLATE/*.yml"
+      - "SECURITY.md"
+    replace:
+      - regex: 'https://github\.com/NousResearch/hermes-agent/issues(?!/\d)'
+        with:  'https://github.com/rook-ltd/reign/issues'
+      - plain: "https://github.com/NousResearch/hermes-agent/security/advisories/new)\nor **security@nousresearch.com**. Do not open"
+        with:  "https://github.com/rook-ltd/reign/security/advisories/new).\nDo not open"
+      - plain: "the GHSA thread or email correspondence with\n  security@nousresearch.com."
+        with:  "the private GitHub Security Advisory thread."
 
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.

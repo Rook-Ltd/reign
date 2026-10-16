@@ -94,7 +94,7 @@ def _patch_update_deps(monkeypatch, tmp_path, run_side_effect):
     monkeypatch.setattr(
         reign_main,
         "_get_origin_url",
-        lambda *a, **k: "https://github.com/asxi9832/reign.git",
+        lambda *a, **k: "https://github.com/rook-ltd/reign.git",
     )
     monkeypatch.setattr(update_cmd, "_is_fork", lambda *a, **k: False)
     monkeypatch.setattr(

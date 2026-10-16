@@ -263,7 +263,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   meta = with lib; {
     description = "AI agent with advanced tool-calling capabilities";
-    homepage = "https://github.com/asxi9832/reign";
+    homepage = "https://github.com/rook-ltd/reign";
     mainProgram = "reign";
     license = licenses.mit;
     platforms = platforms.unix;

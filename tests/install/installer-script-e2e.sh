@@ -78,8 +78,8 @@ case "$UPDATE_METHOD" in
 esac
 
 REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-REPO_URL_SSH="git@github.com:asxi9832/reign.git"
-REPO_URL_HTTPS="https://github.com/asxi9832/reign.git"
+REPO_URL_SSH="git@github.com:rook-ltd/reign.git"
+REPO_URL_HTTPS="https://github.com/rook-ltd/reign.git"
 
 # Everything lives OUTSIDE the checkout; an untracked dir inside the repo
 # would make later dirty-tree checks lie.
