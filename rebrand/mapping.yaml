@@ -459,6 +459,24 @@ post_replace:
       with: "// The Rook imagemark, masked so it renders in the theme's foreground.\nconst ROOK_MARK_MASK = `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`\nconst ROOK_MARK_STYLE = { mask: ROOK_MARK_MASK, WebkitMask: ROOK_MARK_MASK }\n"
     - plain: '<Wordmark className="mb-1" text={WORDMARK} />'
       with: "<span\n          aria-label=\"Reign\"\n          className=\"mx-auto mb-6 block size-28 bg-foreground/20 sm:size-36\"\n          role=\"img\"\n          style={ROOK_MARK_STYLE}\n        />"
+  # Dashboard sidebar header: the Rook outline mark (masked, takes the theme's midground)
+  # beside "Reign", replacing the two-line "Reign / Agent" lettering.
+  - files:
+    - web/src/App.tsx
+    replace:
+    - plain: "                  Reign\n                  <br />\n                  Agent\n                </Typography>"
+      with: "                  Reign\n                </Typography>"
+    - plain: "                <PluginSlot name=\"header-left\" />\n\n                <Typography className=\"font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase\">"
+      with: "                <PluginSlot name=\"header-left\" />\n\n                <span\n                  aria-hidden=\"true\"\n                  className=\"block size-7 shrink-0 bg-midground\"\n                  style={{\n                    mask: `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`,\n                    WebkitMask: `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`,\n                  }}\n                />\n\n                <Typography className=\"font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase\">"
+  # The TUI gateway's display-only skin fallbacks name rook like init_skin_from_config does.
+  - files:
+    - tui_gateway/change_watcher.py
+    - tui_gateway/methods_config.py
+    replace:
+    - plain: '.get("skin") or "default")'
+      with: '.get("skin") or "rook")'
+    - plain: '_display_raw().get("skin", "default")'
+      with: '_display_raw().get("skin", "rook")'
   # Web portal: sign-in pages and the dashboard's default theme go Rook (black, sage, forest
   # green) with the outline imagemark inlined in place of the Nous Research wordmark.
   - files:

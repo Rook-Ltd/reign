@@ -616,10 +616,17 @@ export default function App() {
               >
                 <PluginSlot name="header-left" />
 
+                <span
+                  aria-hidden="true"
+                  className="block size-7 shrink-0 bg-midground"
+                  style={{
+                    mask: `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`,
+                    WebkitMask: `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`,
+                  }}
+                />
+
                 <Typography className="font-bold text-[1.125rem] leading-[0.95] tracking-[0.0525rem] text-midground uppercase">
                   Reign
-                  <br />
-                  Agent
                 </Typography>
               </div>
 

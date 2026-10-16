@@ -39,6 +39,7 @@ png(mark, ROOT / "apps/desktop/public/rook-mark.png", 512)
 _svg = (G / "rook-mark-outline.svg").read_text()
 _svg = re.sub(r'viewBox="[^"]*"', 'viewBox="318 22 725 725"', _svg).replace(' style="enable-background:new 0 0 1366 768;"', "")
 (ROOT / "apps/desktop/public/rook-mark-outline.svg").write_text(_svg)
+(ROOT / "web/public/rook-mark-outline.svg").write_text(_svg)  # dashboard sidebar mark
 (ROOT / "apps/desktop/public/nous-girl.jpg").unlink(missing_ok=True)
 for p in [ROOT / "apps/desktop/public/reign.png", ROOT / "apps/desktop/public/reign-sprite.png"]:
     p.unlink(missing_ok=True)
