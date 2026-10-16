@@ -2122,7 +2122,7 @@ setup_path() {
         REIGN_BIN="$INSTALL_DIR/venv/bin/python"
         REIGN_ENTRYPOINT="$INSTALL_DIR/reign"
     else
-        REIGN_BIN="$(which hermes 2>/dev/null || echo "")"
+        REIGN_BIN="$(which reign 2>/dev/null || echo "")"
         if [ -z "$REIGN_BIN" ]; then
             log_warn "reign not found on PATH after install"
             return 0
