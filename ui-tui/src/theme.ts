@@ -370,14 +370,14 @@ export function buildPalette(seeds: ThemeSeeds, isLight: boolean): ThemeColors {
 }
 
 export const DARK_SEEDS: ThemeSeeds = {
-  accent: '#C0C0C0',
-  // Dark seeds: the Rook monochrome palette, white -> silver -> grey
-  // (#FFFFFF, #C0C0C0, #8A8A8A). The classic navy surfaces are IDENTITY,
+  accent: '#4A9D6B',
+  // Dark seeds: the Rook palette, white text with forest-green accents
+  // (#FFFFFF, #4A9D6B, #2F6F4A). The classic navy surfaces are IDENTITY,
   // not derivation drift — keep them as explicit fill seeds (the ladder
   // derives them for skins that don't care).
   activeRow: '#333355',
   bg: '#101014',
-  border: '#8A8A8A',
+  border: '#2F6F4A',
   error: '#ef5350',
   ok: '#4caf50',
   primary: '#FFFFFF',
@@ -393,16 +393,16 @@ export const DARK_SEEDS: ThemeSeeds = {
   warn: '#ffa726'
 }
 
-// Light-terminal seeds: the Rook monochrome palette flipped for white —
-// black -> charcoal -> grey (#000000, #333333, #6B6B6B, #9A9A9A). The brand
+// Light-terminal seeds: the Rook palette flipped for white — black ink
+// with deep-green accents (#000000, #245F3C, #2E6B45). The brand
 // family (primary/accent/border, text/prompt) is authored ink so hosts
 // WITHOUT a contrast pass render it as-is. Semantic hues (ok/error/warn/
 // status) keep their liftForContrast(dark, white, 4.5) values — the exact
 // colors xterm's minimumContrastRatio rendered on light hosts for years.
 export const LIGHT_SEEDS: ThemeSeeds = {
-  accent: '#333333',
+  accent: '#245F3C',
   bg: '#ffffff',
-  border: '#6B6B6B',
+  border: '#2E6B45',
   error: '#C14240',
   ok: '#367E39',
   primary: '#000000',

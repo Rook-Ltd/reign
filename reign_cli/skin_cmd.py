@@ -24,7 +24,7 @@ def _skins_dir() -> Path:
 def _active_skin() -> str:
     from reign_cli.config import load_config
     display = (load_config() or {}).get("display") or {}
-    return str(display.get("skin") or "default")
+    return str(display.get("skin") or "rook")
 
 
 def _use(name: str) -> None:
