@@ -124,7 +124,7 @@ development environment on the same layout the CLI, updater, lazy dependency
 installer, gateway, and docs assume.
 
 ```bash
-curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
 cd "${REIGN_HOME:-$HOME/.reign}/reign"
 
 # Add dev/test extras on top of the standard install.
