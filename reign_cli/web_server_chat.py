@@ -201,20 +201,29 @@ def _ws_request_is_allowed(ws: "WebSocket") -> bool:
 
 _GATEWAY_WS_PROTOCOL = "reign-gateway-v1"
 _GATEWAY_WS_TICKET_PROTOCOL_PREFIX = "reign-gateway-ticket."
+# Upstream's iOS/Android app speaks the pre-rebrand protocol names;
+# accepting them lets that app sign in to a Reign backend. Kept verbatim by rebrand/mapping.yaml.
+_UPSTREAM_GATEWAY_WS_PROTOCOLS = ("hermes-gateway-v1", "hermes-gateway-ticket.")
+# public protocol -> ticket-bearing prefix; the accept echoes the public one the client offered.
+_GATEWAY_WS_PROTOCOL_FAMILIES = {
+    _GATEWAY_WS_PROTOCOL: _GATEWAY_WS_TICKET_PROTOCOL_PREFIX,
+    _UPSTREAM_GATEWAY_WS_PROTOCOLS[0]: _UPSTREAM_GATEWAY_WS_PROTOCOLS[1],
+}
 
 
-def _gateway_ws_ticket_from_subprotocol(ws: "WebSocket") -> tuple[str, str]:
-    """Return ``(ticket, reason)`` from an unambiguous gateway protocol set."""
+def _gateway_ws_ticket_from_subprotocol(ws: "WebSocket") -> tuple[str, str, str]:
+    """Return ``(ticket, reason, public_protocol)`` from an unambiguous gateway protocol set."""
     raw = str(ws.headers.get("sec-websocket-protocol", "") or "")
     protocols = [value.strip() for value in raw.split(",") if value.strip()]
-    ticket_protocols = [
-        value for value in protocols if value.startswith(_GATEWAY_WS_TICKET_PROTOCOL_PREFIX)]
-    if not ticket_protocols:
-        return "", "none"
-    if _GATEWAY_WS_PROTOCOL not in protocols or len(ticket_protocols) != 1:
-        return "", "invalid"
-    ticket = ticket_protocols[0][len(_GATEWAY_WS_TICKET_PROTOCOL_PREFIX):]
-    return (ticket, "ok") if ticket else ("", "invalid")
+    tickets = [(public, value[len(prefix):])
+               for public, prefix in _GATEWAY_WS_PROTOCOL_FAMILIES.items()
+               for value in protocols if value.startswith(prefix)]
+    if not tickets:
+        return "", "none", ""
+    if len(tickets) != 1 or tickets[0][0] not in protocols:
+        return "", "invalid", ""
+    public, ticket = tickets[0]
+    return (ticket, "ok", public) if ticket else ("", "invalid", "")
 
 
 def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
@@ -262,7 +271,7 @@ def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
                 _reject(f"internal: {exc}")
                 return "internal_invalid", "internal"
 
-        protocol_ticket, protocol_reason = _gateway_ws_ticket_from_subprotocol(ws)
+        protocol_ticket, protocol_reason, public_protocol = _gateway_ws_ticket_from_subprotocol(ws)
         if protocol_reason == "invalid":
             return "ticket_invalid", "ticket-subprotocol"
         ticket = protocol_ticket or ws.query_params.get("ticket", "")
@@ -280,7 +289,7 @@ def _ws_auth_reason(ws: "WebSocket") -> tuple[Optional[str], str]:
                 # Select only the stable public protocol during accept. The
                 # ticket-bearing protocol is a credential and must never be
                 # reflected back to the browser or retained after admission.
-                ws._reign_ws_subprotocol = _GATEWAY_WS_PROTOCOL
+                ws._reign_ws_subprotocol = public_protocol
                 return None, "ticket-subprotocol"
             return None, "ticket"
         except TicketInvalid as exc:

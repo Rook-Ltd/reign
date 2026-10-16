@@ -94,6 +94,8 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"bin" / "hermes-agent"'
   - '/usr/local/bin/hermes-agent"'
   - '(?m)^hermes-agent = "'
+  # Upstream mobile app's WebSocket subprotocol names, accepted alongside ours (reign_cli/web_server_chat.py)
+  - '"hermes-gateway-v1", "hermes-gateway-ticket\."'
   # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
   # over an already-branded tree is a no-op)
   - 'meta(?:data|_block)?\.get\("hermes"\)'
@@ -191,6 +193,7 @@ check_allow:
   - '[Hh]ermes[-_ ]?[2-4](?:\.\d+)?'
   - 'hermes-0day'
   - '5L-hermes01'
+  - 'hermes-gateway-(?:v1|ticket\.)'      # upstream mobile app's WS subprotocols (web_server_chat.py)
   - '[Nn]ous[- ][Hh]ermes'
   - '@nous-research/'
   - '\bnous\b'                 # provider key for Nous Portal
