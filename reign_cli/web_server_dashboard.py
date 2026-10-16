@@ -35,7 +35,7 @@ def _layer_hex(palette: Dict[str, Any], key: str, default: str) -> str:
 
 def _render_active_theme_bootstrap_css() -> str:
     """Critical-CSS ``<style>`` shim for the active *user* theme, so the first paint uses the
-    target palette instead of flashing the bundle's default Reign Teal until
+    target palette instead of flashing the bundle's default Rook theme until
     ``ThemeProvider.applyTheme()`` runs. Built-in themes return "" (the bundle owns them).
 
     Variable names MUST match what the bundle consumes (``layerVars()`` /
@@ -239,8 +239,8 @@ def mount_spa(application: FastAPI):
 
 # Built-in themes — label + description only; colors live in web/src/themes/presets.ts.
 _BUILTIN_DASHBOARD_THEMES = [
-    {"name": "default",       "label": "Reign Teal",         "description": "Classic dark teal — the canonical Reign look"},
-    {"name": "default-large", "label": "Reign Teal (Large)", "description": "Reign Teal with bigger fonts and roomier spacing"},
+    {"name": "default",       "label": "Rook",         "description": "Rook black with sage text and forest-green glow — the canonical Reign look"},
+    {"name": "default-large", "label": "Rook (Large)", "description": "Rook with bigger fonts and roomier spacing"},
     {"name": "nous-blue",     "label": "Nous Blue",           "description": "Light mode — vivid Nous-blue accents on cream canvas"},
     {"name": "midnight",      "label": "Midnight",            "description": "Deep blue-violet with cool accents"},
     {"name": "ember",     "label": "Ember",          "description": "Warm crimson and bronze — forge vibes"},
@@ -341,10 +341,10 @@ def _normalise_theme_definition(data: Dict[str, Any]) -> Optional[Dict[str, Any]
     except (TypeError, ValueError):
         noise = 1.0
     palette = {
-        "background": _layer("background", "#041c1c", 1.0),
-        "midground": _layer("midground", "#ffe6cb", 1.0),
+        "background": _layer("background", "#0B0D0C", 1.0),
+        "midground": _layer("midground", "#CFE5D6", 1.0),
         "foreground": _layer("foreground", "#ffffff", 0.0),
-        "warmGlow": palette_src.get("warmGlow") or data.get("warmGlow") or "rgba(255, 189, 56, 0.35)",
+        "warmGlow": palette_src.get("warmGlow") or data.get("warmGlow") or "rgba(74, 157, 107, 0.35)",
         "noiseOpacity": noise,
     }
 

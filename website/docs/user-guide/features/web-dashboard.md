@@ -1238,8 +1238,8 @@ Built-in themes:
 
 | Theme | Character |
 |-------|-----------|
-| **Reign Teal** (`default`) | Dark teal + cream, system fonts, comfortable spacing |
-| **Reign Teal (Large)** (`default-large`) | Same as default with 18px text and roomier spacing |
+| **Rook** (`default`) | Near-black + sage, green glow, system fonts, comfortable spacing |
+| **Rook (Large)** (`default-large`) | Same as default with 18px text and roomier spacing |
 | **Nous Blue** (`nous-blue`) | Nous-branded blue accents with airy spacing |
 | **Midnight** (`midnight`) | Deep blue-violet, Inter + JetBrains Mono |
 | **Ember** (`ember`) | Warm crimson + bronze, Spectral serif + IBM Plex Mono |

@@ -67,13 +67,13 @@ export function webPresetFromShared(
 
 export const defaultTheme: DashboardTheme = {
   name: "default",
-  label: "Reign Teal",
-  description: "Classic dark teal — the canonical Reign look",
+  label: "Rook",
+  description: "Rook black with sage text and forest-green glow — the canonical Reign look",
   palette: {
-    background: { hex: "#041c1c", alpha: 1 },
-    midground: { hex: "#ffe6cb", alpha: 1 },
+    background: { hex: "#0B0D0C", alpha: 1 },
+    midground: { hex: "#CFE5D6", alpha: 1 },
     foreground: { hex: "#ffffff", alpha: 0 },
-    warmGlow: "rgba(255, 189, 56, 0.35)",
+    warmGlow: "rgba(74, 157, 107, 0.35)",
     noiseOpacity: 1,
   },
   typography: DEFAULT_TYPOGRAPHY,
@@ -229,8 +229,8 @@ export const nousBlueTheme: DashboardTheme = {
  */
 export const defaultLargeTheme: DashboardTheme = {
   name: "default-large",
-  label: "Reign Teal (Large)",
-  description: "Reign Teal with bigger fonts and roomier spacing",
+  label: "Rook (Large)",
+  description: "Rook with bigger fonts and roomier spacing",
   palette: defaultTheme.palette,
   typography: {
     ...DEFAULT_TYPOGRAPHY,
