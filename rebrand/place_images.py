@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Copy Rook brand derivatives over every upstream image touchpoint. Re-runnable.
 Run rebrand/gen_assets.py first. Requires Pillow."""
+import re
 import shutil
 from pathlib import Path
 from PIL import Image
@@ -33,6 +34,11 @@ shutil.copy(G / "icon.ico", ROOT / "apps/desktop/assets/icon.ico")
 png(mark, ROOT / "apps/desktop/assets/icon.png", 1024)
 png(mark, ROOT / "apps/desktop/public/apple-touch-icon.png", 180)
 png(mark, ROOT / "apps/desktop/public/rook-mark.png", 512)
+# Empty-chat imagemark (masked in chat/intro.tsx): the outline mark, viewBox cropped to the
+# mark itself so `contain` sizes the ring rather than the 1366-wide artboard.
+_svg = (G / "rook-mark-outline.svg").read_text()
+_svg = re.sub(r'viewBox="[^"]*"', 'viewBox="318 22 725 725"', _svg).replace(' style="enable-background:new 0 0 1366 768;"', "")
+(ROOT / "apps/desktop/public/rook-mark-outline.svg").write_text(_svg)
 (ROOT / "apps/desktop/public/nous-girl.jpg").unlink(missing_ok=True)
 for p in [ROOT / "apps/desktop/public/reign.png", ROOT / "apps/desktop/public/reign-sprite.png"]:
     p.unlink(missing_ok=True)

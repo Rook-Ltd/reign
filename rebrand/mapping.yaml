@@ -416,6 +416,12 @@ post_replace:
       with: skin_name.strip() else "rook")
     - plain: return entry[0] if entry else "default"
       with: return entry[0] if entry else "rook"
+    - plain: '"description": "Classic Reign — gold and kawaii"'
+      with: '"description": "Classic — upstream gold palette"'
+    - plain: '- ``default`` — Classic Reign gold/kawaii (the current look)'
+      with: '- ``rook``    — Rook monochrome (the default)
+
+        - ``default`` — Classic upstream gold palette'
   # Rook is the shipped default skin. The fallbacks above only fire when display.skin is
   # absent, and the default config always writes it, so every config default names rook too.
   - files:
@@ -441,12 +447,18 @@ post_replace:
       with: "  #   rook           — Rook monochrome with forest green (the default)\n  #   default        — Classic upstream gold palette\n"
     - regex: (?m)^  skin:\s*default$
       with: '  skin: rook'
-    - plain: '"description": "Classic Reign — gold and kawaii"'
-      with: '"description": "Classic — upstream gold palette"'
-    - plain: '- ``default`` — Classic Reign gold/kawaii (the current look)'
-      with: '- ``rook``    — Rook monochrome (the default)
-
-        - ``default`` — Classic upstream gold palette'
+  # Desktop empty chat: a quiet Rook imagemark in place of the oversized REIGN lettering.
+  # The outline mark is a CSS mask, so it takes the theme's foreground at low opacity.
+  # place_images.py writes public/rook-mark-outline.svg (viewBox cropped to the mark).
+  - files:
+    - apps/desktop/src/components/chat/intro.tsx
+    replace:
+    - plain: "import { Wordmark } from './wordmark'\n"
+      with: ""
+    - plain: "const WORDMARK = 'REIGN'\n"
+      with: "// The Rook imagemark, masked so it renders in the theme's foreground.\nconst ROOK_MARK_MASK = `url(${import.meta.env.BASE_URL}rook-mark-outline.svg) center / contain no-repeat`\nconst ROOK_MARK_STYLE = { mask: ROOK_MARK_MASK, WebkitMask: ROOK_MARK_MASK }\n"
+    - plain: '<Wordmark className="mb-1" text={WORDMARK} />'
+      with: "<span\n          aria-label=\"Reign\"\n          className=\"mx-auto mb-6 block size-28 bg-foreground/20 sm:size-36\"\n          role=\"img\"\n          style={ROOK_MARK_STYLE}\n        />"
   - files:
     - tools/wake_word.py
     - reign_cli/config_defaults.py
