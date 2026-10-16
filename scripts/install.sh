@@ -2631,8 +2631,16 @@ run_playwright_install() {
     local timeout_seconds="$1"
     shift
 
+    # npx asks "Ok to install?" when playwright isn't in node_modules (it ships
+    # only with apps/desktop, which this install skips). The watchdog runs the
+    # command in a background process group, so reading that answer from the
+    # terminal stops it with SIGTTIN until the timeout kills it. Answer yes up
+    # front and keep the terminal out of reach.
+    local npm_config_yes=true
+    export npm_config_yes
+
     # First attempt: native platform resolution (inherits any operator override).
-    if run_browser_install_with_timeout "$timeout_seconds" "$@" 2>/dev/null; then
+    if run_browser_install_with_timeout "$timeout_seconds" "$@" </dev/null 2>/dev/null; then
         return 0
     fi
 
@@ -2658,7 +2666,7 @@ run_playwright_install() {
     log_warn "Playwright doesn't recognize ${DISTRO} ${DISTRO_VERSION} yet — retrying with PLAYWRIGHT_HOST_PLATFORM_OVERRIDE=$fallback"
     log_info "(apt releases newer than Playwright knows hang at this step; see #35166)"
     PLAYWRIGHT_HOST_PLATFORM_OVERRIDE="$fallback" \
-        run_browser_install_with_timeout "$timeout_seconds" "$@"
+        run_browser_install_with_timeout "$timeout_seconds" "$@" </dev/null
 }
 
 configure_browser_env_from_system_browser() {
@@ -2748,7 +2756,10 @@ install_node_deps() {
         node_deps_workspace_args "$INSTALL_DIR"
         local npm_log
         npm_log="$(mktemp)"
-        if ! run_with_timeout "$NODE_DEPS_TIMEOUT" npm install "${NODE_DEPS_WORKSPACE_ARGS[@]}" --silent \
+        # CI=true: unicode-animations' postinstall writes a full-screen ad
+        # straight to /dev/tty and skips itself only under CI. package.json's
+        # allowScripts does not stop it on npm 10.
+        if ! run_with_timeout "$NODE_DEPS_TIMEOUT" env CI="${CI:-true}" npm install "${NODE_DEPS_WORKSPACE_ARGS[@]}" --silent \
                 >"$npm_log" 2>&1; then
             log_error "npm install failed or timed out; Node.js dependencies were not installed"
             if [ -s "$npm_log" ]; then
@@ -2823,6 +2834,13 @@ install_node_deps() {
                     fi
                     cd "$INSTALL_DIR" && run_playwright_install 600 npx playwright install chromium || {
                         log_warn "Playwright browser installation failed — browser tools will not work."
+                    }
+                    ;;
+                macos)
+                    # Playwright's macOS Chromium build needs no system libraries.
+                    cd "$INSTALL_DIR" && run_playwright_install 600 npx playwright install chromium || {
+                        log_warn "Playwright browser installation failed — browser tools will not work."
+                        log_warn "Try running manually: cd $INSTALL_DIR && npx --yes playwright install chromium"
                     }
                     ;;
                 fedora|rhel|centos|rocky|alma)
