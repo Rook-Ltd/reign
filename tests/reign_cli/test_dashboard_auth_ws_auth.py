@@ -260,6 +260,20 @@ class TestWsAuthOkGated:
         )
         assert _web_server_chat._ws_auth_ok(ambiguous) is False
 
+    def test_upstream_app_subprotocol_is_admitted_and_echoed_in_its_own_family(self, gated_app):
+        """The upstream mobile app offers the pre-rebrand protocol names; the accept must
+        echo the public protocol it offered, and a ticket never pairs across families."""
+        public, prefix = _web_server_chat._UPSTREAM_GATEWAY_WS_PROTOCOLS
+        ticket = mint_ticket(user_id="app-user", provider="stub")
+        ws = _fake_ws(query={}, path="/api/ws", protocols=(public, f"{prefix}{ticket}"))
+        assert _web_server_chat._ws_auth_ok(ws) is True
+        assert ws._reign_ws_subprotocol == public
+
+        crossed = mint_ticket(user_id="u3", provider="stub")
+        mixed = _fake_ws(query={}, path="/api/ws", protocols=(
+            _web_server_chat._GATEWAY_WS_PROTOCOL, f"{prefix}{crossed}"))
+        assert _web_server_chat._ws_auth_ok(mixed) is False
+
 
     def test_legacy_token_rejected_in_gated_mode(self, gated_app):
         """Critical: gated mode must NOT honour the legacy token path
