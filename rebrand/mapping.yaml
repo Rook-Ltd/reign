@@ -713,6 +713,45 @@ post_replace:
       - regex: '(?m)^( *)- (?:name: [^\n]*\n\1  )?uses: actions/setup-python@[0-9a-f]{40}[^\n]*\n\1  with:\n\1    python-version: ["'']?([0-9.]+)["'']?\n'
         with:  '\1- name: Install uv\n\1  uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0\n\1  with:\n\1    version: "0.9.28"\n\1- name: Set up Python \2 (uv)\n\1  shell: bash\n\1  run: |\n\1    uv venv --seed --python \2 "$RUNNER_TEMP/py"\n\1    echo "$RUNNER_TEMP/py/bin" >> "$GITHUB_PATH"\n\1    echo "VIRTUAL_ENV=$RUNNER_TEMP/py" >> "$GITHUB_ENV"\n'
 
+  # Install one-liners point at Reign's own installers, not Nous's hosted Hermes ones (the
+  # nousresearch.com protect rule otherwise keeps them verbatim and they install Hermes).
+  - files:
+      - "README.md"
+      - "CONTRIBUTING.md"
+      - "scripts/install.sh"
+      - "scripts/install.ps1"
+      - "scripts/install.cmd"
+      - "reign_cli/uninstall.py"
+      - "reign_cli/update_cmd.py"
+      - "reign_cli/update_cmd_maint.py"
+      - "skills/autonomous-ai-agents/reign/SKILL.md"
+      - "apps/desktop/electron/remote-lifecycle.ts"
+      - "apps/desktop/src/i18n/*.ts"
+      - "website/docs/**"
+    replace:
+      - plain: "https://hermes-agent.nousresearch.com/install.sh"
+        with:  "https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh"
+      - plain: "https://hermes-agent.nousresearch.com/install.ps1"
+        with:  "https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1"
+
+  # The repo is private: REIGN_GITHUB_TOKEN (a read-only fine-grained token) authenticates
+  # the installer's clone, and stays in origin's URL so `reign update` fetches keep working.
+  # An existing checkout gets the token applied to origin before its fetch.
+  - files:
+      - "scripts/install.sh"
+    replace:
+      - plain: "REPO_URL_HTTPS=\"https://github.com/asxi9832/reign.git\"\nREIGN_HOME="
+        with:  "REPO_URL_HTTPS=\"https://github.com/asxi9832/reign.git\"\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\n# It stays in origin's URL so later `reign update` fetches authenticate too.\nif [ -n \"${REIGN_GITHUB_TOKEN:-}\" ]; then\n    REPO_URL_HTTPS=\"https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/asxi9832/reign.git\"\nfi\nREIGN_HOME="
+      - regex: "(?<=stall the installer.\n)            git remote set-branches origin \"\\$BRANCH\""
+        with:  "            [ -z \"${REIGN_GITHUB_TOKEN:-}\" ] || git remote set-url origin \"$REPO_URL_HTTPS\"\n            git remote set-branches origin \"$BRANCH\""
+  - files:
+      - "scripts/install.ps1"
+    replace:
+      - plain: "$RepoUrlHttps = \"https://github.com/asxi9832/reign.git\"\r\n$PythonVersion"
+        with:  "$RepoUrlHttps = \"https://github.com/asxi9832/reign.git\"\r\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\r\n# It stays in origin's URL so later `reign update` fetches authenticate too.\r\nif ($env:REIGN_GITHUB_TOKEN) {\r\n    $RepoUrlHttps = \"https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/asxi9832/reign.git\"\r\n}\r\n$PythonVersion"
+      - plain: "                }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
+        with:  "                }\r\n                if ($env:REIGN_GITHUB_TOKEN) { git -c windows.appendAtomically=false remote set-url origin $RepoUrlHttps }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
+
 # Files whose Reign state is fully produced by the rules above (or whose overlay hunks are
 # obsolete); make_overlay.py never puts them in the overlay.
 overlay_exclude:

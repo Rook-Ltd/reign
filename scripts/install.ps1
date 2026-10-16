@@ -5,7 +5,7 @@
 # Uses uv for fast Python provisioning and package management.
 #
 # Usage:
-#   iex (irm https://hermes-agent.nousresearch.com/install.ps1)
+#   iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)
 #
 # Or download and run with options:
 #   .\install.ps1 -NoVenv -SkipSetup
@@ -385,6 +385,11 @@ $script:ResolvedPathReport = @{
 
 $RepoUrlSsh = "git@github.com:asxi9832/reign.git"
 $RepoUrlHttps = "https://github.com/asxi9832/reign.git"
+# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.
+# It stays in origin's URL so later `reign update` fetches authenticate too.
+if ($env:REIGN_GITHUB_TOKEN) {
+    $RepoUrlHttps = "https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/asxi9832/reign.git"
+}
 $PythonVersion = "3.11"
 # Minor versions the installer accepts when the requested $PythonVersion isn't
 # available, in preference order. Only checkout-private uv-managed interpreters
@@ -2329,6 +2334,7 @@ function Install-Repository {
                     git -c windows.appendAtomically=false stash push --include-untracked -m "$stashName"
                     if ($LASTEXITCODE -eq 0) { $autostashRef = "stash@{0}" }
                 }
+                if ($env:REIGN_GITHUB_TOKEN) { git -c windows.appendAtomically=false remote set-url origin $RepoUrlHttps }
                 git -c windows.appendAtomically=false fetch origin $Branch
                 if ($LASTEXITCODE -ne 0) { throw "git fetch failed (exit $LASTEXITCODE)" }
                 # Precedence: Commit > Tag > Branch.  Commit and Tag check
@@ -5184,7 +5190,7 @@ try {
     Write-Err "Installation failed: $_"
     Write-Host ""
     Write-Info "If the error is unclear, try downloading and running the script directly:"
-    Write-Host "  Invoke-WebRequest -Uri 'https://hermes-agent.nousresearch.com/install.ps1' -OutFile install.ps1" -ForegroundColor Yellow
+    Write-Host "  Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1' -OutFile install.ps1" -ForegroundColor Yellow
     Write-Host "  .\install.ps1" -ForegroundColor Yellow
     Write-Host ""
 }

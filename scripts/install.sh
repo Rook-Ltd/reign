@@ -6,7 +6,7 @@
 # Uses uv for desktop/server installs and Python's stdlib venv + pip on Termux.
 #
 # Usage:
-#   curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.sh | bash
 #
 # Or with options:
 #   curl -fsSL ... | bash -s -- --no-venv --skip-setup
@@ -45,6 +45,11 @@ BOLD='\033[1m'
 # Configuration
 REPO_URL_SSH="git@github.com:asxi9832/reign.git"
 REPO_URL_HTTPS="https://github.com/asxi9832/reign.git"
+# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.
+# It stays in origin's URL so later `reign update` fetches authenticate too.
+if [ -n "${REIGN_GITHUB_TOKEN:-}" ]; then
+    REPO_URL_HTTPS="https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/asxi9832/reign.git"
+fi
 REIGN_HOME="${REIGN_HOME:-$HOME/.reign}"
 # INSTALL_DIR is resolved AFTER arg parsing and OS detection so we can pick an
 # FHS-style layout for root installs.  Track whether the user gave us an
@@ -566,7 +571,7 @@ detect_os() {
             OS="windows"
             DISTRO="windows"
             log_error "Windows detected. Please use the PowerShell installer:"
-            log_info "  iex (irm https://hermes-agent.nousresearch.com/install.ps1)"
+            log_info "  iex (irm https://raw.githubusercontent.com/asxi9832/reign/main/scripts/install.ps1)"
             exit 1
             ;;
         *)
@@ -1569,6 +1574,7 @@ clone_repo() {
             # every ref, and this repo carries thousands of auto-generated
             # branches — on a non-single-branch checkout that turns each update
             # into a multi-minute download that can stall the installer.
+            [ -z "${REIGN_GITHUB_TOKEN:-}" ] || git remote set-url origin "$REPO_URL_HTTPS"
             git remote set-branches origin "$BRANCH" 2>/dev/null || true
             git fetch origin "$BRANCH"
             git checkout "$BRANCH"
