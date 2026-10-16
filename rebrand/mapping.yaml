@@ -279,6 +279,8 @@ post_replace:
         with:  "reign-agent must dispatch"
       - regex: '(?m)^hermes-agent = "'
         with:  'reign-agent = "'
+      - plain: 'REIGN_BIN="$(which hermes 2>/dev/null'
+        with:  'REIGN_BIN="$(which reign 2>/dev/null'
   - files:                # exact console-script name strings, safe tree-wide
       - "**/*.py"
       - "**/*.sh"
