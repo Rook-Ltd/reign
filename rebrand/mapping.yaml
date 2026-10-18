@@ -15,6 +15,7 @@ exclude_files:            # never touched by content replace
   - "brand/**"
   - "rebrand/**"
   - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
+  - ".github/workflows/desktop-windows-installer.yml"   # Rook-authored
   - "**/package-lock.json" # regenerated after the run
   - uv.lock
   - flake.lock
