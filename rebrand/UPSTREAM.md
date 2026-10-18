@@ -7,6 +7,9 @@
 - Upstream commit date: 2026-09-01 21:46:46 -0500
 - Cloned: 2026-09-02T02:52Z
 - Remotes: `upstream` = Nous, `origin` = https://github.com/rook-ltd/reign
+- Upstream syncs (`rebrand/sync_upstream.py`) are run from a rook-ltd/reign checkout and merge
+  into its `main` through a PR; there is no separate private mirror.
+- Server deployment config is not in this repo; it lives in a private repo.
 
 ## Re-syncing with upstream (future)
 ```

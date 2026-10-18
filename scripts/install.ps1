@@ -618,7 +618,10 @@ function Write-NpmDebugLogTail {
             if ($npm) {
                 $prevEAPLocal = $ErrorActionPreference
                 $ErrorActionPreference = "Continue"
-                $cacheDir = (& $npm config get cache 2>$null | Select-Object -Last 1)
+                # Outside any npm workspace: inside ui-tui/ or apps/ npm refuses
+                # `config get` with ENOWORKSPACES.
+                Push-Location $env:USERPROFILE
+                try { $cacheDir = (& $npm config get cache 2>$null | Select-Object -Last 1) } finally { Pop-Location }
                 $ErrorActionPreference = $prevEAPLocal
                 if ($cacheDir) {
                     $logsDir = Join-Path ("$cacheDir").Trim() "_logs"
@@ -3648,7 +3651,13 @@ function Install-NodeDeps {
         $cmdLine = "/d /s /c "" ""$exePath"" $argLine > ""$logPath"" 2>&1 """
         $proc = Start-Process -FilePath $env:ComSpec -ArgumentList $cmdLine `
             -WorkingDirectory $workDir -NoNewWindow -PassThru
-        $deadline = [DateTime]::UtcNow.AddSeconds($timeoutSec)
+        # Windows PowerShell 5.1 only fills ExitCode if the process handle
+        # was opened while the process was alive; without this the caller
+        # sees $null and reports a successful npm install as failed.
+        $null = $proc.Handle
+        # Stopwatch, not the wall clock: a freshly restored VM can jump its
+        # clock forward by an hour on time sync and kill a healthy npm install.
+        $timer = [System.Diagnostics.Stopwatch]::StartNew()
         $shown = 0
         function _Drain-NewLines([string]$path, [ref]$count) {
             $lines = @(Get-Content $path -ErrorAction SilentlyContinue)
@@ -3660,7 +3669,7 @@ function Install-NodeDeps {
             }
         }
         while (-not $proc.HasExited) {
-            if ([DateTime]::UtcNow -gt $deadline) {
+            if ($timer.Elapsed.TotalSeconds -gt $timeoutSec) {
                 & taskkill /T /F /PID $proc.Id 2>&1 | Out-Null
                 return 124
             }
@@ -3668,6 +3677,7 @@ function Install-NodeDeps {
             _Drain-NewLines $logPath ([ref]$shown)
         }
         _Drain-NewLines $logPath ([ref]$shown)
+        $proc.WaitForExit()
         return $proc.ExitCode
     }
 
@@ -3958,6 +3968,15 @@ function Test-CuaDriverRuntimeContract {
 function Install-CuaDriver {
     if ($SkipComputerUse) {
         Write-Info "Skipping Computer Use (cua-driver) install (-SkipComputerUse)"
+        return
+    }
+    # cua-driver's installer registers a machine-wide service, so on a
+    # standard account it raises a UAC prompt for an admin password that
+    # most users can't answer. Computer Use is optional and lazy-installs
+    # when enabled, so leave it for then.
+    $principal = [Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Info "Skipping Computer Use driver (needs administrator rights). Install later with: reign computer-use install"
         return
     }
     $existingCuaDriver = Get-Command cua-driver -ErrorAction SilentlyContinue
@@ -4652,8 +4671,13 @@ function Invoke-SetupWizard {
     } else {
         python -m reign_cli.main setup
     }
+    $setupExit = $LASTEXITCODE
 
     Pop-Location
+
+    if ($setupExit -ne 0) {
+        Write-Warn "Setup wizard exited with code $setupExit. Open a new PowerShell window and run 'reign setup' to finish configuring."
+    }
 }
 
 function Start-GatewayIfConfigured {
