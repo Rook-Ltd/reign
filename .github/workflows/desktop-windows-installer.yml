@@ -42,7 +42,12 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
     steps:
+      # On a pull_request, build the PR head rather than the ephemeral merge
+      # commit: write-build-stamp.mjs pins first-launch install.ps1 to this
+      # commit, so it has to stay fetchable after the PR closes.
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
@@ -63,16 +68,18 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./apps/desktop/package.json').version")" >> "$GITHUB_OUTPUT"
 
-      # write-build-stamp.mjs pins first-launch install.ps1 to GITHUB_SHA. On a
-      # pull_request that is the ephemeral merge commit, so pin to the PR head.
+      # The stamp prefers $GITHUB_SHA, which a step cannot override and which
+      # is the merge commit on a pull_request. Unset it there so the stamp
+      # falls back to `git rev-parse HEAD` (the PR head checked out above).
       - name: Build installer
         working-directory: apps/desktop
         shell: bash
         env:
-          GITHUB_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          GITHUB_REF_NAME: ${{ github.head_ref || github.ref_name }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: npm run dist:win:nsis
+          IS_PR: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [[ "$IS_PR" == true ]]; then unset GITHUB_SHA; fi
+          npm run dist:win:nsis
 
       - name: Show output
         shell: bash
