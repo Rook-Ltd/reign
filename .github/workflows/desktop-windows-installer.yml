@@ -1,0 +1,125 @@
+name: Desktop Windows Installer
+
+# Builds the unsigned per-user NSIS installer (Reign-<version>-win-x64.exe)
+# for the desktop app on a hosted Windows runner.
+#
+#   pull_request (this file / desktop build config) ──► build ──► workflow artifact
+#   workflow_dispatch                                ──► build ──► artifact (+ prerelease when `release` is set)
+#   push tag desktop-v*                              ──► build ──► artifact + prerelease on that tag
+#
+# Rook-authored: listed in rebrand/mapping.yaml exclude_files so upstream sync
+# leaves it alone. The installer is NOT code-signed yet (internal testing), so
+# SmartScreen warns on first run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release:
+        description: 'Also publish the .exe as a GitHub prerelease (tag desktop-v<version>-<run>)'
+        type: boolean
+        default: false
+  push:
+    tags:
+      - 'desktop-v*'
+  pull_request:
+    paths:
+      - '.github/workflows/desktop-windows-installer.yml'
+      - 'apps/desktop/package.json'
+      - 'apps/desktop/scripts/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-windows-installer-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build NSIS installer (Windows x64)
+    runs-on: windows-latest
+    timeout-minutes: 60
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      # On a pull_request, build the PR head rather than the ephemeral merge
+      # commit: write-build-stamp.mjs pins first-launch install.ps1 to this
+      # commit, so it has to stay fetchable after the PR closes.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: grab npm 12
+        run: npm i -g npm@12
+
+      # Full npm ci (not --ignore-scripts): electron's postinstall downloads
+      # the binary electron-builder packages, and node-pty builds natively.
+      - uses: ./.github/actions/retry
+        with:
+          command: npm ci
+
+      - name: Read desktop version
+        id: meta
+        shell: bash
+        run: echo "version=$(node -p "require('./apps/desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      # The stamp prefers $GITHUB_SHA, which a step cannot override and which
+      # is the merge commit on a pull_request. Unset it there so the stamp
+      # falls back to `git rev-parse HEAD` (the PR head checked out above).
+      - name: Build installer
+        working-directory: apps/desktop
+        shell: bash
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          IS_PR: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [[ "$IS_PR" == true ]]; then unset GITHUB_SHA; fi
+          npm run dist:win:nsis
+
+      - name: Show output
+        shell: bash
+        run: |
+          ls -la apps/desktop/release
+          cat apps/desktop/build/install-stamp.json
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reign-desktop-windows-${{ steps.meta.outputs.version }}
+          path: apps/desktop/release/Reign-*-win-*.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish prerelease
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/desktop-v') || (github.event_name == 'workflow_dispatch' && inputs.release)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: reign-desktop-windows-${{ needs.build.outputs.version }}
+          path: dist
+
+      - name: Create prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            tag="$GITHUB_REF_NAME"
+          else
+            tag="desktop-v${VERSION}-${GITHUB_RUN_NUMBER}"
+          fi
+          gh release create "$tag" dist/*.exe \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Reign Desktop ${tag#desktop-v} (Windows, unsigned)" \
+            --notes "Unsigned per-user Windows installer for internal testing. Windows SmartScreen will warn on first run (More info > Run anyway). Built from ${GITHUB_SHA}."
