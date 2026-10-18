@@ -305,6 +305,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
+      "allowElevation": false,
+      "include": "assets/installer.nsh",
       "shortcutName": "Reign",
       "uninstallDisplayName": "Reign",
       "warningsAsErrors": false
