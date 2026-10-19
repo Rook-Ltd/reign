@@ -28,7 +28,7 @@ import sqlite3
 import pytest
 
 import reign_state_wal
-import yaml
+import reign_yaml as yaml
 
 
 def _write_config(monkeypatch: pytest.MonkeyPatch, tmp_path, config: object) -> None:

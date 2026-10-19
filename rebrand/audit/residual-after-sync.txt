@@ -1,13 +1,19 @@
 
 <binary path>
-   apps/desktop/public/intro-nous-girl.png
-   apps/desktop/public/nous-badge.png
+   apps/bootstrap-installer/public/nous-girl.png
+   apps/desktop/packaging/nous-dmg-2b.tiff
+   apps/desktop/public/nous-girl-dark.png
+   apps/desktop/public/nous-girl.png
+   website/static/img/nous-logo-dark.png
 
 README.md
-   267: Reign is built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research, released under the MIT license. See [NOTICE](NOTICE) for detail
+   246: Reign is built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research, released under the MIT license. See [NOTICE](NOTICE) for detail
 
 apps/desktop/src/components/ui/decode-text.tsx
    11: *    (matches the nousnet-web download-button decode effect).
+
+locales/ko.yaml
+   3684: t184: "reign mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
 
 optional-skills/creative/pretext/templates/donut-orbit.html
    6: <title>NOUS · pretext</title>
@@ -19,19 +25,43 @@ optional-skills/creative/pretext/templates/donut-orbit.html
    1243: gui.add(ctrls, "nousLetterSpacing", 0, 4, 0.05).name("NOUS spacing");
 
 scripts/contributor_audit.py
-   52: re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
+   51: re.compile(r"^nousbot(-eng)?$", re.IGNORECASE),
 
-scripts/release.py
-   1243: "hermes@noushq.ai": "benbarclay",
-   1751: "nouseman666@gmail.com": "nouseman666",  # PR #19088
+scripts/releases/authors_legacy.py
+   1209: "hermes@noushq.ai": "benbarclay",
+   1717: "nouseman666@gmail.com": "nouseman666",  # PR #19088
+
+tests/agent/test_anthropic_preserved_thinking_replay.py
+   14: NOUS = ("nous", "https://inference-api.nousresearch.com/v1/messages")
+   204: "route:nous": ("claude-opus-4-6", NOUS, 1),
+
+tests/agent/test_credential_pool_profile_oauth_fork.py
+   171: pdir = _profile(fleet, "nousstrip")
+   191: kid = _profile(fleet, "nousfork")
+   202: akid = _profile(fleet, "nousakid")
+
+tests/agent/test_skill_utils.py
+   277: "  hermes:\n"
+
+tests/cron/test_cron_prompt_injection_skill.py
+   159: "  hermes:\n"
+
+tests/reign_cli/test_curator_status.py
+   48: "  hermes:\n"
 
 tests/reign_cli/test_debug.py
-   869: c = self._captured("/debug NOUS")
+   1082: c = self._captured("/debug NOUS")
+
+tests/scripts/install/test_install_sh_no_venv_entrypoint.py
+   4: PATH. A machine that also runs upstream Hermes has a `hermes` command there too,
+   5: so resolving the wrong name would point every Reign launcher at Hermes.
+   26: def test_no_venv_launcher_targets_reign_not_hermes(tmp_path):
+   29: _fake_command(bin_dir, "hermes")
 
 web/src/index.css
    144: /* Nousnet's reign layout bumps `small` and `code` to readable
 
 website/docusaurus.config.ts
-   194: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
+   195: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
 
-residual: 17 lines in 9 files
+residual: 33 lines in 16 files

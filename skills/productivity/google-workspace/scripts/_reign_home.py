@@ -20,8 +20,8 @@ import os
 from pathlib import Path
 
 try:
-    from reign_constants import display_reign_home as display_reign_home
-    from reign_constants import get_reign_home as get_reign_home
+    from reign_constants import display_reign_home
+    from reign_constants import get_reign_home
 except (ModuleNotFoundError, ImportError):
 
     def get_reign_home() -> Path:

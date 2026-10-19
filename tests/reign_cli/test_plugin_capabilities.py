@@ -11,7 +11,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.plugin_capabilities import (
     CAPABILITY_REGISTRY,

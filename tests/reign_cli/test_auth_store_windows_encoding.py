@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pytest
 
-import reign_cli.auth as auth
+from reign_cli import auth
 
 
 # --- helpers ---------------------------------------------------------------

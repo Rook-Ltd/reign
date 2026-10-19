@@ -20,7 +20,7 @@ import json
 import logging
 
 import reign_cli.auth as auth_mod
-import reign_cli.auth_nous as auth_nous
+from reign_cli import auth_nous
 from agent.credential_pool import CredentialPool, PooledCredential
 
 from tests.reign_cli.test_auth_nous_provider import _invoke_jwt, _setup_nous_auth

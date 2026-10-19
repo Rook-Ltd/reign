@@ -4,7 +4,6 @@ from unittest.mock import patch
 
 from cli import ReignCLI
 
-
 class TestCLILoadingIndicator:
     def _make_cli(self):
         cli_obj = ReignCLI.__new__(ReignCLI)
@@ -38,4 +37,3 @@ class TestCLILoadingIndicator:
         }
         assert cli_obj._command_running is False
         assert cli_obj._command_status == ""
-

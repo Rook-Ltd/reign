@@ -70,8 +70,6 @@ export HOME=/opt/data
 _reign_orig_cwd="${REIGN_ORIG_CWD:-$PWD}"
 
 cd /opt/data
-# shellcheck disable=SC1091
-. /opt/reign/.venv/bin/activate
 
 # Restore the original working directory before handing off to
 # the user's command so `reign chat` starts in the Docker -w

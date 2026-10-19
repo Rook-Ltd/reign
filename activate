@@ -1,0 +1,181 @@
+#!/usr/bin/env bash
+# ============================================================================
+# venv-style activation of the Reign dev environment for an interactive shell.
+#
+#   source ./activate       (bash / zsh, repo root)
+#   source ./activate.fish  (fish)
+#   .\activate.ps1          (PowerShell)
+#
+# Applies the composed pm env (PATH + tool vars) to the CURRENT shell, with
+# save/restore: `deactivate` undoes exactly what activation changed.
+#
+# `reign` becomes a shell function for this checkout. It runs only while the
+# shell is inside this worktree and refuses outside it, so a sibling worktree
+# keeps its own command. A prompt prefix names the worktree.
+#
+# Scripts and other processes do not source this: they run under
+# `scripts/run-in-reign-env`. Both build on scripts/_activation.sh.
+#
+# Sync through setup before selecting the environment. PM owns freshness;
+# activation does not maintain a second dependency stamp. It trusts the
+# recorded tool digest instead of re-hashing every entry. `reign pm
+# install` and `reign update` keep that check.
+# ============================================================================
+_REIGN_REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Options: `--test-extras a,b` selects the test environment's runtime extras
+# (default: [all]); `--` ends options.
+# A bare `source ./activate` inherits the caller's positional parameters.
+# Ignore unrelated words so scripts with their own arguments can source it.
+_reign_test_env="--test-environment"
+_reign_expect_extras=""
+for _reign_arg in "$@"; do
+    if [ -n "$_reign_expect_extras" ]; then
+        _reign_test_env="--test-environment=$_reign_arg"
+        _reign_expect_extras=""
+        continue
+    fi
+    case "$_reign_arg" in
+        --) break ;;
+        --test-extras) _reign_expect_extras=1 ;;
+        --test-extras=*) _reign_test_env="--test-environment=${_reign_arg#--test-extras=}" ;;
+        *) : ;;
+    esac
+done
+if [ -n "$_reign_expect_extras" ]; then
+    printf '%s\n' 'activate: --test-extras needs a comma-separated list' >&2
+    unset _reign_arg _reign_test_env _reign_expect_extras
+    return 2 2>/dev/null || exit 2
+fi
+unset _reign_arg _reign_expect_extras
+
+# shellcheck source=scripts/_activation.sh
+. "$_REIGN_REPO/scripts/_activation.sh"
+
+if ! reign_sync "$_REIGN_REPO" "$_reign_test_env"; then
+    printf '%s\n' 'activate: setup failed; shell environment unchanged' >&2
+    unset _reign_test_env
+    return 1 2>/dev/null || exit 1
+fi
+unset _reign_test_env
+
+# Guard against double-sourcing: venv activate precedent (re-activating is a
+# no-op re-save; we keep it idempotent by deactivating first). Key on the
+# function, not the sentinel: child shells inherit __REIGN_ACTIVATED from an
+# activated parent but never the function, and there is nothing to undo there.
+if [ "$(type -t deactivate 2>/dev/null)" = "function" ]; then
+    deactivate
+fi
+
+_reign_script="$(reign_compose_env "$_REIGN_REPO" sh)" || {
+    echo "activate: could not compose the environment (see above)" >&2
+    unset _reign_script
+    return 1 2>/dev/null || exit 1
+}
+_reign_keys="$(printf '%s\n' "$_reign_script" | sed -n 's/^export \([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' | tr '\n' ' ')"
+
+# --- snapshot what we are about to change (deactivate restores this) ---
+# __REIGN_ACTIVATED is part of the composed env below (it carries the
+# installed-state path this environment was built from), so it is snapshotted
+# and exported with every other key — no separate assignment here.
+__REIGN_SAVED_PATH="$PATH"
+for _reign_k in $_reign_keys; do
+    eval "__REIGN_SAVED_$_reign_k=\"\${$_reign_k+set}\""
+    eval "__REIGN_PRIOR_$_reign_k=\${$_reign_k-__REIGN_UNSET__}"
+done
+reign_apply_env "$_reign_script"
+
+# This checkout, not whichever `reign` PATH finds. A function beats PATH, an
+# alias, and a hashed command, including the MSIX execution alias.
+__REIGN_WORKTREE="$_REIGN_REPO"
+# The branch names the worktree. A checkout cannot share a branch with another.
+__REIGN_WORKTREE_NAME="$(git -C "$_REIGN_REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || :)"
+if [ -z "$__REIGN_WORKTREE_NAME" ] || [ "$__REIGN_WORKTREE_NAME" = HEAD ]; then
+    __REIGN_WORKTREE_NAME="$(basename "$_REIGN_REPO")"
+fi
+__REIGN_SAVED_PS1="${PS1-__REIGN_UNSET__}"
+__REIGN_SAVED_PROMPT_COMMAND="${PROMPT_COMMAND-__REIGN_UNSET__}"
+
+_reign_worktree_here() {
+    _reign_top="$(git rev-parse --show-toplevel 2>/dev/null)" || return 1
+    [ "$(cd "$_reign_top" && pwd -P)" = "$(cd "$__REIGN_WORKTREE" && pwd -P)" ]
+}
+
+reign() {
+    _reign_worktree_here || {
+        printf '%s\n' "reign: $(pwd) is outside $__REIGN_WORKTREE; refusing (the installed command is hidden while this checkout is active)" >&2
+        return 1
+    }
+    (
+        cd "$__REIGN_WORKTREE" || exit 1
+        if [ -n "${PYTHON-}" ]; then
+            exec "$PYTHON" reign "$@"
+        elif [ -x .venv/Scripts/python.exe ]; then
+            exec .venv/Scripts/python.exe reign "$@"
+        elif [ -x .venv/bin/python ]; then
+            exec .venv/bin/python reign "$@"
+        elif [ -x venv/Scripts/python.exe ]; then
+            exec venv/Scripts/python.exe reign "$@"
+        elif [ -x venv/bin/python ]; then
+            exec venv/bin/python reign "$@"
+        else
+            exec python reign "$@"
+        fi
+    )
+}
+
+_reign_prompt() {
+    if [ "$__REIGN_SAVED_PS1" = "__REIGN_UNSET__" ]; then
+        _reign_base_ps1=""
+    else
+        _reign_base_ps1="$__REIGN_SAVED_PS1"
+    fi
+    if _reign_worktree_here; then
+        PS1="($__REIGN_WORKTREE_NAME) $_reign_base_ps1"
+    else
+        PS1="$_reign_base_ps1"
+    fi
+}
+
+if [ -n "${PROMPT_COMMAND-}" ]; then
+    PROMPT_COMMAND="_reign_prompt; ${PROMPT_COMMAND}"
+else
+    PROMPT_COMMAND=_reign_prompt
+fi
+_reign_prompt
+
+deactivate() {
+    export PATH="$__REIGN_SAVED_PATH"
+    for _reign_k in $__REIGN_KEY_LIST; do
+        eval "_reign_was=\"\$__REIGN_SAVED_$_reign_k\""
+        eval "_reign_old=\"\$__REIGN_PRIOR_$_reign_k\""
+        if [ "$_reign_was" != "set" ]; then
+            unset "$_reign_k"
+        else
+            export "$_reign_k=$_reign_old"
+        fi
+        unset "__REIGN_SAVED_$_reign_k" "__REIGN_PRIOR_$_reign_k"
+    done
+    if [ "$__REIGN_SAVED_PS1" = "__REIGN_UNSET__" ]; then
+        unset PS1
+    else
+        PS1="$__REIGN_SAVED_PS1"
+    fi
+    if [ "$__REIGN_SAVED_PROMPT_COMMAND" = "__REIGN_UNSET__" ]; then
+        unset PROMPT_COMMAND
+    else
+        PROMPT_COMMAND="$__REIGN_SAVED_PROMPT_COMMAND"
+    fi
+    unset __REIGN_SAVED_PATH __REIGN_KEY_LIST __REIGN_ACTIVATED \
+          __REIGN_WORKTREE __REIGN_WORKTREE_NAME \
+          __REIGN_SAVED_PS1 __REIGN_SAVED_PROMPT_COMMAND
+    unset -f deactivate reign _reign_worktree_here _reign_prompt
+    unset _reign_k _reign_was _reign_old _reign_top
+}
+
+# remember the key list for deactivate (kept out of the loop vars above)
+__REIGN_KEY_LIST="$_reign_keys"
+
+# The composition library is not part of the user's shell.
+unset -f reign_sync reign_bootstrap_python reign_compose_env reign_apply_env \
+         reign_activation_current reign_ensure_env
+unset _REIGN_REPO _reign_script _reign_keys _reign_k _reign_top

@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.plugins import PluginManager
 
@@ -24,7 +24,7 @@ def _write_plugin(
     root: Path,
     segments: list[str],
     *,
-    manifest_extra: Dict[str, Any] | None = None,
+    manifest_extra: dict[str, Any] | None = None,
     register_body: str = "pass",
 ) -> Path:
     """Create a plugin dir at ``root/<segments...>/`` with plugin.yaml + __init__.py.
@@ -44,7 +44,7 @@ def _write_plugin(
     }
     if manifest_extra:
         manifest.update(manifest_extra)
-    (plugin_dir / "plugin.yaml").write_text(yaml.dump(manifest))
+    (plugin_dir / "plugin.yaml").write_text(yaml.safe_dump(manifest))
     (plugin_dir / "__init__.py").write_text(
         f"def register(ctx):\n    {register_body}\n"
     )
@@ -131,7 +131,7 @@ class TestForeignHarnessManifestDirs:
         sp = reign_home / "plugins" / "superpowers"
         (sp / ".reign-plugin").mkdir(parents=True)
         (sp / ".reign-plugin" / "plugin.yaml").write_text(
-            yaml.dump(
+            yaml.safe_dump(
                 {
                     "name": "superpowers",
                     "version": "6.3.0",

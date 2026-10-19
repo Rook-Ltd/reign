@@ -16,7 +16,6 @@ from unittest.mock import patch
 
 from reign_cli.model_switch import (
     list_authenticated_providers,
-    parse_model_flags,
     switch_model,
 )
 from reign_cli.providers import resolve_provider_full

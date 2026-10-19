@@ -5,7 +5,7 @@ Deriving the env var from the provider id (``f"{id.upper()}_API_KEY"``) invents 
 reads ``DASHSCOPE_API_KEY``. Both the auxiliary ladder and main-agent init share one helper.
 """
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from agent.auxiliary_unavailable import missing_provider_credentials_message
 from reign_cli.auth import PROVIDER_REGISTRY

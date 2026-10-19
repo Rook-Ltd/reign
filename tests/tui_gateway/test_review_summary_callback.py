@@ -15,6 +15,12 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+# The real resolver goes into the mocked module: server._launch_home() calls it for the launch
+# state.db, and a MagicMock's return value is os.fspath()-able as the RELATIVE path
+# "MagicMock/<name>/<id>", so the store landed in the cwd (the repo checkout). The real one
+# follows the test's isolated REIGN_HOME.
+from reign_constants import get_process_reign_home as _real_get_process_reign_home
+
 
 @pytest.fixture()
 def server():
@@ -24,7 +30,8 @@ def server():
         "sys.modules",
         {
             "reign_constants": MagicMock(
-                get_reign_home=MagicMock(return_value="/tmp/reign_test_review_summary")
+                get_reign_home=MagicMock(return_value="/tmp/reign_test_review_summary"),
+                get_process_reign_home=_real_get_process_reign_home,
             ),
             "reign_cli.env_loader": MagicMock(),
             "reign_cli.banner": MagicMock(),
@@ -92,7 +99,7 @@ def test_init_session_attaches_background_review_callback(server, monkeypatch):
     # the session id we passed in, carrying the full message text.
     matched = [e for e in captured_emits if e[0] == "review.summary"]
     assert len(matched) == 1, captured_emits
-    event, sid, payload = matched[0]
+    _event, sid, payload = matched[0]
     assert sid == "sid-abc"
     assert payload == {
         "text": "💾 Self-improvement review: Skill 'reign-release' patched"

@@ -1,62 +1,70 @@
 name: Reign Plugin Validate
 description: >-
-  Validate a Reign plugin (plugin.yaml manifest schema AND
-  declared-vs-actually-registered capabilities) using
-  `reign plugins validate`. Drop this into your plugin repo's CI:
-
-    - uses: actions/checkout@<sha>
-    - uses: NousResearch/hermes-agent/.github/actions/plugin-validate@main
-      with:
-        path: .
-
-  The caller's job owns checkout; this action installs Python + reign
-  (git install — a supported CI-context install route) and runs the
-  validator against your plugin directory.
+  Validate a plugin's manifest and registered capabilities with Reign at the
+  requested ref. The caller owns its plugin checkout; Reign and its locked
+  runtime are prepared separately under RUNNER_TEMP.
 
 inputs:
   path:
     description: Path to the plugin directory (containing plugin.yaml).
     default: "."
   reign-ref:
-    description: reign git ref (branch/tag/sha) to install and validate with.
+    description: reign git ref (branch/tag/sha) to validate with.
     default: "main"
 
 runs:
   using: composite
   steps:
-    - name: Install uv
-      uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # 8.2.0
-      with:
-        version: "0.9.28"
-    - name: Set up Python 3.11 (uv)
-      shell: bash
-      run: |
-        uv venv --seed --python 3.11 "$RUNNER_TEMP/py"
-        echo "$RUNNER_TEMP/py/bin" >> "$GITHUB_PATH"
-        echo "VIRTUAL_ENV=$RUNNER_TEMP/py" >> "$GITHUB_ENV"
-
-    - name: Install reign
+    - name: Prepare an isolated Reign checkout
+      id: source
       shell: bash
       env:
         _REIGN_REF: ${{ inputs.reign-ref }}
       run: |
         set -euo pipefail
-        # CI-context install from git; the ref lets plugin authors validate
-        # against a pinned reign release instead of main.
-        pip install "git+https://github.com/rook-ltd/reign@${_REIGN_REF}"
+        source=$(mktemp -d "$RUNNER_TEMP/reign-plugin-validator.XXXXXX")
+        git init "$source"
+        git -C "$source" remote add origin https://github.com/rook-ltd/reign.git
+        git -C "$source" fetch --depth=1 -- origin "$_REIGN_REF"
+        git -C "$source" checkout --detach FETCH_HEAD
+        printf 'source=%s\n' "$source" >> "$GITHUB_OUTPUT"
+        if [ "$RUNNER_OS" = Windows ]; then bootstrap=python; else bootstrap=python3; fi
+        "$bootstrap" -S "$source/scripts/ci/setup_toolchain.py" prepare \
+          --toolchain python --home "$source/.build/pm"
+
+    - name: Prepare the locked Python toolchain
+      shell: bash
+      env:
+        _SOURCE: ${{ steps.source.outputs.source }}
+      run: |
+        set -euo pipefail
+        if [ "$RUNNER_OS" = Windows ]; then bootstrap=python; else bootstrap=python3; fi
+        "$bootstrap" -S "$_SOURCE/scripts/ci/setup_toolchain.py" install \
+          --toolchain python --home "$_SOURCE/.build/pm"
+
+    - name: Build the isolated validator runtime
+      id: runtime
+      shell: bash
+      working-directory: ${{ steps.source.outputs.source }}
+      env:
+        _SOURCE: ${{ steps.source.outputs.source }}
+      run: |
+        set -euo pipefail
+        "$REIGN_PYTHON" - <<'PY'
+        import os
+        from pathlib import Path
+        from pm import build_environment
+        source = Path(os.environ["_SOURCE"])
+        python = build_environment(source=source, out=source / ".build/validator", explicit=True)
+        with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+            output.write(f"python={python}\n")
+        PY
 
     - name: Validate plugin
       shell: bash
       env:
         _PLUGIN_PATH: ${{ inputs.path }}
+        _VALIDATOR_PYTHON: ${{ steps.runtime.outputs.python }}
       run: |
-        set -uo pipefail
-        # `reign plugins validate` checks the plugin.yaml manifest schema
-        # and loads the plugin in a scratch subprocess to verify that the
-        # capabilities it DECLARES match what it actually registers.
-        if reign plugins validate "$_PLUGIN_PATH"; then
-          echo "✅ PASS: plugin at '$_PLUGIN_PATH' validated cleanly"
-        else
-          echo "❌ FAIL: plugin at '$_PLUGIN_PATH' failed validation (see output above)"
-          exit 1
-        fi
+        set -euo pipefail
+        "$_VALIDATOR_PYTHON" -I -m reign_cli.main plugins validate "$_PLUGIN_PATH"

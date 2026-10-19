@@ -26,6 +26,7 @@ import pytest
 
 
 class TestResolveReignUidGid:
+    @pytest.mark.platforms("linux")
     def test_returns_parsed_values_when_both_set(self, monkeypatch):
         monkeypatch.setenv("REIGN_UID", "1000")
         monkeypatch.setenv("REIGN_GID", "911")
@@ -35,11 +36,11 @@ class TestResolveReignUidGid:
         assert gid == 911
 
 
-    # ``windows_only`` rather than ``skipif(sys.platform != "win32")``: the
-    # Windows CI job selects ``-m windows_only``, so a bare skipif would leave
+    # ``platforms("windows")`` rather than ``skipif(sys.platform != "win32")``: the
+    # Windows CI job selects ``-m platforms("windows")``, so a bare skipif would leave
     # this test skipped on Linux AND unselected on the Windows lane — dead on
     # every host.
-    @pytest.mark.windows_only
+    @pytest.mark.platforms("windows")
     def test_windows_returns_none_none(self, monkeypatch):
         monkeypatch.setenv("REIGN_UID", "1000")
         monkeypatch.setenv("REIGN_GID", "911")
@@ -54,6 +55,7 @@ class TestResolveReignUidGid:
 # ---------------------------------------------------------------------------
 
 
+@pytest.mark.platforms("linux")
 class TestChownToReignUid:
 
 
@@ -84,7 +86,7 @@ class TestChownToReignUid:
 
 
 class TestSecureDirChown:
-    @pytest.mark.skipif(sys.platform == "win32", reason="chown is no-op on Windows")
+    @pytest.mark.platforms("posix")  # chown is no-op on Windows
     def test_secure_dir_invokes_chown_when_env_set(self, tmp_path, monkeypatch):
         monkeypatch.setenv("REIGN_UID", "1000")
         monkeypatch.setenv("REIGN_GID", "911")
@@ -97,7 +99,7 @@ class TestSecureDirChown:
             cfg._secure_dir(d)
         mock_chown.assert_called_once_with(d, 1000, 911)
 
-    @pytest.mark.skipif(sys.platform == "win32", reason="chown is no-op on Windows")
+    @pytest.mark.platforms("posix")  # chown is no-op on Windows
     def test_secure_dir_no_chown_when_env_unset(self, tmp_path, monkeypatch):
         monkeypatch.delenv("REIGN_UID", raising=False)
         monkeypatch.delenv("REIGN_GID", raising=False)

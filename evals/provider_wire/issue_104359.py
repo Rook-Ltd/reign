@@ -121,7 +121,7 @@ config = {
     },
     "prompt_caching": {"enabled": False},
 }
-import yaml
+import reign_yaml as yaml
 
 Path(os.environ["REIGN_HOME"], "config.yaml").write_text(yaml.safe_dump(config), encoding="utf-8")
 from reign_state import SessionDB

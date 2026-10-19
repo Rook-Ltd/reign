@@ -67,3 +67,31 @@ def test_profile_liveness_is_the_shared_ladder(tmp_path, monkeypatch):
     assert seen["profile_dir"] == tmp_path
     seen["pid_probe"](tmp_path / "gateway.pid")
     assert calls == [(tmp_path / "gateway.pid", False)]
+
+
+# ``reign serve`` is a substring of ``reign server``: a terminal multiplexer started as
+# ``herdr --session reign server`` was SIGTERMed by ``reign update`` and its unit restarted (#121156).
+DECOY = "tool --name reign server 30"
+BACKENDS = [
+    "/opt/reign/venv/bin/python -m reign_cli.main serve --port 0",
+    "/usr/bin/python3 /opt/reign/reign_cli/main.py dashboard --no-open",
+]
+
+
+def test_dashboard_scan_selects_entrypoint_plus_subcommand_tokens_never_substrings(monkeypatch):
+    from reign_cli import dashboard_procs
+    from reign_cli import process_identity
+
+    monkeypatch.setattr(dashboard_procs, "_iter_process_table",
+                        lambda: [(4242, DECOY), *((5000 + i, cmd) for i, cmd in enumerate(BACKENDS))])
+    monkeypatch.setattr(process_identity, "ledger_entries", list)
+    assert dashboard_procs._scan_dashboard_processes() == [(5000, BACKENDS[0]), (5001, BACKENDS[1])]
+
+
+def test_dashboard_runtime_parse_refuses_the_decoy_and_reads_a_real_backend():
+    from reign_cli.main_dashboard import _parse_dashboard_runtime
+
+    assert _parse_dashboard_runtime(DECOY) is None
+    assert _parse_dashboard_runtime(BACKENDS[0]) == ("serve", "127.0.0.1", 0)
+    # launchd ProgramArguments arrive ``shlex.join``ed: a quoted path with spaces is still the entry.
+    assert _parse_dashboard_runtime("'/Users/a b/venv/bin/reign' dashboard --port 9200") == ("dashboard", "127.0.0.1", 9200)

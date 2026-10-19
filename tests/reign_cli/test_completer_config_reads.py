@@ -7,7 +7,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 import reign_cli.commands_completion as commands_mod
 

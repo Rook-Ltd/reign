@@ -2,10 +2,9 @@
 
 Every Reign request to the Nous Portal (main loop, auxiliary client, fallback
 paths) must carry the same product-attribution tags, sent in OpenAI-compatible
-``extra_body['tags']``: ``["product=reign", "client=reign-client-v<__version__>"]``.
-The version is read live from ``reign_cli.__version__`` — do NOT pre-compute it
-as a module constant in consumers; it can change at runtime (editable installs,
-hot reload).
+``extra_body['tags']``: ``["product=reign", "client=reign-client-v<base_version>"]``.
+The value comes from the canonical runtime identity's base version so build
+provenance never leaks into this compatibility tag.
 """
 
 from __future__ import annotations
@@ -72,12 +71,9 @@ def get_conversation_context() -> Optional[str]:
 
 
 def reign_client_tag() -> str:
-    """``client=reign-client-v<MAJOR>.<MINOR>.<PATCH>`` ("unknown" if reign_cli is unimportable)."""
-    try:
-        from reign_cli import __version__
-    except Exception:
-        __version__ = "unknown"
-    return f"client=reign-client-v{__version__}"
+    """``client=reign-client-v<MAJOR>.<MINOR>.<PATCH>`` from canonical runtime identity."""
+    from reign_cli.version_info import get_version_info
+    return f"client=reign-client-v{get_version_info().base_version}"
 
 
 def conversation_tag(session_id: str) -> str:
@@ -86,7 +82,7 @@ def conversation_tag(session_id: str) -> str:
     return f"conversation={session_id}"
 
 
-def nous_portal_tags(session_id: str | None = None) -> List[str]:
+def nous_portal_tags(session_id: str | None = None) -> list[str]:
     """Fresh list of the canonical Nous Portal tags.
 
     The ambient conversation context (lineage ROOT id) wins over the explicit

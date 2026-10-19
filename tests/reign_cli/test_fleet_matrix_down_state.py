@@ -19,7 +19,7 @@ def _setup(monkeypatch, tmp_path, record: dict):
     home = tmp_path / ".reign"
     home.mkdir(exist_ok=True)
     monkeypatch.setattr(
-        "reign_cli.build_info.get_code_identity",
+        "reign_cli.version_info.get_code_identity",
         lambda refresh=False: {"sha": "HEADSHA", "version": "1.0"},
     )
     monkeypatch.setattr("reign_cli.profiles._get_default_reign_home", lambda: home)

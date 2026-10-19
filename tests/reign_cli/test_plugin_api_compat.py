@@ -3,7 +3,7 @@
 from pathlib import Path
 import shutil
 
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.plugins import PluginManager
 

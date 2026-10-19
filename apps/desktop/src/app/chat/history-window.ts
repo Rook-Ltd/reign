@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { capabilityScoped, type ProfileScope, reignApi } from '@/api/client'
+import { capabilityScoped, type ProfileScope, reignApi, sessionReadOwnerPin } from '@/api/client'
 import {
   cachedTimelineIndex,
   previousPromptRowId,
@@ -36,7 +36,15 @@ export async function fetchHistoryWindow(
   signal: AbortSignal
 ): Promise<HistoryPage> {
   signal.throwIfAborted()
-  const route = capabilityScoped(scope)
+
+  // Owner connection pin (#125372): an around-read for a session owned by
+  // another registry connection must read THAT host, not the ambient one.
+  const route = {
+    ...capabilityScoped(scope),
+    ...(typeof scope === 'object' && scope?.connectionId === 'local' ? { connectionId: 'local' } : {}),
+    ...sessionReadOwnerPin(storedId, scope)
+  }
+
   const query = new URLSearchParams({ row_id: String(rowId), limit: String(HISTORY_WINDOW_LIMIT) })
 
   if (route.profile) {
@@ -48,7 +56,6 @@ export async function fetchHistoryWindow(
   // it does not pretend to cancel backend I/O or fall back to a full transcript.
   const response = await reignApi<HistoryWindowResponse>({
     ...route,
-    ...(typeof scope === 'object' && scope?.connectionId === 'local' ? { connectionId: 'local' } : {}),
     method: 'GET',
     path: `/api/sessions/${encodeURIComponent(storedId)}/messages/around?${query}`
   })

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import yaml
+import reign_yaml as yaml
 
 import pytest
 
@@ -16,7 +16,7 @@ class TestSaveConfigValueAtomic:
         reign_home = tmp_path / ".reign"
         reign_home.mkdir()
         config_path = reign_home / "config.yaml"
-        config_path.write_text(yaml.dump({
+        config_path.write_text(yaml.safe_dump({
             "model": {"default": "test-model", "provider": "openrouter"},
             "display": {"skin": "default"},
         }))

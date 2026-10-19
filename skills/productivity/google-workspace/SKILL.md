@@ -36,6 +36,11 @@ Gmail, Calendar, Drive, Contacts, Sheets, and Docs — through Reign-managed OAu
 The setup is fully non-interactive — you drive it step by step so it works
 on CLI, Telegram, Discord, or any platform.
 
+Run the setup script with Python from the Reign environment, not an unrelated
+system Python. `--install-deps` syncs Reign' declared Google extra through PM;
+after syncing, restart Reign and rerun the OAuth command. If Reign is not
+importable, use `reign setup` first rather than installing packages with pip.
+
 Define a shorthand first:
 
 ```bash

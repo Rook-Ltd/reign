@@ -46,7 +46,7 @@ reign fallback [add|remove|list]  Fallback provider chain
 reign config [show|edit|get|set|unset|path|env-path|check|migrate]
 reign login / logout       OAuth sign-in / clear stored auth
 reign doctor [--fix]       Check dependencies and config
-reign status [--all]       Component status
+reign status [--full]      Component summary (--full: every section)
 ```
 
 ### Tools & Skills

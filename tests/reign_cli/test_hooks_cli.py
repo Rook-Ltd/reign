@@ -75,6 +75,7 @@ class TestHooksList:
 # ── test ──────────────────────────────────────────────────────────────────
 
 
+@pytest.mark.platforms("linux")
 class TestHooksTest:
     def test_synthetic_payload_matches_production_shape(self, tmp_path):
         """`reign hooks test` must feed the script stdin in the same

@@ -99,7 +99,6 @@ def portal(monkeypatch, tmp_path):
     monkeypatch.setenv("REIGN_PORTAL_BASE_URL", PORTAL)
     monkeypatch.setenv("REIGN_ANON_API_SECRET", "test-secret")
     monkeypatch.setenv("REIGN_SHARED_AUTH_DIR", str(tmp_path / "shared-store"))
-    monkeypatch.setenv("REIGN_GUEST_ONBOARDING", "1")
     for var in ("OPENROUTER_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "NOUS_API_KEY"):
         monkeypatch.delenv(var, raising=False)
     from reign_cli import auth_nous

@@ -10,7 +10,7 @@ failures pointing at provider/key. The reader mirrors `_goal_judge_max_tokens`
 
 import pytest
 
-import reign_cli.goals as goals
+from reign_cli import goals
 from reign_cli.goals import DEFAULT_JUDGE_TIMEOUT, _goal_judge_timeout
 
 

@@ -4,6 +4,7 @@ Split out of ``reign_cli/main.py``. Names that still live in main (``PROJECT_ROO
 are imported lazily inside the functions that use them (avoids an import cycle).
 """
 
+from pm import install_hint
 import sys
 
 
@@ -78,13 +79,25 @@ _ACP_FLAGS = (
 
 def cmd_acp(args):
     """Launch Reign as an ACP server."""
+    import os
+    # The gateway-backed ACP server forwards launch flags from their documented env equivalents
+    # (main() already exported --yolo / --safe-mode / --ignore-user-config).
+    for attr, name in (("accept_hooks", "REIGN_ACCEPT_HOOKS"), ("ignore_rules", "REIGN_IGNORE_RULES")):
+        if getattr(args, attr, False):
+            os.environ[name] = "1"
+    # -m / --provider: the route a --safe-mode / --ignore-user-config session freezes (it reads no
+    # profile default), carried like the TUI launcher's.
+    for attr, name in (("model", "REIGN_MODEL"), ("provider", "REIGN_INFERENCE_PROVIDER")):
+        if getattr(args, attr, None):
+            os.environ[name] = getattr(args, attr)
     try:
         from acp_adapter.entry import main as acp_main
         acp_main([flag for attr, flag in _ACP_FLAGS if getattr(args, attr, False)])
     except ImportError as e:
-        from reign_cli.main_dep_hints import missing_optional_deps_message
-
-        print(missing_optional_deps_message("ACP server", "its protocol packages", "acp"), file=sys.stderr)
+        print("The ACP server can't start: its protocol packages are missing from this install.", file=sys.stderr)
+        print("From the Reign environment, run: "
+              f"{install_hint('acp')}", file=sys.stderr)
+        print("Then restart Reign.", file=sys.stderr)
         print(f"Details: {e}", file=sys.stderr)
         sys.exit(1)
 
@@ -107,17 +120,22 @@ def cmd_tools(args):
 def cmd_insights(args):
     db = None
     try:
-        from reign_state import SessionDB, _default_db_path
+        from reign_state import SessionDB
         from agent.insights import InsightsEngine
-        if not _default_db_path().exists():
-            print("No session data yet.")
+        from reign_cli.config import get_reign_home
+        path = get_reign_home() / "state.db"
+        if not path.exists():
+            from agent.i18n import t
+            print(f"  {t('cli.insights.no_session_data')}")
             return
-        db = SessionDB(read_only=True)
+        db = SessionDB(db_path=path, read_only=True)
         engine = InsightsEngine(db)
         report = engine.generate(days=args.days, source=args.source)
         print(engine.format_terminal(report))
     except Exception as e:
-        print(f"Error generating insights: {e}")
+        # Interactive /insights delegates here, so keep main's localized error line.
+        from agent.i18n import t
+        print(t("gateway.insights.error", error=str(e)))
     finally:
         if db is not None:
             try:
@@ -178,7 +196,7 @@ def cmd_skills(args):
         _cmd_skills_trust(args)
     else:
         from reign_cli.skills_hub import skills_command
-        skills_command(args)
+        return skills_command(args)
 
 
 def _cmd_skills_trust(args):

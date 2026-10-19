@@ -747,7 +747,7 @@ class TestOneshotPassesAliasCredential:
             "reign_cli.runtime_provider.resolve_runtime_provider", _fake_resolve
         )
         monkeypatch.setattr("reign_cli.config.load_config", lambda *a, **k: {})
-        import reign_cli.oneshot as oneshot
+        from reign_cli import oneshot
 
         # _run_agent holds the alias wiring; run_oneshot() wraps it in a
         # catch-all that would swallow the sentinel.
@@ -756,5 +756,3 @@ class TestOneshotPassesAliasCredential:
 
         assert captured["explicit_base_url"] == ALIAS_HOST
         assert captured["explicit_api_key"] == "sk-theta-ALIAS"
-
-

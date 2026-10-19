@@ -5,7 +5,7 @@ back; the failure must still reach the operator (one WARNING) and the goal-loop 
 """
 import logging
 
-import yaml
+import reign_yaml as yaml
 
 import agent.auxiliary_unavailable as unavailable
 from reign_cli.auth_constants import AuthError

@@ -81,7 +81,7 @@ def test_resolve_last_session_real_db_prefers_workspace(monkeypatch, tmp_path):
             cmd, 0, stdout=str(repo_a), stderr=""
         ),
     )
-    monkeypatch.setattr("reign_state.SessionDB", lambda **kw: real_db(db_path=state_db, **kw))
+    monkeypatch.setattr("reign_cli.main.get_reign_home", lambda: tmp_path)
     assert _resolve_last_session("cli") == "repo_a"
 
 
@@ -94,9 +94,7 @@ def test_resolve_last_session_cli_continues_a_oneshot(monkeypatch, tmp_path):
     import reign_state
     from pathlib import Path
 
-    state_db = Path(tmp_path / "state.db")
-    real_db = reign_state.SessionDB
-    db = real_db(db_path=state_db)
+    db = reign_state.SessionDB(db_path=Path(tmp_path / "state.db"))
     try:
         db.create_session("interactive", source="cli")
         db.create_session("oneshot_run", source="oneshot")
@@ -109,6 +107,8 @@ def test_resolve_last_session_cli_continues_a_oneshot(monkeypatch, tmp_path):
         db.close()
 
     monkeypatch.setattr("reign_cli.main._resolve_workspace_key", lambda: None)
-    monkeypatch.setattr("reign_state.SessionDB", lambda **kw: real_db(db_path=state_db, **kw))
+    # The lookup opens the active home's store by explicit path (a served-profile process has no
+    # single default home), so the home is the seam — same as the workspace test above.
+    monkeypatch.setattr("reign_cli.main.get_reign_home", lambda: tmp_path)
     assert _resolve_last_session("cli") == "oneshot_run"
     assert _resolve_last_session("tui") == "tui_chat"

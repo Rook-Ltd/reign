@@ -9,7 +9,8 @@ sys.path.insert(0, root)
 # Temp REIGN_HOME with the real auth + a config that shortens the generic sequential deadline to 40 s, so the
 # run takes ~1.5 min instead of 8. The fix exempts delegate_task from this deadline entirely, so the shortened
 # value is exactly what main will hit.
-import shutil, tempfile, yaml
+import shutil, tempfile
+import reign_yaml as yaml
 home = tempfile.mkdtemp(prefix="dl_home_"); os.environ["REIGN_HOME"] = home
 real_home = os.environ.get("REIGN_HOME_SOURCE", os.path.expanduser("~/.reign"))  # credentials are copied from here into a temp home
 shutil.copy(f"{real_home}/auth.json", f"{home}/auth.json")

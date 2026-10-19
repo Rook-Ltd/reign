@@ -7,11 +7,9 @@ These assert the toggle sets the instance flag, persists to config.yaml,
 and that the clamp gate honours the flag.
 """
 
-
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.cli_commands_mixin import CLICommandsMixin
-
 
 class _Stub(CLICommandsMixin):
     """Minimal carrier for the attributes `_handle_reasoning_command` reads."""
@@ -25,9 +23,6 @@ class _Stub(CLICommandsMixin):
     def _current_reasoning_callback(self):
         return None
 
-
-
-
 def _seed_config(tmp_path, monkeypatch):
     hh = tmp_path / ".reign"
     hh.mkdir()
@@ -39,7 +34,6 @@ def _seed_config(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "_reign_home", hh, raising=False)
     return hh
 
-
 def test_reasoning_full_sets_and_persists(tmp_path, monkeypatch):
     hh = _seed_config(tmp_path, monkeypatch)
     s = _Stub()
@@ -48,5 +42,3 @@ def test_reasoning_full_sets_and_persists(tmp_path, monkeypatch):
     assert s.reasoning_full is True
     saved = yaml.safe_load((hh / "config.yaml").read_text())
     assert saved["display"]["reasoning_full"] is True
-
-

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-import reign_cli.profiles as profiles
+from reign_cli import profiles
 
 
 @pytest.fixture(autouse=True)

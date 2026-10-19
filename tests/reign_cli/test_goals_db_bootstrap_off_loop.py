@@ -25,7 +25,7 @@ import time
 
 import pytest
 
-import reign_cli.goals as goals
+from reign_cli import goals
 
 
 class _RecordingDB:

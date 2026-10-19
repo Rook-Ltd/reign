@@ -19,11 +19,11 @@ def _ok(payload):
 def _assert_reign_identity_headers(headers):
     """Both Perplexity endpoints carry the Reign identity headers (same set as Kimi/OpenCode)
     plus Perplexity's integration header."""
-    from reign_cli import __version__
+    from reign_cli.version_info import get_version_info
 
     assert headers["HTTP-Referer"] == "https://hermes-agent.nousresearch.com"
     assert headers["X-Title"] == "Reign"
-    assert headers["User-Agent"] == f"ReignAgent/{__version__}"
+    assert headers["User-Agent"] == f"ReignAgent/{get_version_info().base_version}"
     assert headers["X-Pplx-Integration"] == "reign"
 
 

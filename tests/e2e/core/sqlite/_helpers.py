@@ -13,8 +13,7 @@ protocol). This module owns:
 * process lifecycle (spawn / ready / stop / SIGTERM / SIGKILL, PIDs recorded, nothing else touched);
 * a background ``/proc/<pid>/fd`` monitor over OUR children that records any ``(deleted)`` main-file descriptor
   (a store swapped under a live holder) and, in WAL mode, any ``(deleted)`` ``-wal``/``-shm`` — the
-  kernel-level signature of a WAL generation unlinked under a live holder (not counting the holder's own
-  last close or its exit, see ``_benign_deleted_hold``);
+  kernel-level signature of a WAL generation unlinked under a live holder;
 * the invariant checks, done in the test process with short-lived bare ``sqlite3`` connections only (the
   test process never imports ``reign_state``, so it never becomes a foreign holder of the file).
 
@@ -23,7 +22,6 @@ Reuses the conformance harness's deadline polling / SIGKILL reaping (``tests/con
 
 from __future__ import annotations
 
-import contextlib
 import json
 import os
 import random
@@ -50,41 +48,6 @@ VULNERABLE_SQLITE = "3.50.4"  # bundled by uv's CPython 3.11.14 (the unit CI job
 # DELETE mode holds an EXCLUSIVE lock for every commit's journal+db fsyncs and has no writer fairness: an unpaced
 # append loop starves every other writer and reader. Gateway/TUI writers are paced by turns in the field.
 DELETE_WRITER_PACE = 0.02
-
-
-_PF_EXITING = 0x4  # include/linux/sched.h: set when do_exit() starts, before any descriptor closes
-_SQLITE_SHARED_FIRST = 0x40000000 + 2  # os_unix.c: SHARED_FIRST, the range a WAL last-close takes EXCLUSIVE
-
-
-def _benign_deleted_hold(pid: int, fd_path: str, db: Path) -> bool:
-    """A ``(deleted)`` sidecar just seen on *fd_path* that is not a stranded holder: SQLite's own last
-    close (it unlinks ``-shm`` while holding the main file's SHARED range EXCLUSIVE, then unmaps and
-    closes it), or a process already exiting (kill -9, or an exit that leaves closing to the kernel:
-    its ``state.db`` locks can go before its ``-shm`` descriptor, and a sibling's close unlinks in that
-    gap). Both last microseconds on an idle host; a loaded runner stretches them across a 20 ms scan."""
-    try:
-        with open(f"/proc/{pid}/stat", "rb") as fh:
-            flags = int(fh.read().rsplit(b")", 1)[1].split()[6])
-    except OSError:
-        return True  # already reaped
-    if flags & _PF_EXITING:
-        return True
-    with contextlib.suppress(FileNotFoundError):  # a swapped-out store: no lock to look for
-        st = os.stat(db)
-        inode = f"{os.major(st.st_dev):02x}:{os.minor(st.st_dev):02x}:{st.st_ino}"
-        with open("/proc/locks", encoding="ascii", errors="replace") as fh:
-            for f in (line.split() for line in fh):
-                # "N: POSIX ADVISORY WRITE <pid> <maj:min:inode> <start> <end|EOF>"
-                if (f[1:2] == ["POSIX"] and f[3:6] == ["WRITE", str(pid), inode]
-                        and int(f[6]) <= _SQLITE_SHARED_FIRST
-                        and (f[7] == "EOF" or _SQLITE_SHARED_FIRST <= int(f[7]))):
-                    return True
-    # No exclusive lock now: either that close already finished (it releases the lock only after
-    # closing the descriptor, so the descriptor is gone) or the holder is stranded.
-    try:
-        return not os.readlink(fd_path).endswith(" (deleted)")
-    except OSError:
-        return True
 
 
 def linked_sqlite_is_wal_capable() -> bool:
@@ -160,7 +123,7 @@ class Chamber:
             args.setdefault("pace", self.writer_pace)
         payload = {"workdir": str(self.work), "name": name, "db": str(self.db),
                    "stop": str(self.work / f"{name}.stop"), "busy_ok": self.mode == "delete", **args}
-        stderr = open(self.work / f"{name}.stderr", "wb")  # noqa: SIM115 - closed in reap()
+        stderr = open(self.work / f"{name}.stderr", "wb")
         proc = subprocess.Popen(
             [sys.executable, str(ROLES), role, json.dumps(payload)],
             cwd=str(REPO_ROOT), env={**self.env, **(env or {})}, stdin=subprocess.DEVNULL,
@@ -176,11 +139,11 @@ class Chamber:
     def spawn_cli(self, name: str, *argv: str) -> subprocess.Popen:
         """A real `reign …` CLI subprocess against this REIGN_HOME (``reign_cli.main`` run as ``__main__``
         by ``_roles.py cli`` so the journal-mode seam applies to it too)."""
-        stderr = open(self.work / f"{name}.stderr", "wb")  # noqa: SIM115 - closed in reap()
+        stderr = open(self.work / f"{name}.stderr", "wb")
         payload = {"workdir": str(self.work), "name": name, "argv": list(argv)}
         proc = subprocess.Popen(
             [sys.executable, str(ROLES), "cli", json.dumps(payload)], cwd=str(REPO_ROOT), env=self.env,
-            stdin=subprocess.DEVNULL, stdout=open(self.work / f"{name}.stdout", "wb"), stderr=stderr,  # noqa: SIM115
+            stdin=subprocess.DEVNULL, stdout=open(self.work / f"{name}.stdout", "wb"), stderr=stderr,
         )
         proc._stderr_file = stderr  # type: ignore[attr-defined]
         with self._lock:
@@ -274,15 +237,35 @@ class Chamber:
                         link = os.readlink(f"{fd_dir}/{fd}")
                     except OSError:
                         continue
-                    if (link.endswith(" (deleted)") and link[: -len(" (deleted)")] in targets
-                            and not _benign_deleted_hold(proc.pid, f"{fd_dir}/{fd}", self.db)):
+                    if link.endswith(" (deleted)") and link[: -len(" (deleted)")] in targets:
+                        if not self._still_held(fd_dir, fd, link):
+                            continue
                         with self._lock:
                             self.deleted_hits.append((name, proc.pid, link))
             self._monitor_stop.wait(0.02)
 
-    def deleted_hits_snapshot(self) -> list[tuple[str, int, str]]:
+    @staticmethod
+    def _still_held(fd_dir: str, fd: str, link: str) -> bool:
+        """A leak holds the unlinked sidecar for good; SQLite's own WAL last-close does not.
+
+        ``unixShmUnmap`` unlinks ``-shm`` and only then ``unixShmPurge`` closes its descriptor, so a
+        healthy close shows a ``(deleted)`` ``-shm`` for microseconds.  The 20ms poll occasionally
+        lands in that window on a short-lived role (the opener) and would report a phantom leak.  A
+        descriptor still pointing at the unlinked inode after a grace period is the real thing."""
+        time.sleep(0.05)
+        try:
+            return os.readlink(f"{fd_dir}/{fd}") == link
+        except OSError:
+            return False
+
+    def deleted_hits_mark(self) -> int:
+        """Position to pass to :meth:`deleted_hits_snapshot` so an episode sees only its own hits."""
         with self._lock:
-            return sorted(set(self.deleted_hits))
+            return len(self.deleted_hits)
+
+    def deleted_hits_snapshot(self, since: int = 0) -> list[tuple[str, int, str]]:
+        with self._lock:
+            return sorted(set(self.deleted_hits[since:]))
 
     # -- reports -------------------------------------------------------------------------------------
     def events(self, name: str) -> list[dict]:

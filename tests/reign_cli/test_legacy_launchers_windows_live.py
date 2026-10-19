@@ -11,12 +11,13 @@ import subprocess
 
 import pytest
 
-import reign_cli.gateway_windows as gateway_windows
+from reign_cli import gateway_windows
 
 
-@pytest.mark.windows_only
+@pytest.mark.platforms("windows")
 def test_status_warns_and_uninstall_removes_pre_suffix_launchers(tmp_path, monkeypatch, capsys):
-    home = tmp_path / "reign"
+    # The shared isolation fixture uses tmp_path / "reign" as the Windows native default.
+    home = tmp_path / "custom-reign"
     (home / "gateway-service").mkdir(parents=True)
     monkeypatch.setenv("REIGN_HOME", str(home))
     appdata = tmp_path / "AppData" / "Roaming"
@@ -39,6 +40,7 @@ def test_status_warns_and_uninstall_removes_pre_suffix_launchers(tmp_path, monke
     create = subprocess.run(
         [schtasks, "/Create", "/F", "/TN", "Reign_Gateway", "/SC", "ONLOGON", "/TR", f"wscript.exe //B {legacy_pair}"],
         capture_output=True, text=True, timeout=60,
+        check=False,
     )
     assert create.returncode == 0, create.stderr
     try:
@@ -54,10 +56,10 @@ def test_status_warns_and_uninstall_removes_pre_suffix_launchers(tmp_path, monke
         assert "Removed legacy pre-suffix Scheduled Task 'Reign_Gateway'" in out
         assert not legacy_vbs.exists()
         assert not legacy_pair.exists()
-        query = subprocess.run([schtasks, "/Query", "/TN", "Reign_Gateway"], capture_output=True, text=True, timeout=60)
+        query = subprocess.run([schtasks, "/Query", "/TN", "Reign_Gateway"], capture_output=True, text=True, timeout=60, check=False)
         assert query.returncode != 0, "the pre-suffix task must be gone after uninstall"
 
         gateway_windows.status()
         assert "legacy pre-suffix" not in capsys.readouterr().out
     finally:
-        subprocess.run([schtasks, "/Delete", "/F", "/TN", "Reign_Gateway"], capture_output=True, text=True, timeout=60)
+        subprocess.run([schtasks, "/Delete", "/F", "/TN", "Reign_Gateway"], capture_output=True, text=True, timeout=60, check=False)

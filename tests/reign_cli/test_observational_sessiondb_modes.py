@@ -3,7 +3,7 @@
 from argparse import Namespace
 
 
-import reign_cli.sessions_cmd as sessions_cmd
+from reign_cli import sessions_cmd
 
 
 

@@ -7,8 +7,8 @@ entries under ``model.aliases`` (``localqwen: {model: ..., provider: ...}``)
 were silently dropped because only string values were parsed.
 """
 
-import reign_cli.models as models
-import reign_cli.model_switch as model_switch
+from reign_cli import models
+from reign_cli import model_switch
 
 
 class TestVendorPrefixRouting:

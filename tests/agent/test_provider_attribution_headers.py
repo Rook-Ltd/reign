@@ -6,6 +6,7 @@ referrerUrl / appName / User-Agent flow into gateway analytics.
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
+from reign_cli.version_info import get_version_info
 from run_agent import AIAgent
 
 
@@ -26,7 +27,7 @@ def test_ai_gateway_base_url_applies_attribution_headers(mock_openai):
     headers = agent._client_kwargs["default_headers"]
     assert headers["HTTP-Referer"] == "https://hermes-agent.nousresearch.com"
     assert headers["X-Title"] == "Reign"
-    assert headers["User-Agent"].startswith("ReignAgent/")
+    assert headers["User-Agent"] == f"ReignAgent/{get_version_info().base_version}"
 
 
 @patch("agent.process_bootstrap.OpenAI")
@@ -71,7 +72,7 @@ def test_opencode_go_applies_attribution_via_profile_fallback(mock_openai):
     headers = agent._client_kwargs["default_headers"]
     assert headers["HTTP-Referer"] == "https://hermes-agent.nousresearch.com"
     assert headers["X-Title"] == "Reign"
-    assert headers["User-Agent"].startswith("ReignAgent/")
+    assert headers["User-Agent"] == f"ReignAgent/{get_version_info().base_version}"
 
 
 @patch("agent.process_bootstrap.OpenAI")
