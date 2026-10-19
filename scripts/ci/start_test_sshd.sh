@@ -33,7 +33,7 @@ docker run -d --name "$name" -p "127.0.0.1:${port}:22" \
 
 for _ in $(seq 1 120); do
   if ssh -i "$state_dir/id_ed25519" -p "$port" -o BatchMode=yes -o ConnectTimeout=2 \
-      -o StrictHostKeyChecking=accept-new hermes@127.0.0.1 true 2>/dev/null; then
+      -o StrictHostKeyChecking=accept-new reign@127.0.0.1 true 2>/dev/null; then
     ready=1
     break
   fi

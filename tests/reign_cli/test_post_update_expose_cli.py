@@ -218,8 +218,8 @@ class TestExposeCli:
         assert _launchers.expose_cli(create=False) == {"ok": True, "written": ["reign-acp"]}
         assert acp.is_file() and not acp.is_symlink() and os.access(acp, os.X_OK)
         assert not dangling.exists()
-        assert not (extra / "reign").exists()
-        assert not (wrapper_dir / "reign").exists()
+        assert not (extra / "reign-agent").exists()
+        assert not (wrapper_dir / "reign-agent").exists()
         if reign == "foreign":
             assert (extra / "reign").read_bytes() == foreign
         else:
@@ -422,8 +422,8 @@ class TestSymlinkSealedLaunchers:
         # …and a live symlink to a different tool.
         other = tmp_path / "other-tool"
         other.write_text("other\n", encoding="utf-8")
-        (link_dir / "reign").symlink_to(other)
+        (link_dir / "reign-agent").symlink_to(other)
         result = _launchers._symlink_sealed_launchers(payload_bin)
         assert (link_dir / "reign").read_text(encoding="utf-8-sig") == "#!/bin/sh\n# pipx launcher\n"
-        assert os.readlink(link_dir / "reign") == str(other)
+        assert os.readlink(link_dir / "reign-agent") == str(other)
         assert sorted(result["written"]) == ["reign-acp"]

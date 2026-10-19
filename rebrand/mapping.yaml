@@ -96,6 +96,10 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"bin" / "hermes-agent"'
   - '/usr/local/bin/hermes-agent"'
   - '(?m)^hermes-agent = "'
+  - 'if name == "hermes-agent" else'
+  - '\(\*WINDOWS_BIN_LAUNCHERS, "hermes-agent"\)'
+  - '\{hermes,hermes-agent,hermes-acp\}'
+  - '\b(?:extra|wrapper_dir|link_dir|out) / "hermes-agent"'   # launcher-dir test fixtures
   # Upstream mobile app's WebSocket subprotocol names, accepted alongside ours (reign_cli/web_server_chat.py)
   - '"hermes-gateway-v1", "hermes-gateway-ticket\."'
   # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
@@ -306,6 +310,14 @@ post_replace:
         with:  '"bin" / "reign-agent"'
       - plain: '/usr/local/bin/hermes-agent"'
         with:  '/usr/local/bin/reign-agent"'
+      - plain: 'if name == "hermes-agent" else'
+        with:  'if name == "reign-agent" else'
+      - plain: '(*WINDOWS_BIN_LAUNCHERS, "hermes-agent")'
+        with:  '(*WINDOWS_BIN_LAUNCHERS, "reign-agent")'
+      - plain: '{hermes,hermes-agent,hermes-acp}'
+        with:  '{reign,reign-agent,reign-acp}'
+      - regex: '\b(extra|wrapper_dir|link_dir|out) / "hermes-agent"'
+        with:  '\1 / "reign-agent"'
   - files:                # kawaii text faces in CLI output -> neutral glyphs (order matters)
       - "cli.py"
       - "reign_cli/*.py"
@@ -844,6 +856,13 @@ post_replace:
     replace:
       - plain: "    // A prebuilt .tiff on purpose, not a PNG plus a @2x sibling: dmg-builder's\n    // PNG path runs `tiffutil -cathidpicheck`, which on macOS 26 rewrites both\n    // frames to 72 dpi and silently drops the 2x representation. A .tiff is\n    // handed to dmgbuild untouched (dmg-builder/dist/dmgUtil.js), and living\n    // outside assets/ keeps it out of the app bundle via the `files` whitelist.\n    background: 'packaging/nous-dmg-2b.tiff',\n"
         with:  ""
+  # `hermes@127.0.0.1` looks like an email to the protect pattern, but it is the ssh login of
+  # the test container's user, which renames to `reign`.
+  - files:
+      - "scripts/ci/start_test_sshd.sh"
+    replace:
+      - plain: "hermes@127.0.0.1"
+        with:  "reign@127.0.0.1"
   # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
   # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
   - files:

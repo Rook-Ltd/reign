@@ -541,7 +541,7 @@ def _publish_conveniences(root: Path, out_dir: Path, names, *, create: bool = Tr
             continue
         before = target.lstat().st_mtime_ns if target.exists() or target.is_symlink() else None
         command = ([str(root / ".reign/bin/reign"), "--run-module", "run_agent"]
-                   if name == "reign" else [str(root / ".reign/bin" / name)])
+                   if name == "reign-agent" else [str(root / ".reign/bin" / name)])
         if _write_shell(target, command) is None:
             raise OSError(f"could not publish launcher {target}")
         published[target] = before != target.lstat().st_mtime_ns
@@ -789,7 +789,7 @@ def expose_cli(project_root: Path | None = None, *, create: bool = True) -> dict
                 dirs.append(directory)
         written = []
         for directory in dirs:
-            published = _publish_conveniences(root, directory, (*WINDOWS_BIN_LAUNCHERS, "reign"), create=create)
+            published = _publish_conveniences(root, directory, (*WINDOWS_BIN_LAUNCHERS, "reign-agent"), create=create)
             written.extend(path.name for path, changed in published.items() if changed)
         return {"ok": True, "written": written}
     except OSError as exc:
@@ -979,7 +979,7 @@ def _is_bundled_payload(root: Path) -> bool:
 
 
 def _symlink_sealed_launchers(payload_bin) -> dict:
-    """Link ~/.local/bin/{reign,reign,reign-acp} at a sealed
+    """Link ~/.local/bin/{reign,reign-agent,reign-acp} at a sealed
     bundle's own prebuilt shims (macOS only).
 
     Symlinks, not copies: the shims are signed as part of the app bundle,
