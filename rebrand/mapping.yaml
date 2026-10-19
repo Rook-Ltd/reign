@@ -585,6 +585,11 @@ post_replace:
     - plain: '_PROVIDER_PREFERENCE = ("openwakeword", "sherpa", "porcupine")'
       with: '_PROVIDER_PREFERENCE = ("sherpa", "openwakeword", "porcupine")'
   - files:
+    - tests/tools/test_wake_word.py
+    replace:
+    - regex: '(\("(?:win32|darwin|linux)", "(?:AMD64|arm64|x86_64|aarch64)", )"openwakeword"\)'
+      with: '\1"sherpa")'
+  - files:
     - website/docs/user-guide/features/wake-word.md
     replace:
     - plain: 'engine in this order: **openWakeWord → sherpa → Porcupine**.'
@@ -714,7 +719,7 @@ post_replace:
   - files:
       - "reign_cli/skin_engine.py"
     replace:
-      - regex: '(?s)(_REIGN_BRANDING: Dict\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
+      - regex: '(?s)(_REIGN_BRANDING: (?:Dict|dict)\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
         with:  '\1\n_REIGN_BRANDING["agent_name"] = "Reign"\n_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."'
 
   # Upstream's 32/96-core larger runners don't exist on this account (their jobs queued for a
@@ -794,6 +799,8 @@ post_replace:
       # to a second `reign` key, so the TOML declares two scripts and the Windows lane fails.
       - plain: 'reign = "run_agent:main"'
         with:  'reign-agent = "run_agent:main"'
+      - plain: '{"reign.exe", "reign.exe", "reign-acp.exe"}'
+        with:  '{"reign.exe", "reign-agent.exe", "reign-acp.exe"}'
   - files:
       - "tests/e2e/core/upgrade/test_fresh_process_entrypoints.py"
     replace:
@@ -811,9 +818,12 @@ post_replace:
   - files:
       - "apps/desktop/scripts/local-pack-publish.test.mjs"
     replace:
-      # package.json's repository URL points at the fork (rule above); the owner follows it.
-      - plain: "configs[0].owner, 'NousResearch')"
-        with:  "configs[0].owner, 'rook-ltd')"
+      # The fixture's repository URL is a protected Nous URL and stays verbatim, but the bare
+      # `hermes-agent` the test expects back renames, so the expectation follows the fixture.
+      - plain: "assert.equal(repositoryInfo.project, 'reign')"
+        with:  "assert.equal(repositoryInfo.project, 'hermes-agent')"
+      - plain: "[{ owner: 'NousResearch', repo: 'reign', provider: 'github' }]"
+        with:  "[{ owner: 'NousResearch', repo: 'hermes-agent', provider: 'github' }]"
   # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
   # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
   - files:

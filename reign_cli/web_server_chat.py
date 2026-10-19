@@ -168,6 +168,7 @@ def _ws_request_is_allowed(ws: WebSocket) -> bool:
 from reign_cli.web_server_boundary import (
     _GATEWAY_WS_PROTOCOL,
     _GATEWAY_WS_TICKET_PROTOCOL_PREFIX,
+    _UPSTREAM_GATEWAY_WS_PROTOCOLS,
     _gateway_ws_ticket_and_protocol,
 )
 

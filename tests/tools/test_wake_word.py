@@ -67,11 +67,11 @@ def test_looks_like_path():
 
 @pytest.mark.parametrize("system,machine,expected", [
     ("win32", "ARM64", "sherpa"),
-    ("win32", "AMD64", "openwakeword"),
+    ("win32", "AMD64", "sherpa"),
     ("darwin", "x86_64", "sherpa"),
-    ("darwin", "arm64", "openwakeword"),
-    ("linux", "x86_64", "openwakeword"),
-    ("linux", "aarch64", "openwakeword"),
+    ("darwin", "arm64", "sherpa"),
+    ("linux", "x86_64", "sherpa"),
+    ("linux", "aarch64", "sherpa"),
 ])
 @pytest.mark.parametrize("saved", [None, "wake_word: {}\n", "wake_word:\n  provider: auto\n"])
 def test_loaded_wake_defaults_resolve_supported_provider(tmp_path, monkeypatch, system, machine, expected, saved):

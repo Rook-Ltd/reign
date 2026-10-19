@@ -17,11 +17,10 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--ref", required=True); ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
     mp = yaml.safe_load(MAPPING.read_text()); rb = Rebrander(mp)
-    overlay = set(re.findall(r"^diff --git a/(.*?) b/", (ROOT / "rebrand/overlay/hand-edits.patch").read_text(errors="replace"), re.M))
-    ren = [(re.compile(re.escape(r["plain"])), r["with"]) for r in mp["rename_paths"]]
+    overlay = set(re.findall(r"^diff --git a/(.*?) b/", (ROOT / "rebrand/overlay/hand-edits.patch").read_text(errors="replace"), re.MULTILINE))
     def upstream_path(rel):  # reverse the path rename: reign_cli -> hermes_cli etc. (best effort)
         return rel.replace("reign_cli", "hermes_cli").replace("reign_state", "hermes_state").replace("reign-ink", "hermes-ink").replace("reign-achievements", "hermes-achievements").replace("reign-bots", "hermes-bots")
-    up_files = set(subprocess.run(["git", "ls-tree", "-r", "--name-only", f"{a.ref}^{{commit}}"], capture_output=True, text=True).stdout.split("\n"))
+    up_files = set(subprocess.run(["git", "ls-tree", "-r", "--name-only", f"{a.ref}^{{commit}}"], capture_output=True, text=True, check=False).stdout.split("\n"))
     changed = []
     for rel in tracked_files():
         if rel in overlay or globs_match(rel, rb.exclude) or rel.startswith(("rebrand/", "brand/")) or rel.endswith((".lock", "package-lock.json")):
@@ -29,7 +28,7 @@ def main():
         up = upstream_path(rel)
         if up not in up_files:
             continue
-        raw = subprocess.run(["git", "show", f"{a.ref}^{{commit}}:{up}"], capture_output=True).stdout
+        raw = subprocess.run(["git", "show", f"{a.ref}^{{commit}}:{up}"], capture_output=True, check=False).stdout
         if is_binary(raw):
             continue
         try:

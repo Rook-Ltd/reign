@@ -22,7 +22,7 @@ import logging
 import threading
 import time
 import urllib.parse
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Iterable, Optional
 
 import httpx
 
@@ -326,7 +326,7 @@ class SelfHostedOIDCProvider(JwtOAuthProvider):
             org_id=str(org_id or ""))
 
 
-def _verified_email(claims: Dict[str, Any]) -> str:
+def _verified_email(claims: dict[str, Any]) -> str:
     """Lowercased ``email`` only when the IDP vouches for it: ``email_verified`` must not be
     false, and an Entra work/school token (``tid`` other than the personal-account tenant)
     must carry ``xms_edov`` (email domain owner verified) — otherwise any tenant admin could

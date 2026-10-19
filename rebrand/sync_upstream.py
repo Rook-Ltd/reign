@@ -16,8 +16,8 @@ where replay(ref) runs, in a throwaway git worktree at ref:
   2. run rebrand/rebrand.py            (stages 1-5: delete, protect, replace, rename, post_replace)
   3. run rebrand/place_images.py, then website/scripts/generate-skill-docs.py
   4. regenerate uv.lock and npm lockfiles (--no-lockfiles to skip), then eslint --fix the JS
-     workspaces: hermes->reign renames reorder sorted imports/keys, which the perfectionist
-     rules reject (--no-lint-fix to skip)
+     workspaces and ruff --fix RUF022: hermes->reign renames reorder sorted imports, keys and
+     __all__ lists, which the lint rules reject (--no-lint-fix to skip)
 
 ours - base is then exactly what Reign changed by hand since the last sync (Rook-authored files,
 test fixes, features), so every such edit carries over, including ones nobody remembered to put
@@ -56,7 +56,7 @@ ENV = dict(os.environ, PATH="/opt/homebrew/bin:" + os.environ.get("PATH", ""))
 
 
 def sh(*cmd: str, cwd: Path = ROOT, check: bool = True, quiet: bool = False) -> str:
-    r = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
+    r = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False)
     if check and r.returncode != 0:
         sys.exit(f"command failed: {' '.join(cmd)}\n{r.stdout}\n{r.stderr}")
     if not quiet and r.stdout.strip():
@@ -80,8 +80,9 @@ def regenerate_lockfiles(wt: Path) -> None:
                    cwd=wt / "website", env=ENV, check=True)
 
 
-def replay(ref: str, wt: Path, args: argparse.Namespace) -> str:
-    """Rebrand upstream `ref` in worktree `wt` and return the resulting tree."""
+def replay(ref: str, wt: Path, args: argparse.Namespace) -> tuple[str, dict[str, int]]:
+    """Rebrand upstream `ref` in worktree `wt`; return the resulting tree and the post_replace
+    rule hit counts."""
     print(f"→ replaying {ref[:10]} in {wt}")
     add_worktree(wt, ref)
     for name in ("rebrand", "brand"):
@@ -91,6 +92,7 @@ def replay(ref: str, wt: Path, args: argparse.Namespace) -> str:
 
     out = sh(str(PY), "rebrand/rebrand.py", cwd=wt, quiet=True)
     print("  " + "\n  ".join(l for l in out.splitlines() if l.startswith(("deleted", "files ", "post_replace", "mode"))))
+    hits = {m.group(2): int(m.group(1)) for m in re.finditer(r"^ +(\d+)  (post:.*)$", out, re.MULTILINE)}
     sh(str(PY), "rebrand/place_images.py", cwd=wt, quiet=True)
     sh(str(PY), "website/scripts/generate-skill-docs.py", cwd=wt, quiet=True)
     if args.lockfiles:
@@ -101,11 +103,20 @@ def replay(ref: str, wt: Path, args: argparse.Namespace) -> str:
         subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=ENV, check=True,
                        stdout=subprocess.DEVNULL)
         for d, paths in (("apps/shared", ["src/"]), ("apps/desktop", ["src/", "electron/"]), ("ui-tui", ["src/", "packages/"])):
-            r = subprocess.run(["npx", "eslint", "--fix", *paths], cwd=wt / d, env=ENV, text=True, capture_output=True)
+            r = subprocess.run(["npx", "eslint", "--fix", *paths], cwd=wt / d, env=ENV, text=True, capture_output=True, check=False)
             if r.returncode:
                 print(f"   {d}: errors eslint cannot fix remain (JS & TS checks will fail)")
+        # Renamed strings in the English catalog change the committed i18n key index.
+        for d in ("apps/desktop", "ui-tui"):
+            subprocess.run(["npm", "run", "i18n:keys"], cwd=wt / d, env=ENV, check=False, stdout=subprocess.DEVNULL)
+        # Same for Python: renamed names reorder sorted __all__ lists (RUF022), which the
+        # blocking `ruff check .` rejects. Uses the ruff CI pins.
+        pin = sh(str(PY), "-m", "scripts.code_health", "--print-pins", cwd=wt, check=False, quiet=True).strip()
+        if pin.startswith("ruff=="):
+            subprocess.run(["uvx", "--from", pin, "ruff", "check", "--fix", "--select", "RUF022", "--exit-zero", "--quiet", "."],
+                           cwd=wt, env=ENV, check=False)
     sh("git", "add", "-A", cwd=wt, quiet=True)
-    return sh("git", "write-tree", cwd=wt, quiet=True).strip()
+    return sh("git", "write-tree", cwd=wt, quiet=True).strip(), hits
 
 
 def main() -> None:
@@ -141,14 +152,20 @@ def main() -> None:
     base_sha = m.group(1)
     print(f"  base {base_sha[:10]}  upstream {upstream_sha[:10]}  reign HEAD {reign_head[:10]}")
 
-    base_tree = replay(base_sha, base_wt, args)
-    new_tree = replay(upstream_sha, wt, args)
+    base_tree, base_hits = replay(base_sha, base_wt, args)
+    new_tree, new_hits = replay(upstream_sha, wt, args)
+    # A mapping rule that matched the old upstream but not the new one usually means upstream
+    # reshaped the code it targets, and the Reign change it made is silently gone.
+    dead_rules = sorted(r for r in base_hits if r not in new_hits)
+    print(f"  mapping rules that stopped matching: {len(dead_rules)}")
+    for r in dead_rules:
+        print(f"   {r}")
 
     print("→ merging Reign's hand edits (HEAD vs. replayed base) onto the replayed upstream")
     c_base = sh("git", "commit-tree", base_tree, "-m", "replayed base", quiet=True).strip()
     c_new = sh("git", "commit-tree", new_tree, "-m", "replayed upstream", quiet=True).strip()
     r = subprocess.run(["git", "merge-tree", "--write-tree", "--name-only", "--no-messages", "--merge-base", c_base, reign_head, c_new],
-                       cwd=ROOT, text=True, capture_output=True)
+                       cwd=ROOT, text=True, capture_output=True, check=False)
     if r.returncode not in (0, 1):
         sys.exit(f"git merge-tree failed:\n{r.stderr}")
     lines = r.stdout.splitlines()
@@ -182,7 +199,7 @@ def main() -> None:
 
     print("→ gates")
     sh("git", "add", "-A", cwd=wt, quiet=True)
-    res = subprocess.run([str(PY), "rebrand/rebrand.py", "--check"], cwd=wt, text=True, capture_output=True).stdout
+    res = subprocess.run([str(PY), "rebrand/rebrand.py", "--check"], cwd=wt, text=True, capture_output=True, check=False).stdout
     (wt / "rebrand/audit/residual-after-sync.txt").write_text(res)
     def keyed(text: str) -> list[tuple[str, str]]:
         out, cur = [], ""
@@ -215,6 +232,7 @@ def main() -> None:
               f"- residual: {res.strip().splitlines()[-1]}; {len(new_lines)} new line(s)",
               f"- images surviving: {len(survivors)}; conflict-marker files: {len(markers)}", ""]
     report += [f"- conflict: `{c}`" for c in conflicts]
+    report += [f"- rule stopped matching (check it): `{r}`" for r in dead_rules]
     report += [f"- residual: `{f}`: `{l[:120]}`" for f, l in new_lines[:40]]
     (REBRAND / "audit" / "sync-report.md").write_text("\n".join(report) + "\n")
     if not args.keep_worktree:

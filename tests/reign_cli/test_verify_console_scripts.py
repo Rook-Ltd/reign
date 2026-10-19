@@ -48,5 +48,5 @@ class TestReignExeShims:
     ):
         names = {path.name for path in main_install_repair._reign_exe_shims(fake_scripts_dir)}
 
-        assert {"reign.exe", "reign.exe", "reign-acp.exe"} <= names
+        assert {"reign.exe", "reign-agent.exe", "reign-acp.exe"} <= names
         assert "reign-gateway.exe" in names

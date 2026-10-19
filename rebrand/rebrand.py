@@ -39,7 +39,7 @@ def tracked_files() -> list[str]:
 
 def globs_match(path: str, patterns: list[str]) -> bool:
     for pat in patterns:
-        if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(path, pat.rstrip("/**")) or path.startswith(pat.rstrip("*").rstrip("/") + "/"):
+        if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(path, pat.rstrip("/**")) or path.startswith(pat.rstrip("*").rstrip("/") + "/"):  # noqa: B005
             return True
         if pat.startswith("**/") and fnmatch.fnmatch(path, pat[3:]):  # "**/x.py" also means root-level x.py
             return True
@@ -187,7 +187,7 @@ class Rebrander:
             if p.exists():
                 gone.append(rel)
                 if apply:
-                    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=ROOT, capture_output=True).returncode == 0
+                    tracked = subprocess.run(["git", "ls-files", "--error-unmatch", "--", rel], cwd=ROOT, capture_output=True, check=False).returncode == 0
                     if tracked:
                         subprocess.run(["git", "rm", "-r", "-q", "--", rel], cwd=ROOT, check=True)
                     else:  # untracked leftovers (test pollution such as MagicMock/): just delete
