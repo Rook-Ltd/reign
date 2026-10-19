@@ -60,4 +60,27 @@ shutil.copy(G / "icon.icns", ti / "icon.icns")
 shutil.copy(G / "icon.ico", ti / "icon.ico")
 png(mark, ROOT / "apps/bootstrap-installer/public/rook-mark.png", 512)
 (ROOT / "apps/bootstrap-installer/public/nous-girl.jpg").unlink(missing_ok=True)
+# Touchpoints upstream added after the fork (skipped on an older tree that lacks them): the
+# dark/dock/Windows-dark app icons, the macOS 26 Icon Composer layers, the docs dark logo, and
+# the nous-girl marks. BrandMark shows the Rook mark, but those files still ship and other
+# checks list them, so they are overwritten rather than deleted.
+def place(src_fn, dst: Path):
+    if dst.parent.is_dir():
+        src_fn(dst)
+
+for name in ("icon-dark.icns",):
+    place(lambda d: shutil.copy(G / "icon.icns", d), ROOT / "apps/desktop/assets" / name)
+place(lambda d: shutil.copy(G / "icon.ico", d), ROOT / "apps/desktop/assets/icon-dark.ico")
+for rel in ("apps/desktop/assets/icon-dark.png", "apps/desktop/assets/icon-mac.png",
+            "apps/desktop/assets/icon.icon/Assets/art-light.png",
+            "apps/desktop/assets/icon.icon/Assets/art-dark.png",
+            "apps/desktop/assets/icon.icon/Assets/mono.png"):
+    place(lambda d: png(mark, d, 1024), ROOT / rel)
+place(lambda d: png(mark, d, 512), ROOT / "website/static/img/logo-dark.png")
+for rel in ("apps/desktop/public/nous-girl.png", "apps/desktop/public/nous-girl-dark.png",
+            "apps/bootstrap-installer/public/nous-girl.png"):
+    if (ROOT / rel).exists():
+        png(mark, ROOT / rel, 256)
+if (ROOT / "website/static/img/nous-logo-dark.png").exists():
+    png(mark, ROOT / "website/static/img/nous-logo-dark.png", 150)
 print("images placed")

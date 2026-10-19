@@ -157,14 +157,18 @@ def main() -> None:
     # Workflows are regenerated from upstream plus mapping rules; Rook-authored ones upstream
     # doesn't have stay as merged.
     sh("git", "checkout", c_new, "--", ".github/workflows", cwd=wt, quiet=True)
-    if args.lockfiles:
+    manifests = [p for p in conflicted if p.endswith("package.json") or p.endswith("pyproject.toml")]
+    relocked = args.lockfiles and not manifests
+    if args.lockfiles and manifests:
+        print(f"  not regenerating lockfiles: {', '.join(manifests)} conflicted (resolve, then rerun them)")
+    elif args.lockfiles:
         print("  regenerating lockfiles on the merged tree")
         locks = [p for p in sh("git", "ls-tree", "-r", "--name-only", c_new, cwd=wt, quiet=True).splitlines() if LOCKFILE_RE.search(p)]
         sh("git", "checkout", c_new, "--", *locks, cwd=wt, quiet=True)
         regenerate_lockfiles(wt)
     sh("git", "add", "-A", cwd=wt, quiet=True)
     resolved = lambda p: p.startswith(".github/workflows/") and sh("git", "cat-file", "-t", f"{c_new}:{p}", cwd=wt, check=False, quiet=True).strip() == "blob"
-    conflicts = [p for p in conflicted if not (resolved(p) or (args.lockfiles and LOCKFILE_RE.search(p)))]
+    conflicts = [p for p in conflicted if not (resolved(p) or (relocked and LOCKFILE_RE.search(p)))]
     hand_edited = len(sh("git", "diff", "--name-only", base_tree, reign_head, "--", ".", ":(exclude)rebrand", quiet=True).split())
     print(f"  hand-edited files carried: {hand_edited}; {len(conflicts)} with conflicts")
     for c in conflicts:

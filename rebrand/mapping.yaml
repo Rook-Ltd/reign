@@ -576,6 +576,23 @@ post_replace:
       with: or "sherpa"
     - regex: (?m)^(\s*provider:\s*)openwakeword\b
       with: \1sherpa
+  # Upstream's `auto` wake-word provider tries openWakeWord first, with the bundled hey_hermes
+  # model that decision D2 drops (tools/wakewords is deleted). Reign tries sherpa first: it
+  # needs no model and detects the typed phrase, so `auto` keeps working out of the box.
+  - files:
+    - tools/wake_word.py
+    replace:
+    - plain: '_PROVIDER_PREFERENCE = ("openwakeword", "sherpa", "porcupine")'
+      with: '_PROVIDER_PREFERENCE = ("sherpa", "openwakeword", "porcupine")'
+  - files:
+    - website/docs/user-guide/features/wake-word.md
+    replace:
+    - plain: 'engine in this order: **openWakeWord → sherpa → Porcupine**.'
+      with: 'engine in this order: **sherpa → openWakeWord → Porcupine**.'
+    - plain: 'Includes the **"hey reign"** model. Custom models require a `.tflite` file.'
+      with: 'Reign bundles **no** model for it: set `openwakeword.model` to a custom `.tflite` file.'
+    - plain: "The default phrase label is **\"hey reign\"**. For openWakeWord, Reign includes\nits trained TFLite model.\n"
+      with: "The default phrase is **\"hey reign\"**, detected by sherpa with no trained model. Reign\nships no openWakeWord model.\n"
   - files:
     - tests/tools/test_wake_word.py
     replace:
@@ -718,6 +735,35 @@ post_replace:
         with:  "runner: windows-latest"
       - plain: "REIGN_TEST_WORKERS: 96"
         with:  'REIGN_TEST_WORKERS: ""'
+  # Upstream later moved CI onto Blacksmith runners and Blacksmith's forks of checkout and the
+  # Docker actions. Rook has no Blacksmith account (those jobs would queue forever), so they run
+  # on the matching standard GitHub-hosted runners, free on a public repo, with the stock actions.
+  # The arm64 rule comes first: the plain one would otherwise match its prefix.
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/actions/**"
+    replace:
+      - regex: 'runs-on: blacksmith-(?:16|32)vcpu-(ubuntu-2404|windows-2025)\n(\s+)timeout-minutes: \d+'
+        with:  'runs-on: blacksmith-32vcpu-\1\n\2timeout-minutes: 120'
+      - regex: '\bblacksmith-\d+vcpu-ubuntu-2404-arm\b'
+        with:  'ubuntu-24.04-arm'
+      - regex: '\bblacksmith-\d+vcpu-ubuntu-2404\b'
+        with:  'ubuntu-latest'
+      - regex: '\bblacksmith-\d+vcpu-windows-2025\b'
+        with:  'windows-latest'
+      - regex: '\bblacksmith-\d+vcpu-macos-latest\b'
+        with:  'macos-latest'
+      - plain: "windows-latest-32-arm-core"
+        with:  "windows-11-arm"
+      - regex: 'useblacksmith/checkout@[0-9a-f]{40} *# v1\b'
+        with:  'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2'
+      - regex: 'useblacksmith/setup-docker-builder@[0-9a-f]{40} *# v2\b'
+        with:  'docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3'
+      - regex: 'useblacksmith/build-push-action@[0-9a-f]{40} *# v2\b'
+        with:  'docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0'
+      - plain: "REIGN_TEST_WORKERS: 32\n"
+        with:  "REIGN_TEST_WORKERS: \"\"\n"
   - files:
       - ".github/workflows/tests.yml"
     replace:
@@ -786,6 +832,12 @@ post_replace:
         with:  "on:\n  pull_request:\n  push:\n    branches: [main]\n  workflow_dispatch:\n\n"
       - regex: "    if: (needs\\.detect\\.outputs\\.(?:python|installer) == 'true'\n    uses: \\./\\.github/workflows/(?:tests-os|installer-tests)\\.yml)"
         with:  "    if: github.event_name == 'workflow_dispatch' && \\1"
+      - regex: "    if: (needs\\.detect\\.outputs\\.python == 'true'[^\n]*)\n    uses: \\./\\.github/workflows/tests-os\\.yml"
+        with:  "    if: github.event_name == 'workflow_dispatch' && (\\1)\n    uses: ./.github/workflows/tests-os.yml"
+      # Reign ships Rook icons (rebrand/place_images.py), not scripts/generate-icons.mjs output
+      # from the nous-girl art, so upstream's freshness diff would always fail.
+      - plain: "    needs: detect\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
+        with:  "    needs: detect\n    if: false  # Reign ships Rook icons (rebrand/place_images.py)\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
   - files:
       - ".github/workflows/install-e2e.yml"
     replace:
@@ -830,24 +882,6 @@ post_replace:
         with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh"
       - plain: "https://hermes-agent.nousresearch.com/install.ps1"
         with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1"
-
-  # The repo is private: REIGN_GITHUB_TOKEN (a read-only fine-grained token) authenticates
-  # the installer's clone, and stays in origin's URL so `reign update` fetches keep working.
-  # An existing checkout gets the token applied to origin before its fetch.
-  - files:
-      - "scripts/install.sh"
-    replace:
-      - plain: "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\nREIGN_HOME="
-        with:  "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\n# It stays in origin's URL so later `reign update` fetches authenticate too.\nif [ -n \"${REIGN_GITHUB_TOKEN:-}\" ]; then\n    REPO_URL_HTTPS=\"https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/rook-ltd/reign.git\"\nfi\nREIGN_HOME="
-      - regex: "(?<=stall the installer.\n)            git remote set-branches origin \"\\$BRANCH\""
-        with:  "            [ -z \"${REIGN_GITHUB_TOKEN:-}\" ] || git remote set-url origin \"$REPO_URL_HTTPS\"\n            git remote set-branches origin \"$BRANCH\""
-  - files:
-      - "scripts/install.ps1"
-    replace:
-      - plain: "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n$PythonVersion"
-        with:  "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\r\n# It stays in origin's URL so later `reign update` fetches authenticate too.\r\nif ($env:REIGN_GITHUB_TOKEN) {\r\n    $RepoUrlHttps = \"https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/rook-ltd/reign.git\"\r\n}\r\n$PythonVersion"
-      - plain: "                }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
-        with:  "                }\r\n                if ($env:REIGN_GITHUB_TOKEN) { git -c windows.appendAtomically=false remote set-url origin $RepoUrlHttps }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
 
   # Public repo: issues and vulnerability reports come to Rook, not Nous (upstream's links
   # survive the nousresearch protect rules otherwise).
