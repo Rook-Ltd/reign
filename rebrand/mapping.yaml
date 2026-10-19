@@ -939,6 +939,11 @@ post_replace:
         with:  '"origin": "https://github.com/NousResearch/reign",'
       - plain: "'--repo', 'NousResearch/hermes-agent',"
         with:  "'--repo', 'rook-ltd/reign',"
+  - files:                # Reign gates tests-os on workflow_dispatch (ci.yaml rules), so the required-checks
+      - scripts/ci/required_results.py   # gate must not demand it on PR/push runs
+    replace:
+      - regex: '(\n    required = \{job for job, keys in _UPDATE_CONSUMER_LANES\.items\(\)\n                if any\(lanes\.get\(key\) in \("true", True\) for key in keys\)\}\n)(?!    if lanes\.get\("event_name"\))'
+        with:  '\1    if lanes.get("event_name") in ("pull_request", "push"):\n        required.discard("tests-os")  # Reign: tests-os runs only on a manual dispatch\n'
   - files:                # upstream slices len("HERMES_HOME=") == 12 by hand; REIGN_HOME= is 11
       - tests/conftest.py
     replace:

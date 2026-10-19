@@ -57,6 +57,8 @@ def evaluate_gate(
     lanes = (entries.get("detect") or {}).get("outputs") or {}
     required = {job for job, keys in _UPDATE_CONSUMER_LANES.items()
                 if any(lanes.get(key) in ("true", True) for key in keys)}
+    if lanes.get("event_name") in ("pull_request", "push"):
+        required.discard("tests-os")  # Reign: tests-os runs only on a manual dispatch
     if not entries:
         failed.append("<no-needs>")
     failed.extend(required - entries.keys())
