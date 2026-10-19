@@ -28,7 +28,7 @@ test.skipIf(process.platform === 'win32')('an installed launcher backend mints w
   // The normal Windows install resolves to kind 'command' (the installation launcher).
   const python = process.execPath
   const command = await launcher(`printf '%s' '${JSON.stringify([python, '-I', '-c', 'bootstrap'])}'`)
-  const root = path.join(dir, 'reign')
+  const root = path.join(dir, 'reign-agent')
   await fs.mkdir(root)
 
   await expect(ticketRuntimeFor({ command, kind: 'command', shell: false, root, env: { PYTHONPATH: '/scrubbed', B: '2' } }))

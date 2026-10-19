@@ -100,6 +100,10 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '\(\*WINDOWS_BIN_LAUNCHERS, "hermes-agent"\)'
   - '\{hermes,hermes-agent,hermes-acp\}'
   - '\b(?:extra|wrapper_dir|link_dir|out) / "hermes-agent"'   # launcher-dir test fixtures
+  - "path\\.join\\(dir, 'hermes-agent'\\)"   # desktop launcher-root test fixtures (a dir next to the `hermes` launcher)
+  # Bundled desktop variant must stay distinct from the full client ("Hermes Agent" -> "Reign" would collide)
+  - "display: 'Hermes Agent',"
+  - "\\['bundled', 'Hermes Agent', 'hermes',"
   # Upstream mobile app's WebSocket subprotocol names, accepted alongside ours (reign_cli/web_server_chat.py)
   - '"hermes-gateway-v1", "hermes-gateway-ticket\."'
   # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
@@ -850,6 +854,27 @@ post_replace:
         with:  '(out / "pool" / "r" / "reign_'
       - plain: '{"pool/h/reign_'
         with:  '{"pool/r/reign_'
+  - files:                # desktop launcher-root fixtures: a dir that must not collide with the `reign` launcher
+      - "apps/desktop/electron/*.test.ts"
+    replace:
+      - plain: "path.join(dir, 'hermes-agent')"
+        with:  "path.join(dir, 'reign-agent')"
+  - files:                # bundled variant keeps an OS identity distinct from the full "Reign" client
+      - "apps/desktop/product-identity.cjs"
+      - "apps/desktop/electron/product-identity.test.ts"
+    replace:
+      - plain: "display: 'Hermes Agent',"
+        with:  "display: 'Reign Agent',"
+      - plain: "['bundled', 'Hermes Agent', 'hermes',"
+        with:  "['bundled', 'Reign Agent', 'reign',"
+  - files:                # upstream's timeouts are too tight for 2-core GitHub-hosted runners
+      - "tests-js/bundle-smoke-metadata.test.mjs"
+      - "tests-js/update-ui.test.mjs"
+    replace:
+      - plain: "}, 15_000)"
+        with:  "}, 60_000)"
+      - regex: "\\}\\)\\n\\ntest\\.skipIf\\(process\\.platform === 'win32'\\)\\('historical venv install"
+        with:  "}, 30_000)\n\ntest.skipIf(process.platform === 'win32')('historical venv install"
   # The Nous DMG background is deleted above, so the DMG falls back to dmgbuild's plain window.
   - files:
       - "apps/desktop/electron-builder.config.cjs"

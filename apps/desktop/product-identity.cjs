@@ -16,7 +16,7 @@ const variants = {
     pascal: 'ReignLight'
   },
   bundled: {
-    display: 'Reign',
+    display: 'Reign Agent',
     kebab: 'reign-bundled',
     pascal: 'ReignBundled'
   }

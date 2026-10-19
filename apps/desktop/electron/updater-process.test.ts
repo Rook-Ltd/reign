@@ -485,7 +485,7 @@ test('observeUpdaterHandoff settles ok for children without an event interface',
 
 test.skipIf(process.platform === 'win32')('launcherInstallDirectory returns the root the launcher reports', async () => {
   const dir = await realpathMkdtemp('launcher-install-')
-  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign')).then(() => path.join(dir, 'reign')))
+  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign-agent')).then(() => path.join(dir, 'reign-agent')))
   const launcher = await writeLauncher(dir, `printf 'Reign v0.22.1\\nInstall directory: ${reported}\\n'`)
 
   assert.equal(launcherInstallDirectory(launcher), reported)
@@ -506,7 +506,7 @@ test.skipIf(process.platform === 'win32')('launcherInstallDirectory stays null w
 // names its root must not pay a fresh spawn on each resolve.
 test.skipIf(process.platform === 'win32')('launcherInstallRoot probes off the main thread, once for concurrent callers', async () => {
   const dir = await realpathMkdtemp('launcher-root-')
-  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign')).then(() => path.join(dir, 'reign')))
+  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign-agent')).then(() => path.join(dir, 'reign-agent')))
   const calls = path.join(dir, 'calls')
   const launcher = await writeLauncher(dir, `echo x >> ${calls}; sleep 0.4; printf 'Install directory: ${reported}\\n'`)
   let ticked = false
@@ -526,7 +526,7 @@ test.skipIf(process.platform === 'win32')('launcherInstallRoot probes off the ma
 // permanent miss would keep the override rootless until Desktop restarts.
 test.skipIf(process.platform === 'win32')('launcherInstallRoot caches a miss for a short window, then retries and keeps the root', async () => {
   const dir = await realpathMkdtemp('launcher-root-')
-  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign')).then(() => path.join(dir, 'reign')))
+  const reported = await fs.realpath(await fs.mkdir(path.join(dir, 'reign-agent')).then(() => path.join(dir, 'reign-agent')))
   const calls = path.join(dir, 'calls')
   const launcher = await writeLauncher(dir, `echo x >> ${calls}; printf 'Reign v0.22.1\\n'`)
   const count = async () => (await fs.readFile(calls, 'utf8')).trim().split('\n').length
