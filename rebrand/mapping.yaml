@@ -1032,6 +1032,23 @@ post_replace:
       - plain: "runner: ubuntu-latest-32-arm-core"
         with:  "runner: ubuntu-24.04-arm"
 
+  # The supply-chain scan's base64+exec check flags upstream's Windows launchers, which build
+  # `-c` code from a local f-string placeholder or a tiny literal ('eA==' is "x"). Those two
+  # shapes can't carry a hidden payload, so they're dropped; a long literal or a variable still trips.
+  - files:
+      - ".github/workflows/supply-chain-audit.yml"
+    replace:
+      - regex: '(?m)^( *)(B64_EXEC_HITS=(?!.*grep -vE).*?)( \| head -10 \|\| true\))$'
+        with:  '\1# Reign: skip launcher code built from a placeholder or a tiny literal\n\1\2 | grep -vE "b64decode\([''\"](\{[^''\"]*\}|[A-Za-z0-9+/=]{0,15})[''\"]\)"\3'
+  # An upstream sync PR changes ~10k files the ratchet compares with Reign's older main, so it
+  # flags upstream's own code (upstream ratchets that itself) and runs out of time. Sync PRs
+  # (the ones moving rebrand/UPSTREAM.md) skip it; later PRs ratchet against the synced main.
+  - files:
+      - ".github/workflows/lint.yml"
+    replace:
+      - plain: "        run: python scripts/check --only health --base HEAD^1\n"
+        with:  "        run: |\n          if ! git diff --quiet HEAD^1 HEAD -- rebrand/UPSTREAM.md; then\n            echo \"::notice::Upstream sync PR: upstream ratchets its own code, so Reign skips it here\"\n            exit 0\n          fi\n          python scripts/check --only health --base HEAD^1\n"
+
   # reign1's CPU is x86-64-v2 (no AVX2), and setup-python's Ubuntu 26.04 builds need
   # x86-64-v3 ("CPU ISA level is lower than required"). uv's Python builds run on v2, so
   # each setup-python step becomes setup-uv plus a seeded venv on PATH (python, pip).

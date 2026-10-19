@@ -204,7 +204,12 @@ jobs:
           command: python -m scripts.ci.python_packages "$(python -m scripts.code_health --print-pins)"
 
       - name: Ratchet the PR against the base branch tip
-        run: python scripts/check --only health --base HEAD^1
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- rebrand/UPSTREAM.md; then
+            echo "::notice::Upstream sync PR: upstream ratchets its own code, so Reign skips it here"
+            exit 0
+          fi
+          python scripts/check --only health --base HEAD^1
 
       - name: Check the checkout is clean
         # Last step of every job (tests/ci/test_clean_worktree_check.py): a test or CI step that
