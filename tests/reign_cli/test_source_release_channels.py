@@ -180,7 +180,7 @@ def test_source_check_honors_transient_channel_without_rewriting_record(releases
 
 
 def test_fork_origin_uses_its_own_published_release_not_the_official_pointer(releases):
-    url = "https://github.com/Fixture/hermes-agent.git"
+    url = "https://github.com/Fixture/reign.git"
     git(releases.root, "config", "remote.origin.url", url)
     git(releases.root, "config", f"url.{releases.origin}.insteadOf", url)
     tag = releases.tags["stable"]
@@ -208,7 +208,7 @@ def test_zip_fallback_keeps_selected_repository_and_commit(releases, monkeypatch
         update_cmd_zip._update_via_zip(
             SimpleNamespace(branch=None), target_sha=releases.commits[2],
             target_repository="Fixture/reign", completion_request={})
-    assert seen == [(f"https://github.com/Fixture/hermes-agent/archive/{releases.commits[2]}.zip",
+    assert seen == [(f"https://github.com/Fixture/reign/archive/{releases.commits[2]}.zip",
                      releases.commits[2])]
 
 
@@ -254,7 +254,7 @@ def test_missing_pointers_fall_back_only_to_published_releases(releases, channel
 
 
 def _track_official_origin(releases):
-    official = "https://github.com/rook-ltd/reign.git"
+    official = "https://github.com/NousResearch/hermes-agent.git"
     git(releases.root, "remote", "set-url", "origin", official)
     git(releases.root, "config", f"url.{releases.origin.as_uri()}.insteadOf", official)
 

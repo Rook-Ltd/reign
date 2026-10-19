@@ -42,7 +42,7 @@ _PROBE = textwrap.dedent("""
             out["after_bind"] = sorted(m for m in ("reign_cli.web_server", "fastapi") if m in sys.modules)
             url = handle.api_origin.replace("http:", "ws:") + "/api/ws"
             def protocols():
-                return ["hermes-gateway-v1", "hermes-gateway-ticket." + tickets.mint(
+                return ["reign-gateway-v1", "reign-gateway-ticket." + tickets.mint(
                     profile_id=home, subject="human", purpose="interactive")]
             async with connect(url, subprotocols=protocols()) as ws:
                 out["native"] = json.loads(await ws.recv())

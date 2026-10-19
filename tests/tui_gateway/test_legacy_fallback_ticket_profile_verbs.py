@@ -45,6 +45,7 @@ def test_secondary_ticket_runs_connectors_and_billing_in_its_own_profile(homes, 
         seen.append((label, Path(str(get_reign_home())).resolve()))
 
     monkeypatch.setattr(tools.connectors, 'connectors_available', lambda *a, **k: True)
+    monkeypatch.setattr(tools.connectors, 'ensure_guest_identity', lambda: None)
     monkeypatch.setattr(tools.connectors.managed, 'managed_client',
                         lambda: types.SimpleNamespace(list_connectors=lambda: rec('list') or []))
     monkeypatch.setattr(reign_cli.nous_billing, 'post_charge', lambda **k: rec('charge') or {'chargeId': 'c'})

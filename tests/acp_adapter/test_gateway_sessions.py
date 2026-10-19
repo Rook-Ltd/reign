@@ -19,7 +19,7 @@ async def viewer(daemon):
     grant = control(home, "session-ticket", {"profile_id": str(home),
                     "instance_id": descriptor["instance_id"], "purpose": "interactive"})
     url = descriptor["api_origin"].replace("http:", "ws:") + "/api/ws"
-    async with connect(url, subprotocols=["hermes-gateway-v1", "hermes-gateway-ticket." + grant["ticket"]]) as ws:
+    async with connect(url, subprotocols=["reign-gateway-v1", "reign-gateway-ticket." + grant["ticket"]]) as ws:
         async with GatewayClient(ws) as client:
             yield client
 

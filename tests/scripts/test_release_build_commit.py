@@ -134,7 +134,7 @@ def test_commit_build_dispatch_is_repository_independent(fixture_repo):
     assert result.returncode == 0, result.stderr
     dispatches = [call for call in calls if call[1:3] == ['workflow', 'run']]
     assert dispatches == [['gh', 'workflow', 'run', 'desktop-bundled-release.yml',
-                           '--ref', 'main', '--repo', 'NousResearch/hermes-agent',
+                           '--ref', 'main', '--repo', 'rook-ltd/reign',
                            '-f', f'build_commit={tip}', '-f', 'tag=', '-f', 'upload_release=false',
                            '-f', 'termux_upgrade_from_tag=']]
 

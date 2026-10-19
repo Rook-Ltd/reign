@@ -484,7 +484,7 @@ def test_embedded_revision_keeps_https_ref_advertisement_recovery(installation, 
     monkeypatch.setattr(subprocess, "run", advertise)
     assert check_for_updates(home=home)["behind"] == 0
     assert len(probes) == 1
-    assert "https://github.com/rook-ltd/reign.git" in probes[0][0]
+    assert "https://github.com/NousResearch/hermes-agent.git" in probes[0][0]
     assert probes[0][1]["stdin"] == subprocess.DEVNULL
     assert probes[0][1]["env"]["GIT_TERMINAL_PROMPT"] == "0"
 
@@ -514,7 +514,7 @@ def test_official_ssh_healing_uses_public_https_without_retargeting_forks(instal
     from reign_cli.update_channel import set_install_channel
     root, linked, home, _base, head, responses, _requests, git = installation
     git("remote", "set-url", "origin", f"git@github.com:{repository}.git")
-    git("config", f"url.{root.as_uri()}.insteadOf", "https://github.com/rook-ltd/reign.git")
+    git("config", f"url.{root.as_uri()}.insteadOf", "https://github.com/NousResearch/hermes-agent.git")
     # The branch heal is a main-channel concern; an official checkout's default is stable.
     set_install_channel("main", linked)
     monkeypatch.setenv("GIT_SSH_COMMAND", "false")

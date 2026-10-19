@@ -59,6 +59,7 @@ SID = "op-rpc-session"
 
 @pytest.fixture
 def owned(monkeypatch):
+    monkeypatch.setattr("tools.connectors.gateway.config.ensure_guest_identity", lambda: None)
     live.reset_for_tests()
     with ExitStack() as stack:
         owner, stranger = PipeClient(stack), PipeClient(stack)

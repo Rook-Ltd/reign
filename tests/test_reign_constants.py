@@ -649,7 +649,7 @@ class TestProjectVenvDirOutOfTree:
         from pm.environments import site_packages
         reign_constants.venv_python_path(venv).parent.mkdir(parents=True)
         reign_constants.venv_python_path(venv).write_text("", encoding="utf-8")
-        dist_info = site_packages(venv) / "reign_agent-0.0.0.dist-info"
+        dist_info = site_packages(venv) / "reign-0.0.0.dist-info"
         dist_info.mkdir(parents=True)
         (dist_info / "METADATA").write_text("Name: reign\nVersion: 0.0.0\n", encoding="utf-8")
         (dist_info / "direct_url.json").write_text(

@@ -15,6 +15,7 @@ from tui_gateway import server
 
 @pytest.fixture(autouse=True)
 def _gate(monkeypatch):
+    monkeypatch.setattr("tools.connectors.gateway.config.ensure_guest_identity", lambda: None)
     live.reset_for_tests()
     monkeypatch.setattr("tools.connectors.connectors_available", lambda: True)
     yield

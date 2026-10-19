@@ -98,7 +98,7 @@ async def test_bundled_provider_issuer_subject_owns_durable_receipts(tmp_path, m
         return result
 
     oauth = oidc('user-a')
-    basic = BasicAuthProvider(username='user-a', password_hash=hash_password('fixture-password'), secret=b'fixture-secret-32-characters-long')
+    basic = BasicAuthProvider(users={'user-a': hash_password('fixture-password')}, secret=b'fixture-secret-32-characters-long')
     password = basic.complete_password_login(username='user-a', password='fixture-password')
     owner, other, same_sub = await actor(oauth), await actor(oidc('user-b')), await actor(password)
     params = {'request_id': 'same-request', 'source': 'gui', 'cwd': str(tmp_path), 'model': 'fixture', 'toolsets': []}

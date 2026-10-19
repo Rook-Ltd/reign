@@ -298,7 +298,7 @@ async def test_restart_wait_cuts_sockets_opened_before_it(tmp_path, monkeypatch,
     scope = {"type": "websocket", "path": "/api/ws", "scheme": "ws", "query_string": b"",
              "client": ("127.0.0.1", 1234), "server": ("127.0.0.1", 9999),
              "headers": [(b"sec-websocket-protocol", ("reign-gateway-v1, reign-gateway-ticket." + ticket).encode())],
-             "subprotocols": ["hermes-gateway-v1", "hermes-gateway-ticket." + ticket]}
+             "subprotocols": ["reign-gateway-v1", "reign-gateway-ticket." + ticket]}
     await GatewayRuntimeAPI(fallback, runner, web.app)(scope, receive, send)
     if opened_in_wait:
         assert received == [("text", frame), ("disconnect", 1000)], received

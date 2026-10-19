@@ -248,6 +248,7 @@ post_replace:
       - "tests/reign_cli/test_lazy_refresh_venv_repair.py"
       - "tests/reign_cli/test_cmd_update.py"
       - "tests-js/update-ui.test.mjs"  # fixture origin must be the URL source-branch-probe rewrites
+      - "tests/installation/test_installer_common.py"  # fixture origin must be the URL installer-common.sh redirects
     replace:
       - plain: "https://github.com/NousResearch/hermes-agent.git"
         with:  "https://github.com/rook-ltd/reign.git"
@@ -854,6 +855,89 @@ post_replace:
         with:  '(out / "pool" / "r" / "reign_'
       - plain: '{"pool/h/reign_'
         with:  '{"pool/r/reign_'
+  - files:                # OFFICIAL_REPOSITORY stays NousResearch/hermes-agent (Reign checkouts are a fork,
+      - "tests/reign_cli/test_source_check.py"   # so they follow main; Rook publishes no releases). The URL rewrite above
+    replace:                                     # must not retarget these two official-repo fixtures.
+      - plain: '"https://github.com/rook-ltd/reign.git" in probes'
+        with:  '"https://github.com/NousResearch/hermes-agent.git" in probes'
+      - plain: '.insteadOf", "https://github.com/rook-ltd/reign.git")'
+        with:  '.insteadOf", "https://github.com/NousResearch/hermes-agent.git")'
+  - files:                # release fixtures: URL spans are shielded, so their bundle names lag the
+      - "tests/scripts/test_release_r2.py"   # renamed expectations; SigV4 vectors sign the upstream paths
+    replace:
+      - plain: "/HermesBundled-"
+        with:  "/ReignBundled-"
+      - plain: "('PUT', '/reign-releases/ReignBundled-0.28.0-win-x64.msix'"
+        with:  "('PUT', '/hermes-releases/HermesBundled-0.28.0-win-x64.msix'"
+      - plain: "('GET', '/reign-releases', {'list-type': '2', 'prefix': 'ReignBundled-0.28.0-'"
+        with:  "('GET', '/hermes-releases', {'list-type': '2', 'prefix': 'HermesBundled-0.28.0-'"
+      - plain: "('DELETE', '/reign-releases/ReignBundled-0.28.0+canary"
+        with:  "('DELETE', '/hermes-releases/HermesBundled-0.28.0+canary"
+      - plain: "assert encoded == 'list-type=2&max-keys=1000&prefix=ReignBundled-0.28.0-'"
+        with:  "assert encoded == 'list-type=2&max-keys=1000&prefix=HermesBundled-0.28.0-'"
+  - files:
+      - "tests/scripts/test_release_entrypoint.py"
+    replace:
+      - plain: "github.com/example/hermes-agent/"
+        with:  "github.com/example/reign/"
+  - files:                # out-of-tree venv fixture: the distribution is `reign`, not `reign-agent`
+      - "tests/test_reign_constants.py"
+    replace:
+      - plain: '"reign_agent-0.0.0.dist-info"'
+        with:  '"reign-0.0.0.dist-info"'
+  - files:                # placeholder-version fixture names the distribution, which is `reign`
+      - "tests/reign_cli/test_security_audit.py"
+    replace:
+      - plain: '"reign_agent"'
+        with:  '"reign"'
+  - files:                # Reign's default skin is "rook", so "default" is off-default here
+      - "tests/reign_cli/test_shared_metrics_desktop.py"
+    replace:
+      - plain: 'skin: default'
+        with:  'skin: rook'
+  - files:                # upstream mints a real Nous guest here; Reign's portal refuses it, so stub it
+      - "tests/tui_gateway/test_legacy_fallback_ticket_profile_verbs.py"
+    replace:
+      - regex: "(    monkeypatch\\.setattr\\(tools\\.connectors, 'connectors_available', lambda \\*a, \\*\\*k: True\\)\\n)(?!    monkeypatch\\.setattr\\(tools\\.connectors, 'ensure_guest_identity')"
+        with:  "\\1    monkeypatch.setattr(tools.connectors, 'ensure_guest_identity', lambda: None)\\n"
+  - files:                # the upstream-subprotocol shield above also catches test clients; they speak ours
+      - "tests/**/*.py"
+    replace:
+      - plain: '["hermes-gateway-v1", "hermes-gateway-ticket."'
+        with:  '["reign-gateway-v1", "reign-gateway-ticket."'
+  - files:                # these suites reach a real Nous guest mint upstream; Reign's mint is refused, so stub it
+      - "tests/tui_gateway/test_connector_accounts_rpc.py"
+      - "tests/tui_gateway/test_connector_operation_rpc.py"
+    replace:
+      - regex: '(\ndef (?:_gate|owned)\(monkeypatch\):\n)(?!    monkeypatch\.setattr\("tools\.connectors\.gateway\.config\.ensure_guest_identity")'
+        with:  '\1    monkeypatch.setattr("tools.connectors.gateway.config.ensure_guest_identity", lambda: None)\n'
+  - files:                # Reign's basic dashboard auth takes a users map (multi-user), not one username
+      - "tests/gateway/test_authenticated_session_identity.py"
+    replace:
+      - plain: "BasicAuthProvider(username='user-a', password_hash=hash_password('fixture-password'), secret="
+        with:  "BasicAuthProvider(users={'user-a': hash_password('fixture-password')}, secret="
+  - files:                # channel fixtures model the official repo, which stays NousResearch/hermes-agent
+      - "tests/reign_cli/test_source_release_channels.py"
+    replace:
+      - plain: 'official = "https://github.com/rook-ltd/reign.git"'
+        with:  'official = "https://github.com/NousResearch/hermes-agent.git"'
+      - plain: "Fixture/hermes-agent"
+        with:  "Fixture/reign"
+  - files:
+      - "tests/reign_cli/test_source_channel_integration.py"
+    replace:
+      - plain: 'f"https://github.com/rook-ltd/reign/archive/'
+        with:  'f"https://github.com/NousResearch/hermes-agent/archive/'
+  - files:                # release scripts read the repo from origin, which the URL rewrite made rook-ltd/reign
+      - "tests/scripts/test_release_tags.py"
+      - "tests/scripts/test_release_build_commit.py"
+    replace:
+      - plain: 'remote_github_repo("origin") == "NousResearch/hermes-agent"'
+        with:  'remote_github_repo("origin") == "NousResearch/reign"'
+      - plain: '"origin": "https://github.com/rook-ltd/reign",'   # its pushInsteadOf case rewrites github.com/NousResearch/
+        with:  '"origin": "https://github.com/NousResearch/reign",'
+      - plain: "'--repo', 'NousResearch/hermes-agent',"
+        with:  "'--repo', 'rook-ltd/reign',"
   - files:                # desktop launcher-root fixtures: a dir that must not collide with the `reign` launcher
       - "apps/desktop/electron/*.test.ts"
     replace:
