@@ -1094,7 +1094,7 @@ def _processes_with_reign_home_under(roots) -> list[int]:
                 environ = handle.read().split(b"\0")
         except OSError:
             continue
-        home = next((item[12:] for item in environ if item.startswith(b"REIGN_HOME=")), None)
+        home = next((item[len(b"REIGN_HOME="):] for item in environ if item.startswith(b"REIGN_HOME=")), None)
         if not home:
             continue
         try:

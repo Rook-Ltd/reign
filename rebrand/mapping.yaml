@@ -43,6 +43,7 @@ delete:
   - hermes_agent.egg-info           # stale build metadata tracked upstream
   - MagicMock                       # test pollution if it ever lands upstream
   - apps/desktop/packaging/nous-dmg-2b.tiff  # Nous DMG art, 1.2 MB (over the blob limit); macOS DMG uses the plain background
+  - tests/scripts/test_install_sh_stable_default.py  # Reign has no releases: installs follow main, never a stable tag
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
   # emails first, so the domain rule below cannot shield half of an address. These stay
@@ -867,11 +868,11 @@ post_replace:
     replace:
       - plain: "/HermesBundled-"
         with:  "/ReignBundled-"
-      - plain: "('PUT', '/reign-releases/ReignBundled-0.28.0-win-x64.msix'"
+      - regex: "\\('PUT', '/(?:reign|hermes)-releases/ReignBundled-0\\.28\\.0-win-x64\\.msix'"
         with:  "('PUT', '/hermes-releases/HermesBundled-0.28.0-win-x64.msix'"
-      - plain: "('GET', '/reign-releases', {'list-type': '2', 'prefix': 'ReignBundled-0.28.0-'"
+      - regex: "\\('GET', '/(?:reign|hermes)-releases', \\{'list-type': '2', 'prefix': '(?:Reign|Hermes)Bundled-0\\.28\\.0-'"
         with:  "('GET', '/hermes-releases', {'list-type': '2', 'prefix': 'HermesBundled-0.28.0-'"
-      - plain: "('DELETE', '/reign-releases/ReignBundled-0.28.0+canary"
+      - regex: "\\('DELETE', '/(?:reign|hermes)-releases/ReignBundled-0\\.28\\.0\\+canary"
         with:  "('DELETE', '/hermes-releases/HermesBundled-0.28.0+canary"
       - plain: "assert encoded == 'list-type=2&max-keys=1000&prefix=ReignBundled-0.28.0-'"
         with:  "assert encoded == 'list-type=2&max-keys=1000&prefix=HermesBundled-0.28.0-'"
@@ -938,6 +939,23 @@ post_replace:
         with:  '"origin": "https://github.com/NousResearch/reign",'
       - plain: "'--repo', 'NousResearch/hermes-agent',"
         with:  "'--repo', 'rook-ltd/reign',"
+  - files:                # upstream slices len("HERMES_HOME=") == 12 by hand; REIGN_HOME= is 11
+      - tests/conftest.py
+    replace:
+      - plain: 'item[12:] for item in environ if item.startswith(b"REIGN_HOME=")'
+        with:  'item[len(b"REIGN_HOME="):] for item in environ if item.startswith(b"REIGN_HOME=")'
+  - files:                # Reign gates tests-os on github.event_name == 'workflow_dispatch' (ci.yaml rules
+      - tests/ci/test_update_ci_routing.py   # above), so the replayed jobs see the event detect replays
+    replace:
+      - plain: '"github": {"event_name": "pull_request", "ref_type": "branch"},'
+        with:  '"github": {"event_name": (detect or {}).get("event_name", "pull_request"), "ref_type": "branch"},'
+      - plain: 'assert "tests" in run and "tests-os" in run  # the unit lanes still run'
+        with:  'assert "tests" in run  # the Linux unit lanes still run; Reign dispatches tests-os by hand'
+  - files:                # Rook's desktop-windows-installer.yml publishes prereleases from desktop-v* tags
+      - tests/ci/test_workflow_job_graph.py
+    replace:
+      - regex: '(\n        if filename == "live-providers\.yml" and push == \{"tags": \["v\*"\]\}:\n            continue\n)(?!        if filename == "desktop-windows-installer\.yml")'
+        with:  '\1        if filename == "desktop-windows-installer.yml" and push == {"tags": ["desktop-v*"]}:\n            continue\n'
   - files:                # desktop launcher-root fixtures: a dir that must not collide with the `reign` launcher
       - "apps/desktop/electron/*.test.ts"
     replace:
