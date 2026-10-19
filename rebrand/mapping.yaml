@@ -42,6 +42,7 @@ delete:
   - tools/wakewords                 # decision D2: hey_hermes models dropped
   - hermes_agent.egg-info           # stale build metadata tracked upstream
   - MagicMock                       # test pollution if it ever lands upstream
+  - apps/desktop/packaging/nous-dmg-2b.tiff  # Nous DMG art, 1.2 MB (over the blob limit); macOS DMG uses the plain background
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
   # emails first, so the domain rule below cannot shield half of an address. These stay
@@ -238,6 +239,7 @@ post_replace:
       - "tests/reign_cli/test_banner_git_state.py"
       - "tests/reign_cli/test_lazy_refresh_venv_repair.py"
       - "tests/reign_cli/test_cmd_update.py"
+      - "tests-js/update-ui.test.mjs"  # fixture origin must be the URL source-branch-probe rewrites
     replace:
       - plain: "https://github.com/NousResearch/hermes-agent.git"
         with:  "https://github.com/rook-ltd/reign.git"
@@ -824,6 +826,24 @@ post_replace:
         with:  "assert.equal(repositoryInfo.project, 'hermes-agent')"
       - plain: "[{ owner: 'NousResearch', repo: 'reign', provider: 'github' }]"
         with:  "[{ owner: 'NousResearch', repo: 'hermes-agent', provider: 'github' }]"
+  # Debian pools shard by the package name's first letter; the package is `reign`, so `h/` -> `r/`.
+  - files:
+      - "tests/scripts/test_stage_apt_repo.py"
+    replace:
+      - plain: '"pool" / "rc.2-v0.21.5" / "h" /'
+        with:  '"pool" / "rc.2-v0.21.5" / "r" /'
+      - plain: '"pool/rc.2-v0.21.5/h/reign_'
+        with:  '"pool/rc.2-v0.21.5/r/reign_'
+      - plain: '(out / "pool" / "h" / "reign_'
+        with:  '(out / "pool" / "r" / "reign_'
+      - plain: '{"pool/h/reign_'
+        with:  '{"pool/r/reign_'
+  # The Nous DMG background is deleted above, so the DMG falls back to dmgbuild's plain window.
+  - files:
+      - "apps/desktop/electron-builder.config.cjs"
+    replace:
+      - plain: "    // A prebuilt .tiff on purpose, not a PNG plus a @2x sibling: dmg-builder's\n    // PNG path runs `tiffutil -cathidpicheck`, which on macOS 26 rewrites both\n    // frames to 72 dpi and silently drops the 2x representation. A .tiff is\n    // handed to dmgbuild untouched (dmg-builder/dist/dmgUtil.js), and living\n    // outside assets/ keeps it out of the app bundle via the `files` whitelist.\n    background: 'packaging/nous-dmg-2b.tiff',\n"
+        with:  ""
   # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
   # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
   - files:
