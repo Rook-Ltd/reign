@@ -66,7 +66,7 @@ custom_providers:
     # resolve_persist_behavior() reads the profile config through get_reign_home(); without this
     # the sandbox home looks like a fresh install and the --provider switch persists globally.
     monkeypatch.setattr("reign_cli.config.get_reign_home", lambda: reign_home)
-    monkeypatch.setattr("agent.models_dev.fetch_models_dev", lambda: {})
+    monkeypatch.setattr("agent.models_dev.fetch_models_dev", dict)
     monkeypatch.setattr(
         "reign_cli.model_switch.switch_model",
         lambda **kw: ModelSwitchResult(

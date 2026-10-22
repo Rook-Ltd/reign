@@ -14,13 +14,24 @@ Driver contract (every ``_drive_*.py`` module follows it)::
 * stop the entrypoint through its NORMAL shutdown path (exit, stdin EOF,
   SIGTERM, RPC) before returning; never SIGKILL except as a last resort after a
   bounded graceful wait (and then report it via ``graceful_exit=False``).
+
+``reign -z`` and ``reign chat -q`` are thin clients of the unified gateway
+runtime: the turn runs in the profile's ``gateway run`` daemon (spawned on first
+connect), which outlives the client by design. Their normal shutdown is therefore
+client exit + ``reign gateway stop`` (``stop_profile_gateway``).
 """
 
 from __future__ import annotations
 
 import subprocess
 
-from tests.e2e.core.parity._helpers import TURN_TIMEOUT, DriveResult, ParityHome, reign_argv
+from tests.e2e.core.parity._helpers import (
+    TURN_TIMEOUT,
+    DriveResult,
+    ParityHome,
+    reign_argv,
+    stop_profile_gateway,
+)
 from tests.fakes.fake_llm_provider import FakeLLMServer
 
 
@@ -28,16 +39,26 @@ def _run_cli(ph: ParityHome, *args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
         reign_argv(*args), cwd=ph.project, env=ph.env(), capture_output=True, text=True,
         timeout=TURN_TIMEOUT, stdin=subprocess.DEVNULL,
+        check=False,
+    )
+
+
+def _client_turn(ph: ParityHome, label: str, *args: str) -> DriveResult:
+    proc = _run_cli(ph, *args)
+    try:
+        assert proc.returncode == 0, f"{label} exited {proc.returncode}: {proc.stderr[-2000:]}"
+    finally:
+        # The daemon is the surface's process; a failed client still leaves it to stop.
+        stopped = stop_profile_gateway(ph)
+    return DriveResult(
+        final_text=proc.stdout.strip(), toolset="reign-cli", graceful_exit=stopped,
+        extra={"exit_code": proc.returncode, "stderr_tail": proc.stderr[-2000:], "gateway_stopped": stopped},
     )
 
 
 def drive_oneshot(ph: ParityHome, srv: FakeLLMServer, prompt: str) -> DriveResult:
-    proc = _run_cli(ph, "-z", prompt)
-    assert proc.returncode == 0, f"reign -z exited {proc.returncode}: {proc.stderr[-2000:]}"
-    return DriveResult(final_text=proc.stdout.strip(), toolset="reign-cli")
+    return _client_turn(ph, "reign -z", "-z", prompt)
 
 
 def drive_chat_q(ph: ParityHome, srv: FakeLLMServer, prompt: str) -> DriveResult:
-    proc = _run_cli(ph, "chat", "-q", prompt, "-Q")
-    assert proc.returncode == 0, f"reign chat -q exited {proc.returncode}: {proc.stderr[-2000:]}"
-    return DriveResult(final_text=proc.stdout.strip(), toolset="reign-cli")
+    return _client_turn(ph, "reign chat -q", "chat", "-q", prompt, "-Q")

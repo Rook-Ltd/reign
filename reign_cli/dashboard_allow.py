@@ -15,7 +15,7 @@ _RESTART_HINT = "  Restart the dashboard (or `reign serve` service) to apply."
 
 def _normalize(entry: str) -> str:
     entry = entry.strip().lower()
-    local, at, domain = entry.rpartition("@")
+    _local, at, domain = entry.rpartition("@")
     if not at or not domain or "." not in domain:
         sys.exit(f"  ✗ {entry!r} is not an email address or @domain.")
     return entry

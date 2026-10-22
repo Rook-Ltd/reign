@@ -7,8 +7,8 @@ import pytest
 def _write_config(tmp_path, config: dict) -> None:
     reign_home = tmp_path / "reign"
     reign_home.mkdir(parents=True, exist_ok=True)
-    import yaml
-    (reign_home / "config.yaml").write_text(yaml.dump(config))
+    import reign_yaml as yaml
+    (reign_home / "config.yaml").write_text(yaml.safe_dump(config))
 
 
 def _write_auth_store(tmp_path, payload: dict) -> None:

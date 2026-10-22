@@ -19,7 +19,12 @@ def _reset_headed_cache():
 
 
 @pytest.fixture(autouse=True)
-def _clean_headed_cache():
+def _clean_headed_cache(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setenv("REIGN_HOME", str(tmp_path / ".reign"))
+    monkeypatch.setenv("REIGN_RUNTIME_DIR", str(tmp_path / "tools"))
     _reset_headed_cache()
     yield
     _reset_headed_cache()

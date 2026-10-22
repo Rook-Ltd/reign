@@ -11,7 +11,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 
 class TestConnectionsToolsetMigration:

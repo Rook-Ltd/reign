@@ -8,7 +8,7 @@ from __future__ import annotations
 import sys
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli import auth as auth_mod
 from reign_cli.model_switch import switch_model

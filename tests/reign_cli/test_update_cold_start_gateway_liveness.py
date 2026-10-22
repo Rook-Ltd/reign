@@ -15,7 +15,7 @@ import pytest
 from reign_cli import gateway as reign_gateway
 from reign_cli import gateway_windows
 from reign_cli import main as cli_main
-import reign_cli.main_install_repair as main_install_repair
+from reign_cli import main_install_repair
 from reign_cli import update_cmd
 
 

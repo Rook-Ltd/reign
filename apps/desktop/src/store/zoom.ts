@@ -10,15 +10,24 @@
 
 import { atom } from 'nanostores'
 
-// Mirror DEFAULT_ZOOM_LEVEL (90%) so Appearance doesn't flash 100% before
-// the main-process zoom.get() resolves. Keep in sync with electron/zoom.ts.
-export const $zoomPercent = atom<number>(90)
+export const $zoomPercent = atom<number>(100)
 
 export function setZoomPercent(percent: number): void {
   window.reignDesktop?.zoom?.setPercent(percent)
 }
 
 if (typeof window !== 'undefined' && window.reignDesktop?.zoom) {
-  void window.reignDesktop.zoom.get().then(({ percent }) => $zoomPercent.set(percent))
-  window.reignDesktop.zoom.onChanged(({ percent }) => $zoomPercent.set(percent))
+  const zoom = window.reignDesktop.zoom
+  let receivedZoomChange = false
+
+  zoom.onChanged(({ percent }) => {
+    receivedZoomChange = true
+    $zoomPercent.set(percent)
+  })
+
+  void zoom.get().then(({ percent }) => {
+    if (!receivedZoomChange) {
+      $zoomPercent.set(percent)
+    }
+  })
 }

@@ -5,6 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 from cli import ReignCLI
+from agent.i18n import t
 
 
 def _make_cli():
@@ -72,7 +73,7 @@ def test_show_session_status_prints_gateway_style_summary():
         cli_obj._show_session_status()
 
     printed = "\n".join(str(call.args[0]) for call in cli_obj.console.print.call_args_list)
-    assert "Reign CLI Status" in printed
+    assert t("cli.session.status_title") in printed
     assert "Session ID: session-123" in printed
     assert "Path: ~/.reign" in printed
     assert "Title: My titled session" in printed

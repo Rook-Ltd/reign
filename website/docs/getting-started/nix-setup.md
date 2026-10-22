@@ -29,6 +29,27 @@ The `curl | bash` installer manages Python, Node, and dependencies itself. The N
 **For NixOS module users**, the entire lifecycle is different: configuration lives in `configuration.nix`, secrets go through sops-nix/agenix, the service is a systemd unit, and CLI config commands are blocked. You manage reign the same way you manage any other NixOS service.
 :::
 
+## Runtime pins
+
+PM's tool lock is also a Nix build input. `nix/npm-pinned.nix` reads the npm
+pin, and `nix/pm-packages.nix` exposes matching archives as `pm-NAME` derivations:
+
+```bash
+nix build .#pm-ripgrep
+```
+
+These outputs unpack the pinned archives. They are not the complete Reign
+wrapper or a guarantee that each archive runs without platform integration.
+The application still uses the uv2nix environment and Nix wrapper.
+
+`nix/pythonLock.nix` reads Python's major/minor from `pm/lock.json`.
+The uv2nix environment, package overrides, plugin packages, and developer shell
+use that interpreter family. If the pinned nixpkgs lacks that family, evaluation
+stops instead of selecting a different Python.
+
+Native Nix evaluation and builds remain CI gates. Update through Nix. Do not
+repair a Nix store path with pip.
+
 ## Prerequisites
 
 - **Nix with flakes enabled** — [Determinate Nix](https://install.determinate.systems) recommended (enables flakes by default)
@@ -656,7 +677,7 @@ macOS has no equivalent option. A `launchd` agent with `RunAtLoad` starts at log
 
 ### Running the Desktop / Dashboard Backend
 
-`gateway.enable` runs the messaging gateway for Telegram, Discord, Slack and the other platforms. Reign Desktop and the web dashboard connect to a *different* process, which is `reign serve` or `reign dashboard`. `backend.mode` runs that process with the gateway:
+`gateway.enable` runs the messaging gateway for Telegram, Discord, Slack and the other platforms. A Reign Desktop **remote** connection and the web dashboard connect to a *different* process, which is `reign serve` or `reign dashboard`. (A Desktop running on the same host attaches to the gateway itself via `reign gateway ensure`.) `backend.mode` runs that process with the gateway:
 
 ```nix
 {
@@ -779,7 +800,7 @@ For pip-packaged plugins that register via `[project.entry-points."reign_agent.p
 
 ```nix
 services.reign.extraPythonPackages = [
-  (pkgs.python312Packages.buildPythonPackage {
+  (config.services.reign.package.python.pkgs.buildPythonPackage {
     pname = "rtk-reign";
     version = "1.0.0";
     src = pkgs.fetchFromGitHub {
@@ -789,7 +810,7 @@ services.reign.extraPythonPackages = [
       hash = "sha256-...";
     };
     format = "pyproject";
-    build-system = [ pkgs.python312Packages.setuptools ];
+    build-system = [ config.services.reign.package.python.pkgs.setuptools ];
   })
 ];
 ```
@@ -805,15 +826,9 @@ For optional extras declared in reign's `pyproject.toml`, use `extraDependencyGr
 services.reign.extraDependencyGroups = [ "messaging" ];
 ```
 
-```nix
-# Enable a memory provider
-services.reign = {
-  extraDependencyGroups = [ "honcho" ];
-  settings.memory.provider = "honcho";
-};
-```
-
-This is resolved by uv alongside core dependencies — no PYTHONPATH patching, no collision risk. Available groups:
+These groups join the core dependency resolution at build time. Conflicting
+requirements can still fail that resolution. The table lists common groups;
+`pyproject.toml` is authoritative for the complete list and platform markers.
 
 | Group | What it enables |
 |-------|-----------------|
@@ -827,7 +842,6 @@ This is resolved by uv alongside core dependencies — no PYTHONPATH patching, n
 | `anthropic` | Native Anthropic SDK (not needed via OpenRouter) |
 | `bedrock` | AWS Bedrock (boto3) |
 | `azure-identity` | Azure Entra ID auth |
-| `honcho` | Honcho memory provider |
 | `modal` | Modal terminal backend |
 | `daytona` | Daytona terminal backend |
 | `exa` | Exa web search |
@@ -854,7 +868,7 @@ A directory plugin with third-party Python dependencies needs both options:
 ```nix
 services.reign = {
   extraPlugins = [ my-plugin-src ];          # plugin source
-  extraPythonPackages = [ pkgs.python312Packages.redis ];  # its Python dep
+  extraPythonPackages = [ config.services.reign.package.python.pkgs.redis ];  # its Python dep
   extraPackages = [ pkgs.redis ];            # system binary it needs
 };
 ```
@@ -870,7 +884,7 @@ External flakes can override the package directly:
     nixpkgs.overlays = [ reign.overlays.default ];
     # Then:
     #   pkgs.reign.override { extraPythonPackages = [...]; }
-    #   pkgs.reign.override { extraDependencyGroups = [ "honcho" ]; }
+    #   pkgs.reign.override { extraDependencyGroups = [ "voice" ]; }
   };
 }
 ```
@@ -896,17 +910,15 @@ A build-time collision check prevents plugin packages from shadowing core reign 
 
 ### Dev Shell
 
-The flake provides a development shell with Python 3.12, uv, Node.js, and all runtime tools:
+The flake provides an editable Python environment with the lock-derived interpreter
+and the `dev` dependency group. `REIGN_PYTHON` points to its interpreter. It does not install
+Python dependencies into a repository-local `.venv`. The shell also provides
+Node.js and runtime tools. Its npm hook refreshes JS workspaces when their inputs change.
 
 ```bash
 cd reign
 nix develop
-
-# Shell provides:
-#   - Python 3.12 + uv (deps installed into .venv on first entry)
-#   - Node.js 26, ripgrep, git, openssh, ffmpeg on PATH
-#   - Stamp-file optimization: re-entry is near-instant if deps haven't changed
-
+"$REIGN_PYTHON" -c "import sys; print(sys.executable); print(sys.version)"
 reign setup
 reign chat
 ```
@@ -918,7 +930,7 @@ The included `.envrc` activates the dev shell automatically:
 ```bash
 cd reign
 direnv allow    # one-time
-# Subsequent entries are near-instant (stamp file skips dep install)
+# Nix reuses its built Python environment; the npm hook checks JS inputs.
 ```
 
 ### Flake Checks
@@ -1016,14 +1028,14 @@ nix build .#checks.x86_64-linux.config-roundtrip    # merge script preserves use
 | `extraArgs` | `listOf str` | `[]` | Extra args for `reign gateway` |
 | `extraPackages` | `listOf package` | `[]` | Extra packages available to the agent. Added to the reign user's per-user profile so terminal commands, skills, and cron jobs all see them |
 | `extraPlugins` | `listOf package` | `[]` | Directory plugin packages to symlink into `$REIGN_HOME/plugins/`. Each must contain `plugin.yaml` |
-| `extraPythonPackages` | `listOf package` | `[]` | Python packages added to PYTHONPATH for entry-point plugin discovery. Build with `python312Packages` |
-| `extraDependencyGroups` | `listOf str` | `[]` | pyproject.toml optional extras to include in the sealed venv (e.g. `["honcho"]`). Resolved by uv — no collisions |
+| `extraPythonPackages` | `listOf package` | `[]` | Python packages added to PYTHONPATH for entry-point plugin discovery. Use the selected package’s `python.pkgs` |
+| `extraDependencyGroups` | `listOf str` | `[]` | pyproject.toml optional extras to include in the sealed venv (e.g. `["voice"]`). Resolved by uv — no collisions |
 | `restart` | `str` | `"always"` | The systemd `Restart=` policy. macOS does not use it. |
 | `restartSec` | `int` | `5` | The systemd `RestartSec=` value. macOS does not use it. |
 
 ### Backend (`reign serve` / `reign dashboard`)
 
-This option runs the process that Reign Desktop and the web dashboard connect to, with the gateway. You cannot use it with `container.enable`.
+This option runs the process that a remote Reign Desktop connection and the web dashboard connect to, with the gateway. You cannot use it with `container.enable`.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
@@ -1225,7 +1237,7 @@ nix-store --query --roots $(docker exec reign readlink /data/current-package)
 | Symptom | Cause | Fix |
 |---|---|---|
 | `Cannot save configuration: managed by NixOS` | CLI guards active | Edit `configuration.nix` and `nixos-rebuild switch` |
-| `No adapter available for discord` (or telegram/slack) | Messaging deps missing from the sealed Nix venv | Install `#messaging` variant: `nix profile install ...#messaging`. For NixOS module: `extraDependencyGroups = [ "messaging" ]`. Check `journalctl -u reign` for `FeatureUnavailable` or `requirements not met` for the underlying error. |
+| `No adapter available for discord` (or telegram/slack) | Messaging deps missing from the sealed Nix venv | Install `#messaging` variant: `nix profile install ...#messaging`. For NixOS module: `extraDependencyGroups = [ "messaging" ]`. Read `journalctl -u reign` for `InstallError` or `requirements not met` and the underlying cause. |
 | Container recreated unexpectedly | `extraVolumes`, `extraOptions`, or `image` changed | Expected — writable layer resets. Reinstall packages or use a custom image |
 | `reign --version` shows old version | Container not restarted | `systemctl restart reign` |
 | Permission denied on `/var/lib/reign` | State dir is `0750 reign:reign` | Use `docker exec` or `sudo -u reign` |

@@ -13,7 +13,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.model_switch import ModelSwitchResult
 

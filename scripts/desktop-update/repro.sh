@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # repro.sh -- reproduce desktop-update paths against a sandboxed REIGN_HOME.
 #
 # Nothing here touches your real ~/.reign or checkout. Each mode builds (or

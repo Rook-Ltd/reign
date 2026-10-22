@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.agent_import import (
     ENTRY_DELIMITER,
@@ -636,6 +636,7 @@ class TestExistingConfigPreserved:
         leftovers = [p.name for p in reign_home.glob(".tmp*")]
         assert leftovers == []
 
+    @pytest.mark.require_symlinks
     def test_symlinked_config_stays_a_symlink(
             self, claude_tree, reign_home, tmp_path, config_path):
         """A non-atomic ``write_text`` would follow it; ``os.replace`` would

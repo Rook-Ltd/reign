@@ -17,11 +17,9 @@ import zipfile
 
 import pytest
 
-from reign_cli import backup as backup_mod
+from reign_cli import backup_restore as backup_mod
 
-pytestmark = pytest.mark.skipif(
-    not sys.platform.startswith("linux"), reason="/proc holder scan is Linux-only"
-)
+pytestmark = pytest.mark.platforms("linux")  # /proc holder scan is Linux-only
 
 _HOLDER = (
     "import sqlite3, sys, time\n"

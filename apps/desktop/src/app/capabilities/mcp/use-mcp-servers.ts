@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '@/i18n'
 import { completeMcpDesktopOAuth } from '@/lib/mcp-dashboard-oauth'
 import { probeCache, probeKey } from '@/lib/mcp-probe-cache'
+import { announceMcpReload, reloadMcp } from '@/lib/mcp-reload'
 import { getServers, type McpServerEntry, type McpServers } from '@/lib/mcp-servers'
 import { setDisabledTools, toggleToolInServer } from '@/lib/mcp-tool-filter'
 import {
@@ -151,7 +152,7 @@ export function useMcpServers({ gateway, profile }: UseMcpServersOptions): McpSe
     }
 
     try {
-      await gateway.request('reload.mcp', { confirm: true, session_id: activeSessionId ?? undefined })
+      announceMcpReload(await reloadMcp(gateway, activeSessionId))
     } catch (err) {
       notifyError(err, m.reloadFailed)
     }

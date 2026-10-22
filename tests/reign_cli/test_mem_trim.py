@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-import reign_cli.mem_trim as mem_trim
+from reign_cli import mem_trim
 
 
 @pytest.fixture(autouse=True)

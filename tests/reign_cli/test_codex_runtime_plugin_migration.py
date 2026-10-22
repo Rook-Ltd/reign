@@ -459,7 +459,7 @@ class TestSameNameUserMcpTable:
         reign_cli/main.py stays pinned, and honour ``CODEX_HOME`` like every codex sibling."""
         import json
 
-        import reign_cli.main as main
+        from reign_cli import main
 
         codex_home = tmp_path / "alt-codex"
         codex_home.mkdir()

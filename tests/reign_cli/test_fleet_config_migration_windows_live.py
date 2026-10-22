@@ -7,12 +7,12 @@ import sys
 from pathlib import Path
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 WORKTREE = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(WORKTREE))
 
-pytestmark = pytest.mark.windows_only
+pytestmark = pytest.mark.platforms("windows")
 
 
 def test_fleet_config_migration_live_windows(tmp_path, monkeypatch):
@@ -31,7 +31,7 @@ def test_fleet_config_migration_live_windows(tmp_path, monkeypatch):
     )
     monkeypatch.setenv("REIGN_HOME", str(active))
 
-    import reign_cli.update_cmd as update_cmd
+    from reign_cli import update_cmd
     from reign_cli.config import DEFAULT_CONFIG
 
     latest = int(DEFAULT_CONFIG["_config_version"])

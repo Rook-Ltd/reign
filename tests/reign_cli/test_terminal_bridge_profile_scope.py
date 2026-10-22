@@ -19,7 +19,7 @@ import os
 
 import pytest
 
-import reign_cli.env_loader as env_loader
+from reign_cli import env_loader
 from reign_constants import (
     set_reign_home_override,
     reset_reign_home_override,

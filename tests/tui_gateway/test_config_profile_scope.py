@@ -10,9 +10,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import yaml
+import reign_yaml as yaml
 
-import tui_gateway.server as server
+from tui_gateway import server
 from reign_constants import reset_reign_home_override, set_reign_home_override
 
 

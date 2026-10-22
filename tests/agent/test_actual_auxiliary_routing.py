@@ -8,7 +8,7 @@ import threading
 import time
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 
 @pytest.fixture

@@ -38,7 +38,7 @@ from reign_cli.update_cmd import (
 )
 
 
-pytestmark = pytest.mark.macos_only  # launchd fleet restart is macOS-only; helpers use POSIX os.getuid
+pytestmark = pytest.mark.platforms("macos")  # launchd fleet restart is macOS-only; helpers use POSIX os.getuid
 
 UID = 501
 
@@ -100,7 +100,7 @@ class TestLaunchdGatewayLabelsForInstall:
         ]
 
     def test_no_profiles_means_no_fleet(self, monkeypatch):
-        monkeypatch.setattr(reign_cli.profiles, "list_profiles", lambda: [])
+        monkeypatch.setattr(reign_cli.profiles, "list_profiles", list)
         assert launchd_gateway_labels_for_install() == []
 
 
@@ -576,7 +576,7 @@ class TestRestartMacosLaunchdGateways:
         assert restarted == ["ai.reign.gateway", "ai.reign.gateway-after"]
 
     def test_sibling_that_never_comes_back_is_failed(self, monkeypatch, tmp_path):
-        rec = _fleet(
+        _fleet(
             monkeypatch,
             tmp_path,
             current="ai.reign.gateway",

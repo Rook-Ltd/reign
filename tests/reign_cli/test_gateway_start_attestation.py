@@ -18,7 +18,7 @@ import json
 
 import pytest
 
-import reign_cli.gateway_windows as gateway_windows
+from reign_cli import gateway_windows
 
 
 # ---------------------------------------------------------------------------

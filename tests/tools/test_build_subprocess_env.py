@@ -1,110 +1,47 @@
-"""Tests for tools.environments.local.build_subprocess_env — the single
-factory for child-process environments (profile-home + secret-scrub owner).
-"""
+"""Real children observe factory scrubbing, overrides and routed profile homes."""
 
 import os
-import subprocess
-import sys
 
 import pytest
 
+from tests.tools._child_env_fixtures import child_env, observe_child
 from tools.environments.local import build_subprocess_env
 
 
-# ---------------------------------------------------------------------------
-# Unit: scrub path delegates to _sanitize_subprocess_env semantics
-# ---------------------------------------------------------------------------
-
-def test_scrub_on_strips_provider_key(monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-secret")
-    env = build_subprocess_env()
-    assert "ANTHROPIC_API_KEY" not in env
-
-
-def test_scrub_on_strips_dynamic_internal_secret(monkeypatch):
-    monkeypatch.setenv("AUXILIARY_VISION_API_KEY", "sk-aux")
-    monkeypatch.setenv("GATEWAY_RELAY_FOO_TOKEN", "tok")
-    env = build_subprocess_env()
-    assert "AUXILIARY_VISION_API_KEY" not in env
-    assert "GATEWAY_RELAY_FOO_TOKEN" not in env
-
-
-def test_scrub_on_forwards_extra_like_sanitize_extra_env(monkeypatch):
-    env = build_subprocess_env(extra={"MY_HARMLESS_VAR": "1"})
-    assert env.get("MY_HARMLESS_VAR") == "1"
-    # extra still goes through the blocklist on the scrub path
-    env2 = build_subprocess_env(extra={"ANTHROPIC_API_KEY": "sk"})
-    assert "ANTHROPIC_API_KEY" not in env2
-
-
-# ---------------------------------------------------------------------------
-# Unit: no-scrub path preserves content exactly
-# ---------------------------------------------------------------------------
-
-
-def test_no_scrub_inherit_profile_home_bridges_context_override(tmp_path):
+@pytest.mark.parametrize("scrub,inherit_home", [(True, True), (True, False), (False, True), (False, False)])
+def test_factory_child_policy_and_profile_home(child_env, monkeypatch, scrub, inherit_home):
     from reign_constants import set_reign_home_override, reset_reign_home_override
-
-    token = set_reign_home_override(str(tmp_path))
+    routed = child_env / "profiles/coder"
+    routed.mkdir(parents=True)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "fake-parent-secret")
+    monkeypatch.setenv("AUXILIARY_FAKE_API_KEY", "fake-auxiliary")
+    monkeypatch.setenv("GATEWAY_RELAY_FOO_TOKEN", "fake-relay")
+    before = dict(os.environ)
+    token = set_reign_home_override(str(routed))
     try:
-        env = build_subprocess_env(
-            {"PATH": "/bin"}, scrub_secrets=False, inherit_profile_home=True
-        )
+        env = build_subprocess_env(scrub_secrets=scrub, inherit_profile_home=inherit_home,
+                                   extra={"MY_HARMLESS_VAR": "caller", "ANTHROPIC_API_KEY": "fake-extra"})
+        result = observe_child(env, ["REIGN_HOME", "ANTHROPIC_API_KEY", "AUXILIARY_FAKE_API_KEY",
+                                     "GATEWAY_RELAY_FOO_TOKEN", "MY_HARMLESS_VAR"])
     finally:
         reset_reign_home_override(token)
-    assert env["REIGN_HOME"] == str(tmp_path)
+    assert result == {
+        "REIGN_HOME": str(routed) if scrub or inherit_home else before["REIGN_HOME"],
+        "ANTHROPIC_API_KEY": None if scrub else "fake-extra",
+        "AUXILIARY_FAKE_API_KEY": None if scrub else "fake-auxiliary",
+        "GATEWAY_RELAY_FOO_TOKEN": None if scrub else "fake-relay", "MY_HARMLESS_VAR": "caller",
+    }
+    assert dict(os.environ) == before
 
 
-# ---------------------------------------------------------------------------
-# E2E: real subprocess sees the factory's contract
-# ---------------------------------------------------------------------------
-
-def test_e2e_child_sees_reign_home_and_no_planted_secret(tmp_path, monkeypatch):
-    """A real child spawned with a factory-built env must see REIGN_HOME
-    propagated and (with scrub on) a planted provider-style key absent."""
-    reign_home = tmp_path / "reign-home"
-    reign_home.mkdir()
-    monkeypatch.setenv("REIGN_HOME", str(reign_home))
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-FAKE-planted")
-    monkeypatch.setenv("AUXILIARY_FAKE_API_KEY", "sk-FAKE-aux")
-
-    env = build_subprocess_env()  # scrub on (default)
-
-    code = (
-        "import os, json; "
-        "print(json.dumps({'home': os.environ.get('REIGN_HOME'), "
-        "'k1': 'ANTHROPIC_API_KEY' in os.environ, "
-        "'k2': 'AUXILIARY_FAKE_API_KEY' in os.environ}))"
-    )
-    out = subprocess.run(
-        [sys.executable, "-c", code],
-        env=env, capture_output=True, text=True, timeout=60, check=True,
-    )
-    import json
-
-    result = json.loads(out.stdout)
-    assert result["home"] == str(reign_home)
-    assert result["k1"] is False
-    assert result["k2"] is False
+def test_no_scrub_is_byte_preserving_except_explicit_extra():
+    base = {"PATH": "/bin", "PYTHONHOME": "/poison", "VIRTUAL_ENV": "/venv",
+            "CONDA_PREFIX": "/conda", "SERVICE_TOKEN": "fake", "REIGN_HOME": "/original"}
+    assert build_subprocess_env(base, scrub_secrets=False, inherit_profile_home=False) == base
+    assert build_subprocess_env(base, scrub_secrets=False, extra={"REIGN_HOME": "/caller"})["REIGN_HOME"] == "/caller"
 
 
-def test_e2e_no_scrub_child_keeps_planted_secret(tmp_path, monkeypatch):
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-FAKE-planted")
-    env = build_subprocess_env(scrub_secrets=False, inherit_profile_home=False)
-    out = subprocess.run(
-        [sys.executable, "-c",
-         "import os; print(os.environ.get('ANTHROPIC_API_KEY', ''))"],
-        env=env, capture_output=True, text=True, timeout=60, check=True,
-    )
-    assert out.stdout.strip() == "sk-FAKE-planted"
-
-
-# ---------------------------------------------------------------------------
-# E2E regression (#93082): cron/no_agent children keep bare `reign` on PATH
-# ---------------------------------------------------------------------------
-
-
-def test_e2e_scrubbed_env_resolves_bare_reign_under_minimal_parent_path(monkeypatch):
+def test_e2e_scrubbed_env_resolves_bare_reign_under_minimal_parent_path(monkeypatch, tmp_path):
     """Regression for #92998/#93082: a gateway launched by systemd/cron with a
     minimal PATH (no reign console-script dir) must still hand cron job
     children an env whose PATH resolves bare ``reign``.
@@ -123,8 +60,10 @@ def test_e2e_scrubbed_env_resolves_bare_reign_under_minimal_parent_path(monkeypa
     ):
         pytest.skip("no real reign console-script install available")
 
-    # Simulate the service-manager minimal PATH: reign dir absent.
-    minimal_path = os.pathsep.join(["/usr/bin", "/bin"])
+    # Simulate the service-manager minimal PATH: reign dir absent. An empty directory, not
+    # /usr/bin:/bin — a distro-packaged reign (/usr/bin/reign) would already be on those.
+    minimal_path = str(tmp_path / "service-manager-bin")
+    os.mkdir(minimal_path)
     monkeypatch.setenv("PATH", minimal_path)
     assert shutil.which("reign", path=minimal_path) is None
 

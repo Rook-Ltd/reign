@@ -3,7 +3,7 @@
 
 from typing import Any
 
-from reign_cli import __version__ as _REIGN_VERSION
+from reign_cli.version_info import get_version_info
 from providers import register_provider
 from providers.base import ProviderProfile
 
@@ -36,7 +36,7 @@ fireworks = FireworksProfile(
     default_headers={
         "HTTP-Referer": "https://hermes-agent.nousresearch.com",
         "X-Title": "Reign",
-        "User-Agent": f"ReignAgent/{_REIGN_VERSION}",
+        "User-Agent": f"ReignAgent/{get_version_info().base_version}",
     },
     default_aux_model="accounts/fireworks/models/glm-5p2",
     # Picker safety net when the live catalog fetch fails.

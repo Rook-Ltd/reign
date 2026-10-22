@@ -13,7 +13,7 @@ import importlib
 import os
 
 import pytest
-import yaml
+import reign_yaml as yaml
 import reign_cli.web_server_config as _web_server_config
 
 

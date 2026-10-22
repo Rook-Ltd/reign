@@ -30,7 +30,7 @@ from agent.credential_pool import (
     load_pool,
 )
 from reign_cli import auth as A
-import reign_cli.auth_codex as auth_codex
+from reign_cli import auth_codex
 
 
 def _write_store(path, store):

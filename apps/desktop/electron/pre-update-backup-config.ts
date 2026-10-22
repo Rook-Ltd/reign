@@ -13,7 +13,7 @@ export function preUpdateBackupEnabled(value: unknown): boolean {
 }
 
 export interface ReignConfigRuntime {
-  command?: string
+  command?: string | null
   args?: string[]
   env?: NodeJS.ProcessEnv
   shell?: boolean

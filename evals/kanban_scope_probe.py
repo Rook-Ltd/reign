@@ -11,7 +11,7 @@ repo = Path(sys.argv[1]).resolve()
 if len(sys.argv) == 2:
     with tempfile.TemporaryDirectory(prefix="kanban-transport-") as home:
         env = {"HOME": home, "REIGN_HOME": home + "/reign", "PATH": os.environ["PATH"], "PYTHONDONTWRITEBYTECODE": "1"}
-        p = subprocess.run([sys.executable, __file__, str(repo), "isolated"], cwd=home, env=env, stdin=subprocess.DEVNULL)
+        p = subprocess.run([sys.executable, __file__, str(repo), "isolated"], cwd=home, env=env, stdin=subprocess.DEVNULL, check=False)
         sys.exit(p.returncode)
 sys.path.insert(0, str(repo))
 from reign_cli import kanban_db as kb

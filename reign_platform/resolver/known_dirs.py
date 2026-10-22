@@ -33,6 +33,48 @@ def reign_vendored_dirs() -> tuple[str, ...]:
     return ("~/.reign/bin",) if _POSIX else ("%USERPROFILE%/.reign/bin",)
 
 
+def machine_marker_files() -> tuple[str, ...]:
+    """Where Reign records that this OS user has used it. No Reign data-dir setting moves these.
+    The first entry is the one written; the rest are read too (Windows: MSIX builds that ran with
+    filesystem virtualisation wrote under the package's LocalCache)."""
+    if _WIN:
+        return ("%LOCALAPPDATA%/Rook/.machine",
+                "%LOCALAPPDATA%/Packages/NousResearch*_*/LocalCache/Local/Rook/.machine")
+    if sys.platform == "darwin":
+        return ("~/Library/Application Support/Rook/.machine",)
+    return ("$XDG_STATE_HOME/nous-research/.machine", "~/.local/state/nous-research/.machine")
+
+
+def reign_home_globs() -> tuple[str, ...]:
+    """Every place a Reign data root can sit by default: suffixed channel roots, the legacy Windows
+    root, and the per-package roots of MSIX builds that ran with filesystem virtualisation."""
+    if _WIN:
+        return ("%LOCALAPPDATA%/reign*", "%USERPROFILE%/.reign",
+                "%LOCALAPPDATA%/Packages/NousResearch*_*/LocalCache/Local/reign*")
+    return ("~/.reign*",)
+
+
+def gateway_service_definition_globs() -> tuple[str, ...]:
+    """This OS user's gateway service definitions, each naming the REIGN_HOME it serves."""
+    if _WIN:
+        return ("%APPDATA%/Microsoft/Windows/Start Menu/Programs/Startup/Reign_Gateway*",)
+    if sys.platform == "darwin":
+        return ("~/Library/LaunchAgents/ai.reign.gateway*.plist",)
+    return ("$XDG_CONFIG_HOME/systemd/user/reign-gateway*.service", "~/.config/systemd/user/reign-gateway*.service")
+
+
+def system_gateway_service_definition_globs() -> tuple[str, ...]:
+    """Machine-wide gateway services. Each runs as the account its ``User=`` names (root when none)."""
+    return ("/etc/systemd/system/reign-gateway*.service",) if _POSIX and sys.platform != "darwin" else ()
+
+
+def mac_privacy_protected_dirs() -> tuple[str, ...]:
+    """Folders macOS guards with a permission prompt (TCC); opening anything inside raises it."""
+    if sys.platform != "darwin":
+        return ()
+    return ("~/Documents", "~/Desktop", "~/Downloads", "~/Library/Mobile Documents")  # windows-footgun: ok — macOS only
+
+
 def windows_user_program_dirs() -> tuple[str, ...]:
     if not _WIN:
         return ()
@@ -41,3 +83,16 @@ def windows_user_program_dirs() -> tuple[str, ...]:
         "%USERPROFILE%/scoop/shims",
         "%LOCALAPPDATA%/Microsoft/WinGet/Links",
     )
+
+
+def mac_application_dirs() -> tuple[str, ...]:
+    return ("/Applications", "~/Applications") if sys.platform == "darwin" else ()
+
+
+def flatpak_export_dirs() -> tuple[str, ...]:
+    """Where flatpak links each installed app's launcher, named by its app id (system, then per-user)."""
+    return ("/var/lib/flatpak/exports/bin", "~/.local/share/flatpak/exports/bin") if sys.platform.startswith("linux") else ()
+
+
+def snap_bin_dirs() -> tuple[str, ...]:
+    return ("/snap/bin",) if sys.platform.startswith("linux") else ()

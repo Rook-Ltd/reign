@@ -1,6 +1,6 @@
 """Endpoint-less manual credentials resolve through the public runtime ladder."""
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.auth import PROVIDER_REGISTRY, write_credential_pool
 from reign_cli.runtime_provider import resolve_runtime_provider

@@ -33,7 +33,7 @@ import { downloadGatewayMediaFile, isArtifactFilePath, isRemoteGateway } from '@
 import { normalize } from '@/lib/text'
 import { fmtDayTime } from '@/lib/time'
 import { cn } from '@/lib/utils'
-import { getAllSessionMessages, listAllProfileSessions } from '@/reign'
+import { getSessionMessages, listAllProfileSessions } from '@/reign'
 import { notify, notifyError } from '@/store/notifications'
 
 import { useRefreshHotkey } from '../hooks/use-refresh-hotkey'
@@ -138,9 +138,12 @@ export function ArtifactsView({ setStatusbarItemGroup: _setStatusbarItemGroup, .
     try {
       const sessions = (await listAllProfileSessions(30, 1)).sessions
 
-      const { artifacts: nextArtifacts, failures } = await loadArtifactsForSessions(
-        sessions,
-        async session => (await getAllSessionMessages(session.id, session.profile)).messages
+      const { artifacts: nextArtifacts, failures } = await loadArtifactsForSessions(sessions, (session, page) =>
+        getSessionMessages(session.id, session.profile, {
+          ...page,
+          includeCompacted: true,
+          order: 'oldest'
+        })
       )
 
       if (failures.length > 0) {

@@ -4,8 +4,8 @@ import base64
 import json
 import time
 
-import reign_cli.auth as auth
-import reign_cli.auth_nous as auth_nous
+from reign_cli import auth
+from reign_cli import auth_nous
 
 
 def _invoke_jwt(*, seconds: int = 3600) -> str:

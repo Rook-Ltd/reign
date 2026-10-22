@@ -12,8 +12,10 @@ def test_platform_modules_only_import_stdlib_and_reign_platform() -> None:
 import sys
 before = set(sys.modules)
 import reign_platform.host.facts
+import reign_platform.host.gpu_adapters
 import reign_platform.host.runtime
 import reign_platform.host.products
+import reign_platform.host.summary
 import reign_platform.declaration
 import reign_platform.resolver
 import reign_platform.resolver.app

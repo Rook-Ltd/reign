@@ -19,7 +19,7 @@ import reign_cli.web_server_gateway as _web_server_gateway
 @pytest.fixture(autouse=True)
 def reset_restart_cooldown():
     """Keep the module-level cooldown state out of neighbouring tests."""
-    import reign_cli.web_server as web_server
+    from reign_cli import web_server
 
     web_server._LAST_GATEWAY_RESTART = None
     yield
@@ -106,7 +106,7 @@ class TestRepeatRestartWithinCooldown:
         Completed action children get reaped out of that table, and a guard
         that disappears when the child is reaped is the bug this fixes.
         """
-        import reign_cli.web_server as web_server
+        from reign_cli import web_server
         from reign_cli.web_server import _spawn_gateway_restart
 
         mock_spawn.return_value = _exited_proc()

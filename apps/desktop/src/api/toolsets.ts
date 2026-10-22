@@ -109,16 +109,19 @@ export function runToolsetPostSetup(
   })
 }
 
-export function getTerminalBackends(): Promise<TerminalBackendsResponse> {
-  return reignApi<TerminalBackendsResponse>({
-    ...profileScoped(),
+export function getTerminalBackends(profile?: ProfileScope): Promise<TerminalBackendsResponse> {
+  return window.reignDesktop.api<TerminalBackendsResponse>({
+    ...capabilityScoped(profile),
     path: '/api/tools/terminal/backends'
   })
 }
 
-export function selectTerminalBackend(backend: string): Promise<{ ok: boolean; backend: string }> {
-  return reignApi<{ ok: boolean; backend: string }>({
-    ...profileScoped(),
+export function selectTerminalBackend(
+  backend: string,
+  profile?: ProfileScope
+): Promise<{ ok: boolean; backend: string }> {
+  return window.reignDesktop.api<{ ok: boolean; backend: string }>({
+    ...capabilityScoped(profile),
     path: '/api/tools/terminal/backend',
     method: 'PUT',
     body: { backend }

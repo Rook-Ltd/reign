@@ -123,6 +123,7 @@ const config: Config = {
       logo: {
         alt: 'Rook',
         src: 'img/logo.png',
+        srcDark: 'img/logo-dark.png',
       },
       items: [
         {

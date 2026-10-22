@@ -42,6 +42,8 @@ delete:
   - tools/wakewords                 # decision D2: hey_hermes models dropped
   - hermes_agent.egg-info           # stale build metadata tracked upstream
   - MagicMock                       # test pollution if it ever lands upstream
+  - apps/desktop/packaging/nous-dmg-2b.tiff  # Nous DMG art, 1.2 MB (over the blob limit); macOS DMG uses the plain background
+  - tests/scripts/test_install_sh_stable_default.py  # Reign has no releases: installs follow main, never a stable tag
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
   # emails first, so the domain rule below cannot shield half of an address. These stay
@@ -95,6 +97,14 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - '"bin" / "hermes-agent"'
   - '/usr/local/bin/hermes-agent"'
   - '(?m)^hermes-agent = "'
+  - 'if name == "hermes-agent" else'
+  - '\(\*WINDOWS_BIN_LAUNCHERS, "hermes-agent"\)'
+  - '\{hermes,hermes-agent,hermes-acp\}'
+  - '\b(?:extra|wrapper_dir|link_dir|out) / "hermes-agent"'   # launcher-dir test fixtures
+  - "path\\.join\\(dir, 'hermes-agent'\\)"   # desktop launcher-root test fixtures (a dir next to the `hermes` launcher)
+  # Bundled desktop variant must stay distinct from the full client ("Hermes Agent" -> "Reign" would collide)
+  - "display: 'Hermes Agent',"
+  - "\\['bundled', 'Hermes Agent', 'hermes',"
   # Upstream mobile app's WebSocket subprotocol names, accepted alongside ours (reign_cli/web_server_chat.py)
   - '"hermes-gateway-v1", "hermes-gateway-ticket\."'
   # Hand-edited lines that keep "hermes" on purpose (so re-running the codemod
@@ -238,6 +248,8 @@ post_replace:
       - "tests/reign_cli/test_banner_git_state.py"
       - "tests/reign_cli/test_lazy_refresh_venv_repair.py"
       - "tests/reign_cli/test_cmd_update.py"
+      - "tests-js/update-ui.test.mjs"  # fixture origin must be the URL source-branch-probe rewrites
+      - "tests/installation/test_installer_common.py"  # fixture origin must be the URL installer-common.sh redirects
     replace:
       - plain: "https://github.com/NousResearch/hermes-agent.git"
         with:  "https://github.com/rook-ltd/reign.git"
@@ -304,6 +316,14 @@ post_replace:
         with:  '"bin" / "reign-agent"'
       - plain: '/usr/local/bin/hermes-agent"'
         with:  '/usr/local/bin/reign-agent"'
+      - plain: 'if name == "hermes-agent" else'
+        with:  'if name == "reign-agent" else'
+      - plain: '(*WINDOWS_BIN_LAUNCHERS, "hermes-agent")'
+        with:  '(*WINDOWS_BIN_LAUNCHERS, "reign-agent")'
+      - plain: '{hermes,hermes-agent,hermes-acp}'
+        with:  '{reign,reign-agent,reign-acp}'
+      - regex: '\b(extra|wrapper_dir|link_dir|out) / "hermes-agent"'
+        with:  '\1 / "reign-agent"'
   - files:                # kawaii text faces in CLI output -> neutral glyphs (order matters)
       - "cli.py"
       - "reign_cli/*.py"
@@ -576,6 +596,28 @@ post_replace:
       with: or "sherpa"
     - regex: (?m)^(\s*provider:\s*)openwakeword\b
       with: \1sherpa
+  # Upstream's `auto` wake-word provider tries openWakeWord first, with the bundled hey_hermes
+  # model that decision D2 drops (tools/wakewords is deleted). Reign tries sherpa first: it
+  # needs no model and detects the typed phrase, so `auto` keeps working out of the box.
+  - files:
+    - tools/wake_word.py
+    replace:
+    - plain: '_PROVIDER_PREFERENCE = ("openwakeword", "sherpa", "porcupine")'
+      with: '_PROVIDER_PREFERENCE = ("sherpa", "openwakeword", "porcupine")'
+  - files:
+    - tests/tools/test_wake_word.py
+    replace:
+    - regex: '(\("(?:win32|darwin|linux)", "(?:AMD64|arm64|x86_64|aarch64)", )"openwakeword"\)'
+      with: '\1"sherpa")'
+  - files:
+    - website/docs/user-guide/features/wake-word.md
+    replace:
+    - plain: 'engine in this order: **openWakeWord → sherpa → Porcupine**.'
+      with: 'engine in this order: **sherpa → openWakeWord → Porcupine**.'
+    - plain: 'Includes the **"hey reign"** model. Custom models require a `.tflite` file.'
+      with: 'Reign bundles **no** model for it: set `openwakeword.model` to a custom `.tflite` file.'
+    - plain: "The default phrase label is **\"hey reign\"**. For openWakeWord, Reign includes\nits trained TFLite model.\n"
+      with: "The default phrase is **\"hey reign\"**, detected by sherpa with no trained model. Reign\nships no openWakeWord model.\n"
   - files:
     - tests/tools/test_wake_word.py
     replace:
@@ -697,7 +739,7 @@ post_replace:
   - files:
       - "reign_cli/skin_engine.py"
     replace:
-      - regex: '(?s)(_REIGN_BRANDING: Dict\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
+      - regex: '(?s)(_REIGN_BRANDING: (?:Dict|dict)\[str, str\] = _branding\([^)]*\))(?!\n_REIGN_BRANDING\[)'
         with:  '\1\n_REIGN_BRANDING["agent_name"] = "Reign"\n_REIGN_BRANDING["welcome"] = "Welcome to Reign! Type your message or /help for commands."'
 
   # Upstream's 32/96-core larger runners don't exist on this account (their jobs queued for a
@@ -718,6 +760,35 @@ post_replace:
         with:  "runner: windows-latest"
       - plain: "REIGN_TEST_WORKERS: 96"
         with:  'REIGN_TEST_WORKERS: ""'
+  # Upstream later moved CI onto Blacksmith runners and Blacksmith's forks of checkout and the
+  # Docker actions. Rook has no Blacksmith account (those jobs would queue forever), so they run
+  # on the matching standard GitHub-hosted runners, free on a public repo, with the stock actions.
+  # The arm64 rule comes first: the plain one would otherwise match its prefix.
+  - files:
+      - ".github/workflows/*.yml"
+      - ".github/workflows/*.yaml"
+      - ".github/actions/**"
+    replace:
+      - regex: 'runs-on: blacksmith-(?:16|32)vcpu-(ubuntu-2404|windows-2025)\n(\s+)timeout-minutes: \d+'
+        with:  'runs-on: blacksmith-32vcpu-\1\n\2timeout-minutes: 120'
+      - regex: '\bblacksmith-\d+vcpu-ubuntu-2404-arm\b'
+        with:  'ubuntu-24.04-arm'
+      - regex: '\bblacksmith-\d+vcpu-ubuntu-2404\b'
+        with:  'ubuntu-latest'
+      - regex: '\bblacksmith-\d+vcpu-windows-2025\b'
+        with:  'windows-latest'
+      - regex: '\bblacksmith-\d+vcpu-macos-latest\b'
+        with:  'macos-latest'
+      - plain: "windows-latest-32-arm-core"
+        with:  "windows-11-arm"
+      - regex: 'useblacksmith/checkout@[0-9a-f]{40} *# v1\b'
+        with:  'actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2'
+      - regex: 'useblacksmith/setup-docker-builder@[0-9a-f]{40} *# v2\b'
+        with:  'docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3'
+      - regex: 'useblacksmith/build-push-action@[0-9a-f]{40} *# v2\b'
+        with:  'docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0'
+      - plain: "REIGN_TEST_WORKERS: 32\n"
+        with:  "REIGN_TEST_WORKERS: \"\"\n"
   - files:
       - ".github/workflows/tests.yml"
     replace:
@@ -748,6 +819,8 @@ post_replace:
       # to a second `reign` key, so the TOML declares two scripts and the Windows lane fails.
       - plain: 'reign = "run_agent:main"'
         with:  'reign-agent = "run_agent:main"'
+      - plain: '{"reign.exe", "reign.exe", "reign-acp.exe"}'
+        with:  '{"reign.exe", "reign-agent.exe", "reign-acp.exe"}'
   - files:
       - "tests/e2e/core/upgrade/test_fresh_process_entrypoints.py"
     replace:
@@ -765,9 +838,163 @@ post_replace:
   - files:
       - "apps/desktop/scripts/local-pack-publish.test.mjs"
     replace:
-      # package.json's repository URL points at the fork (rule above); the owner follows it.
-      - plain: "configs[0].owner, 'NousResearch')"
-        with:  "configs[0].owner, 'rook-ltd')"
+      # The fixture's repository URL is a protected Nous URL and stays verbatim, but the bare
+      # `hermes-agent` the test expects back renames, so the expectation follows the fixture.
+      - plain: "assert.equal(repositoryInfo.project, 'reign')"
+        with:  "assert.equal(repositoryInfo.project, 'hermes-agent')"
+      - plain: "[{ owner: 'NousResearch', repo: 'reign', provider: 'github' }]"
+        with:  "[{ owner: 'NousResearch', repo: 'hermes-agent', provider: 'github' }]"
+  # Debian pools shard by the package name's first letter; the package is `reign`, so `h/` -> `r/`.
+  - files:
+      - "tests/scripts/test_stage_apt_repo.py"
+    replace:
+      - plain: '"pool" / "rc.2-v0.21.5" / "h" /'
+        with:  '"pool" / "rc.2-v0.21.5" / "r" /'
+      - plain: '"pool/rc.2-v0.21.5/h/reign_'
+        with:  '"pool/rc.2-v0.21.5/r/reign_'
+      - plain: '(out / "pool" / "h" / "reign_'
+        with:  '(out / "pool" / "r" / "reign_'
+      - plain: '{"pool/h/reign_'
+        with:  '{"pool/r/reign_'
+  - files:                # OFFICIAL_REPOSITORY stays NousResearch/hermes-agent (Reign checkouts are a fork,
+      - "tests/reign_cli/test_source_check.py"   # so they follow main; Rook publishes no releases). The URL rewrite above
+    replace:                                     # must not retarget these two official-repo fixtures.
+      - plain: '"https://github.com/rook-ltd/reign.git" in probes'
+        with:  '"https://github.com/NousResearch/hermes-agent.git" in probes'
+      - plain: '.insteadOf", "https://github.com/rook-ltd/reign.git")'
+        with:  '.insteadOf", "https://github.com/NousResearch/hermes-agent.git")'
+  - files:                # release fixtures: URL spans are shielded, so their bundle names lag the
+      - "tests/scripts/test_release_r2.py"   # renamed expectations; SigV4 vectors sign the upstream paths
+    replace:
+      - plain: "/HermesBundled-"
+        with:  "/ReignBundled-"
+      - regex: "\\('PUT', '/(?:reign|hermes)-releases/ReignBundled-0\\.28\\.0-win-x64\\.msix'"
+        with:  "('PUT', '/hermes-releases/HermesBundled-0.28.0-win-x64.msix'"
+      - regex: "\\('GET', '/(?:reign|hermes)-releases', \\{'list-type': '2', 'prefix': '(?:Reign|Hermes)Bundled-0\\.28\\.0-'"
+        with:  "('GET', '/hermes-releases', {'list-type': '2', 'prefix': 'HermesBundled-0.28.0-'"
+      - regex: "\\('DELETE', '/(?:reign|hermes)-releases/ReignBundled-0\\.28\\.0\\+canary"
+        with:  "('DELETE', '/hermes-releases/HermesBundled-0.28.0+canary"
+      - plain: "assert encoded == 'list-type=2&max-keys=1000&prefix=ReignBundled-0.28.0-'"
+        with:  "assert encoded == 'list-type=2&max-keys=1000&prefix=HermesBundled-0.28.0-'"
+  - files:
+      - "tests/scripts/test_release_entrypoint.py"
+    replace:
+      - plain: "github.com/example/hermes-agent/"
+        with:  "github.com/example/reign/"
+  - files:                # out-of-tree venv fixture: the distribution is `reign`, not `reign-agent`
+      - "tests/test_reign_constants.py"
+    replace:
+      - plain: '"reign_agent-0.0.0.dist-info"'
+        with:  '"reign-0.0.0.dist-info"'
+  - files:                # placeholder-version fixture names the distribution, which is `reign`
+      - "tests/reign_cli/test_security_audit.py"
+    replace:
+      - plain: '"reign_agent"'
+        with:  '"reign"'
+  - files:                # Reign's default skin is "rook", so "default" is off-default here
+      - "tests/reign_cli/test_shared_metrics_desktop.py"
+    replace:
+      - plain: 'skin: default'
+        with:  'skin: rook'
+  - files:                # upstream mints a real Nous guest here; Reign's portal refuses it, so stub it
+      - "tests/tui_gateway/test_legacy_fallback_ticket_profile_verbs.py"
+    replace:
+      - regex: "(    monkeypatch\\.setattr\\(tools\\.connectors, 'connectors_available', lambda \\*a, \\*\\*k: True\\)\\n)(?!    monkeypatch\\.setattr\\(tools\\.connectors, 'ensure_guest_identity')"
+        with:  "\\1    monkeypatch.setattr(tools.connectors, 'ensure_guest_identity', lambda: None)\\n"
+  - files:                # the upstream-subprotocol shield above also catches test clients; they speak ours
+      - "tests/**/*.py"
+    replace:
+      - plain: '["hermes-gateway-v1", "hermes-gateway-ticket."'
+        with:  '["reign-gateway-v1", "reign-gateway-ticket."'
+  - files:                # these suites reach a real Nous guest mint upstream; Reign's mint is refused, so stub it
+      - "tests/tui_gateway/test_connector_accounts_rpc.py"
+      - "tests/tui_gateway/test_connector_operation_rpc.py"
+    replace:
+      - regex: '(\ndef (?:_gate|owned)\(monkeypatch\):\n)(?!    monkeypatch\.setattr\("tools\.connectors\.gateway\.config\.ensure_guest_identity")'
+        with:  '\1    monkeypatch.setattr("tools.connectors.gateway.config.ensure_guest_identity", lambda: None)\n'
+  - files:                # Reign's basic dashboard auth takes a users map (multi-user), not one username
+      - "tests/gateway/test_authenticated_session_identity.py"
+    replace:
+      - plain: "BasicAuthProvider(username='user-a', password_hash=hash_password('fixture-password'), secret="
+        with:  "BasicAuthProvider(users={'user-a': hash_password('fixture-password')}, secret="
+  - files:                # channel fixtures model the official repo, which stays NousResearch/hermes-agent
+      - "tests/reign_cli/test_source_release_channels.py"
+    replace:
+      - plain: 'official = "https://github.com/rook-ltd/reign.git"'
+        with:  'official = "https://github.com/NousResearch/hermes-agent.git"'
+      - plain: "Fixture/hermes-agent"
+        with:  "Fixture/reign"
+  - files:
+      - "tests/reign_cli/test_source_channel_integration.py"
+    replace:
+      - plain: 'f"https://github.com/rook-ltd/reign/archive/'
+        with:  'f"https://github.com/NousResearch/hermes-agent/archive/'
+  - files:                # release scripts read the repo from origin, which the URL rewrite made rook-ltd/reign
+      - "tests/scripts/test_release_tags.py"
+      - "tests/scripts/test_release_build_commit.py"
+    replace:
+      - plain: 'remote_github_repo("origin") == "NousResearch/hermes-agent"'
+        with:  'remote_github_repo("origin") == "NousResearch/reign"'
+      - plain: '"origin": "https://github.com/rook-ltd/reign",'   # its pushInsteadOf case rewrites github.com/NousResearch/
+        with:  '"origin": "https://github.com/NousResearch/reign",'
+      - plain: "'--repo', 'NousResearch/hermes-agent',"
+        with:  "'--repo', 'rook-ltd/reign',"
+  - files:                # Reign gates tests-os on workflow_dispatch (ci.yaml rules), so the required-checks
+      - scripts/ci/required_results.py   # gate must not demand it on PR/push runs
+    replace:
+      - regex: '(\n    required = \{job for job, keys in _UPDATE_CONSUMER_LANES\.items\(\)\n                if any\(lanes\.get\(key\) in \("true", True\) for key in keys\)\}\n)(?!    if lanes\.get\("event_name"\))'
+        with:  '\1    if lanes.get("event_name") in ("pull_request", "push"):\n        required.discard("tests-os")  # Reign: tests-os runs only on a manual dispatch\n'
+  - files:                # upstream slices len("HERMES_HOME=") == 12 by hand; REIGN_HOME= is 11
+      - tests/conftest.py
+    replace:
+      - plain: 'item[12:] for item in environ if item.startswith(b"REIGN_HOME=")'
+        with:  'item[len(b"REIGN_HOME="):] for item in environ if item.startswith(b"REIGN_HOME=")'
+  - files:                # Reign gates tests-os on github.event_name == 'workflow_dispatch' (ci.yaml rules
+      - tests/ci/test_update_ci_routing.py   # above), so the replayed jobs see the event detect replays
+    replace:
+      - plain: '"github": {"event_name": "pull_request", "ref_type": "branch"},'
+        with:  '"github": {"event_name": (detect or {}).get("event_name", "pull_request"), "ref_type": "branch"},'
+      - plain: 'assert "tests" in run and "tests-os" in run  # the unit lanes still run'
+        with:  'assert "tests" in run  # the Linux unit lanes still run; Reign dispatches tests-os by hand'
+  - files:                # Rook's desktop-windows-installer.yml publishes prereleases from desktop-v* tags
+      - tests/ci/test_workflow_job_graph.py
+    replace:
+      - regex: '(\n        if filename == "live-providers\.yml" and push == \{"tags": \["v\*"\]\}:\n            continue\n)(?!        if filename == "desktop-windows-installer\.yml")'
+        with:  '\1        if filename == "desktop-windows-installer.yml" and push == {"tags": ["desktop-v*"]}:\n            continue\n'
+  - files:                # desktop launcher-root fixtures: a dir that must not collide with the `reign` launcher
+      - "apps/desktop/electron/*.test.ts"
+    replace:
+      - plain: "path.join(dir, 'hermes-agent')"
+        with:  "path.join(dir, 'reign-agent')"
+  - files:                # bundled variant keeps an OS identity distinct from the full "Reign" client
+      - "apps/desktop/product-identity.cjs"
+      - "apps/desktop/electron/product-identity.test.ts"
+    replace:
+      - plain: "display: 'Hermes Agent',"
+        with:  "display: 'Reign Agent',"
+      - plain: "['bundled', 'Hermes Agent', 'hermes',"
+        with:  "['bundled', 'Reign Agent', 'reign',"
+  - files:                # upstream's timeouts are too tight for 2-core GitHub-hosted runners
+      - "tests-js/bundle-smoke-metadata.test.mjs"
+      - "tests-js/update-ui.test.mjs"
+    replace:
+      - plain: "}, 15_000)"
+        with:  "}, 60_000)"
+      - regex: "\\}\\)\\n\\ntest\\.skipIf\\(process\\.platform === 'win32'\\)\\('historical venv install"
+        with:  "}, 30_000)\n\ntest.skipIf(process.platform === 'win32')('historical venv install"
+  # The Nous DMG background is deleted above, so the DMG falls back to dmgbuild's plain window.
+  - files:
+      - "apps/desktop/electron-builder.config.cjs"
+    replace:
+      - plain: "    // A prebuilt .tiff on purpose, not a PNG plus a @2x sibling: dmg-builder's\n    // PNG path runs `tiffutil -cathidpicheck`, which on macOS 26 rewrites both\n    // frames to 72 dpi and silently drops the 2x representation. A .tiff is\n    // handed to dmgbuild untouched (dmg-builder/dist/dmgUtil.js), and living\n    // outside assets/ keeps it out of the app bundle via the `files` whitelist.\n    background: 'packaging/nous-dmg-2b.tiff',\n"
+        with:  ""
+  # `hermes@127.0.0.1` looks like an email to the protect pattern, but it is the ssh login of
+  # the test container's user, which renames to `reign`.
+  - files:
+      - "scripts/ci/start_test_sshd.sh"
+    replace:
+      - plain: "hermes@127.0.0.1"
+        with:  "reign@127.0.0.1"
   # The tone-ladder test pins the ladder knobs against the classic gold seeds; Reign ships the
   # Rook monochrome seeds, so the test builds the palette from the gold seeds as a fixture.
   - files:
@@ -786,6 +1013,12 @@ post_replace:
         with:  "on:\n  pull_request:\n  push:\n    branches: [main]\n  workflow_dispatch:\n\n"
       - regex: "    if: (needs\\.detect\\.outputs\\.(?:python|installer) == 'true'\n    uses: \\./\\.github/workflows/(?:tests-os|installer-tests)\\.yml)"
         with:  "    if: github.event_name == 'workflow_dispatch' && \\1"
+      - regex: "    if: (needs\\.detect\\.outputs\\.python == 'true'[^\n]*)\n    uses: \\./\\.github/workflows/tests-os\\.yml"
+        with:  "    if: github.event_name == 'workflow_dispatch' && (\\1)\n    uses: ./.github/workflows/tests-os.yml"
+      # Reign ships Rook icons (rebrand/place_images.py), not scripts/generate-icons.mjs output
+      # from the nous-girl art, so upstream's freshness diff would always fail.
+      - plain: "    needs: detect\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
+        with:  "    needs: detect\n    if: false  # Reign ships Rook icons (rebrand/place_images.py)\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
   - files:
       - ".github/workflows/install-e2e.yml"
     replace:
@@ -798,6 +1031,23 @@ post_replace:
     replace:
       - plain: "runner: ubuntu-latest-32-arm-core"
         with:  "runner: ubuntu-24.04-arm"
+
+  # The supply-chain scan's base64+exec check flags upstream's Windows launchers, which build
+  # `-c` code from a local f-string placeholder or a tiny literal ('eA==' is "x"). Those two
+  # shapes can't carry a hidden payload, so they're dropped; a long literal or a variable still trips.
+  - files:
+      - ".github/workflows/supply-chain-audit.yml"
+    replace:
+      - regex: '(?m)^( *)(B64_EXEC_HITS=(?!.*grep -vE).*?)( \| head -10 \|\| true\))$'
+        with:  '\1# Reign: skip launcher code built from a placeholder or a tiny literal\n\1\2 | grep -vE "b64decode\([''\"](\{[^''\"]*\}|[A-Za-z0-9+/=]{0,15})[''\"]\)"\3'
+  # An upstream sync PR changes ~10k files the ratchet compares with Reign's older main, so it
+  # flags upstream's own code (upstream ratchets that itself) and runs out of time. Sync PRs
+  # (the ones moving rebrand/UPSTREAM.md) skip it; later PRs ratchet against the synced main.
+  - files:
+      - ".github/workflows/lint.yml"
+    replace:
+      - plain: "        run: python scripts/check --only health --base HEAD^1\n"
+        with:  "        run: |\n          if ! git diff --quiet HEAD^1 HEAD -- rebrand/UPSTREAM.md; then\n            echo \"::notice::Upstream sync PR: upstream ratchets its own code, so Reign skips it here\"\n            exit 0\n          fi\n          python scripts/check --only health --base HEAD^1\n"
 
   # reign1's CPU is x86-64-v2 (no AVX2), and setup-python's Ubuntu 26.04 builds need
   # x86-64-v3 ("CPU ISA level is lower than required"). uv's Python builds run on v2, so
@@ -830,24 +1080,6 @@ post_replace:
         with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.sh"
       - plain: "https://hermes-agent.nousresearch.com/install.ps1"
         with:  "https://raw.githubusercontent.com/rook-ltd/reign/main/scripts/install.ps1"
-
-  # The repo is private: REIGN_GITHUB_TOKEN (a read-only fine-grained token) authenticates
-  # the installer's clone, and stays in origin's URL so `reign update` fetches keep working.
-  # An existing checkout gets the token applied to origin before its fetch.
-  - files:
-      - "scripts/install.sh"
-    replace:
-      - plain: "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\nREIGN_HOME="
-        with:  "REPO_URL_HTTPS=\"https://github.com/rook-ltd/reign.git\"\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\n# It stays in origin's URL so later `reign update` fetches authenticate too.\nif [ -n \"${REIGN_GITHUB_TOKEN:-}\" ]; then\n    REPO_URL_HTTPS=\"https://x-access-token:${REIGN_GITHUB_TOKEN}@github.com/rook-ltd/reign.git\"\nfi\nREIGN_HOME="
-      - regex: "(?<=stall the installer.\n)            git remote set-branches origin \"\\$BRANCH\""
-        with:  "            [ -z \"${REIGN_GITHUB_TOKEN:-}\" ] || git remote set-url origin \"$REPO_URL_HTTPS\"\n            git remote set-branches origin \"$BRANCH\""
-  - files:
-      - "scripts/install.ps1"
-    replace:
-      - plain: "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n$PythonVersion"
-        with:  "$RepoUrlHttps = \"https://github.com/rook-ltd/reign.git\"\r\n# Private repo: a read-only GitHub token in REIGN_GITHUB_TOKEN authenticates the clone.\r\n# It stays in origin's URL so later `reign update` fetches authenticate too.\r\nif ($env:REIGN_GITHUB_TOKEN) {\r\n    $RepoUrlHttps = \"https://x-access-token:$($env:REIGN_GITHUB_TOKEN)@github.com/rook-ltd/reign.git\"\r\n}\r\n$PythonVersion"
-      - plain: "                }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
-        with:  "                }\r\n                if ($env:REIGN_GITHUB_TOKEN) { git -c windows.appendAtomically=false remote set-url origin $RepoUrlHttps }\r\n                git -c windows.appendAtomically=false fetch origin $Branch\r\n"
 
   # Public repo: issues and vulnerability reports come to Rook, not Nous (upstream's links
   # survive the nousresearch protect rules otherwise).

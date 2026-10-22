@@ -24,7 +24,7 @@ import os
 from unittest.mock import patch
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.config import (
     _MISSING,

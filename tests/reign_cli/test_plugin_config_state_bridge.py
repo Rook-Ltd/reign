@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_constants import reset_reign_home_override, set_reign_home_override
 from reign_cli.plugins import PluginContext, PluginManager, PluginManifest

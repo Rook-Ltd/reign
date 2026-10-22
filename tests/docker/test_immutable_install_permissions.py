@@ -9,7 +9,9 @@ def test_container_sets_hosted_write_policy_env(built_image: str) -> None:
     script = (
         'test "$REIGN_HOME" = "/opt/data" && '
         'test "$REIGN_WRITE_SAFE_ROOT" = "/opt/data" && '
-        'test "$REIGN_DISABLE_LAZY_INSTALLS" = "1" && '
+        # Opt-in extras install into PM generations under $REIGN_HOME, never
+        # the sealed /opt/reign tree, so the image must not refuse them.
+        'test -z "${REIGN_DISABLE_LAZY_INSTALLS:-}" && '
         'test "$PYTHONDONTWRITEBYTECODE" = "1"'
     )
     result = subprocess.run(
@@ -17,6 +19,7 @@ def test_container_sets_hosted_write_policy_env(built_image: str) -> None:
         capture_output=True,
         text=True,
         timeout=60,
+        check=False,
     )
     assert result.returncode == 0, result.stderr[-2000:]
 
@@ -63,5 +66,6 @@ def test_reign_user_cannot_modify_install_but_can_write_data(built_image: str) -
         capture_output=True,
         text=True,
         timeout=120,
+        check=False,
     )
     assert result.returncode == 0, result.stderr[-2000:]

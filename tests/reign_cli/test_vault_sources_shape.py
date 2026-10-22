@@ -5,7 +5,7 @@ coerced to a dict before the opt-out is written."""
 
 from types import SimpleNamespace
 
-import yaml
+import reign_yaml as yaml
 
 from agent.vault_store import VaultStore
 from reign_cli.vault import _cmd_sources, vault_command

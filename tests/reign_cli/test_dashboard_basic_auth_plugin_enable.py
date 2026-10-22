@@ -10,7 +10,7 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.dashboard_auth import clear_providers, list_providers
 from reign_cli.plugins import PluginManager, discover_plugins

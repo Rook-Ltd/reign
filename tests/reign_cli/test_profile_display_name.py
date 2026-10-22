@@ -9,7 +9,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli.profiles import (
     create_profile,

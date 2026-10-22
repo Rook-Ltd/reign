@@ -21,7 +21,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 import reign_cli.model_selection_guards as guards
 import tui_gateway.server as srv

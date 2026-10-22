@@ -137,13 +137,16 @@ reign plugins enable <plugin-name>
 reign chat --query 'Reply exactly ok'
 ```
 
-For source checkouts, prefer the source command so the runtime sees plugins and
-middleware from the working tree:
+For source checkouts, use the [PM developer workflow](../reference/package-management.md#developer-workflow)
+and a separate development home so the runtime sees plugins and middleware from
+the working tree:
 
 ```bash
-uv sync
-uv run reign plugins enable <plugin-name>
-uv run reign chat --query 'Reply exactly ok'
+export REIGN_HOME="$HOME/reign-middleware-test"
+export REIGN_RUNTIME_DIR="$REIGN_HOME/tools"
+source ./activate
+python reign plugins enable <plugin-name>
+python reign chat --query 'Reply exactly ok'
 ```
 
 ## Generic Plugin Examples
@@ -245,8 +248,9 @@ Execution middleware may call `next_call(modified_args)` to pass a changed
 payload to later middleware and the base tool dispatcher.
 
 Plugin-specific examples should live with the plugin that owns the behavior.
-NeMo Relay execution middleware is installed through an explicitly selected
-Relay `plugins.toml`; see
+NeMo Relay execution middleware is installed through Relay's discovered user
+and system configuration, or through an explicit `plugins.toml` selected with
+`REIGN_NEMO_RELAY_PLUGINS_TOML`; see
 [Relay shared metrics](relay-shared-metrics.md).
 
 ## Safety Notes

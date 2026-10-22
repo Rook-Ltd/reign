@@ -9,6 +9,13 @@
 
 **The native desktop app for [Reign](../../README.md) — the self-improving AI agent from [Rook](https://nousresearch.com).** Same agent, same skills, same memory as the CLI and gateway, in a polished native window — chat with streaming tool output, side-by-side previews, a file browser, voice, and settings, no terminal required. Available for **macOS, Windows, and Linux**.
 
+> **Intel Macs:** the `Reign-Setup.dmg` bootstrap installer is built for
+> Apple Silicon (arm64) only, so on an Intel Mac it reports "not supported on
+> this Mac". Stable releases build the native `darwin-x64` bundle only when
+> cut with `--with macos-intel`; otherwise install the
+> [CLI](../../README.md) and run `reign desktop`. See
+> [Platform Support](../../website/docs/getting-started/platform-support.md#build-targets-and-support-priority).
+
 <table>
 <tr><td><b>Chat with the full agent</b></td><td>Streaming responses, live tool activity, structured tool summaries, and the same conversation history as every other Reign surface.</td></tr>
 <tr><td><b>Side-by-side previews</b></td><td>Render web pages, files, and tool outputs in a right-hand pane while you keep chatting.</td></tr>
@@ -40,11 +47,12 @@ Prebuilt installers are built and distributed via [the Reign Desktop website.](h
 
 ## Updating
 
-The app checks for updates in the background and offers a one-click update when one is ready. You can also update any time from the CLI:
+Update through the owner of the installed artifact: Windows App Installer for
+sideload MSIX, Microsoft Store for Store packages, and `electron-updater` for
+macOS bundles. Source-built apps use the checkout update handoff.
 
-```bash
-reign update
-```
+`reign update` updates managed source checkouts; it does not rewrite a bundled
+payload. See [BUILDING.md](BUILDING.md) for package and release contracts.
 
 ---
 
@@ -64,7 +72,9 @@ attachment before sending, especially when the captured window is sensitive.
 
 ## Requirements
 
-The installer handles everything for you (Python 3.11+, a portable Git, ripgrep).
+Bundled packages provide Python 3.14 and their supported dependencies.
+Source/bootstrap builds have a separate preparation path. Platform-native
+requirements, including system Git on POSIX, are described in [BUILDING.md](BUILDING.md).
 macOS source builds also require Xcode Command Line Tools to compile the native
 shortcut helper. Prebuilt installers include it; no compiler is needed at runtime.
 
@@ -84,7 +94,7 @@ Point the app at a specific source checkout, or sandbox it away from your real c
 
 ```bash
 # throwaway REIGN_HOME, separate Electron userData, distinct app name to avoid the single-instance lock
-../scripts/dev-sandbox.sh npm run dev
+../../scripts/dev-sandbox.sh npm run dev
 REIGN_DESKTOP_REIGN_ROOT=/path/to/clone npm run dev
 REIGN_HOME=$HOME/.reign/cache/scratch/throwaway npm run dev
 npm run dev:fake-boot   # exercise the startup overlay with deterministic delays
@@ -94,19 +104,23 @@ npm run dev:fake-boot   # exercise the startup overlay with deterministic delays
 
 ```bash
 npm run dist:mac     # DMG + zip
-npm run dist:win     # NSIS + MSI
+npm run dist:win     # MSIX
 npm run dist:linux   # AppImage + deb + rpm
 npm run pack         # unpacked app under release/ (no installer)
 ```
 
-Installers are built and uploaded to GitHub Releases manually. macOS/Windows signing & notarization happen automatically when the relevant credentials are present in the environment (`CSC_LINK` / `CSC_KEY_PASSWORD` / `APPLE_*` for macOS, `WIN_CSC_*` for Windows).
+These are ordinary packaging commands, not complete tagged payload builds.
+Use [BUILDING.md](BUILDING.md) for the native bundled builder, Azure/Apple
+signing, R2 artifact publication, and release gates. The current release matrix
+publishes Windows and macOS packages; Linux desktop legs are disabled.
 
 ### How it works
 
-The packaged app ships the Electron shell and a native React chat surface. On
-first launch it can install the Reign runtime into `REIGN_HOME`
-(`~/.reign`, or `%LOCALAPPDATA%\reign` on Windows), using the same layout as a
-CLI install.
+The bundled app carries the Electron shell, native React chat surface, and
+local agent payload. It runs the payload directly from resources. User data
+lives in `REIGN_HOME` outside the app. Bootstrap builds instead provision a
+source installation. A remote-only Light variant exists as a build target but
+is not published.
 
 The app has three boundaries:
 
@@ -118,16 +132,13 @@ The app has three boundaries:
   `tui_gateway` JSON-RPC/WebSocket API. The renderer connects through
   [`apps/shared`](../shared/), which is also used by the browser dashboard.
 
-Backend resolution is an ordered ladder:
+A bundled artifact uses its payload. If that payload is unusable, the app
+reports damage rather than installing a second checkout. It does not adopt
+an arbitrary `reign` command on PATH or a system Python installation.
 
-1. `REIGN_DESKTOP_REIGN_ROOT`
-2. the current source checkout during development
-3. a completed managed install
-4. `REIGN_DESKTOP_REIGN`, or `reign` on `PATH`
-5. a system Python that can import the Reign runtime
-6. the first-launch bootstrap installer
-
-Candidates are probed before use; an existing shim or interpreter is not enough.
+Non-bundled builds can use the explicit source-root override, development
+checkout, completed managed install, or `REIGN_DESKTOP_REIGN` deployment
+override before offering bootstrap. Candidates are probed before use.
 A runtime that predates `serve` falls back to headless
 `dashboard --no-open`. This is compatibility for the backend command only and
 does not launch or embed the dashboard UI.

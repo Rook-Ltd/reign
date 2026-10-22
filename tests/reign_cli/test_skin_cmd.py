@@ -7,7 +7,7 @@ The whole point is that changing one token never disturbs the rest of the look
 import os
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 from reign_cli import skin_cmd
 from reign_constants import get_reign_home
@@ -99,6 +99,7 @@ def test_set_persists_the_skin_durably():
     assert [p.name for p in _skins().iterdir() if p.name.endswith(".tmp")] == []
 
 
+@pytest.mark.require_symlinks
 def test_set_preserves_a_symlinked_skin_file():
     """Guard on the conversion, not a behavior change.
 

@@ -16,7 +16,7 @@ Windows post-update path already uses for exactly this case.
 
 import pytest
 
-import reign_cli.gateway as gateway
+from reign_cli import gateway
 
 
 _ARGV = ["python", "-m", "reign_cli.main", "gateway", "run"]

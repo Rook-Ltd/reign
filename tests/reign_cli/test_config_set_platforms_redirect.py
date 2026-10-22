@@ -10,13 +10,13 @@ edit appeared to succeed while having no effect.
 from pathlib import Path
 
 import pytest
-import yaml
+import reign_yaml as yaml
 
 
 def _write_config(reign_home: Path, data: dict) -> Path:
     reign_home.mkdir(parents=True, exist_ok=True)
     config_path = reign_home / "config.yaml"
-    config_path.write_text(yaml.dump(data))
+    config_path.write_text(yaml.safe_dump(data))
     return config_path
 
 

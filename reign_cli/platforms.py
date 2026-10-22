@@ -21,7 +21,6 @@ PLATFORMS: OrderedDict[str, PlatformInfo] = OrderedDict([
     ("signal",         PlatformInfo(label="📡 Signal",          default_toolset="reign-signal")),
     ("bluebubbles",    PlatformInfo(label="💙 BlueBubbles",     default_toolset="reign-bluebubbles")),
     ("email",          PlatformInfo(label="📧 Email",           default_toolset="reign-email")),
-    ("homeassistant",  PlatformInfo(label="🏠 Home Assistant",  default_toolset="reign-homeassistant")),
     ("mattermost",     PlatformInfo(label="💬 Mattermost",      default_toolset="reign-mattermost")),
     ("matrix",         PlatformInfo(label="💬 Matrix",          default_toolset="reign-matrix")),
     ("dingtalk",       PlatformInfo(label="💬 DingTalk",        default_toolset="reign-dingtalk")),
@@ -56,7 +55,7 @@ def platform_label(key: str, default: str = "") -> str:
     return default
 
 
-def get_all_platforms() -> "OrderedDict[str, PlatformInfo]":
+def get_all_platforms() -> OrderedDict[str, PlatformInfo]:
     """PLATFORMS plus plugin-registered platforms (appended after builtins) — use for menus."""
     merged = OrderedDict(PLATFORMS)
     try:

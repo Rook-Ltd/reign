@@ -108,6 +108,44 @@ class TestFleetRestartTimeoutIsolation:
 
         assert seen == ["reign-serve", "reign-serve-work", "reign-gateway"]
 
+    def test_reign_dashboard_units_are_included(self):
+        # #125297 — the same blind spot for the systemd-supervised dashboard: the
+        # unit pass skipped reign-dashboard*, so a successful update left the
+        # dashboard on pre-update code with outcome "deferred" and nothing
+        # restarted it. Reconciliation already credits reign-dashboard{,-<profile>}
+        # unit restarts; the pass must produce one.
+        seen: list[str] = []
+
+        _for_each_systemd_gateway_unit(
+            "\n".join(
+                [
+                    "ssh.service loaded active running",
+                    "reign-dashboard.service loaded active running",
+                    "reign-dashboard-work.service loaded active running",
+                    "reign-serve.service loaded active running",
+                    "",
+                ]
+            ),
+            process_unit=seen.append,
+            on_unit_timeout=lambda *_: pytest.fail("unexpected timeout"),
+        )
+
+        assert seen == ["reign-dashboard", "reign-dashboard-work", "reign-serve"]
+
+    def test_reign_dashboard_near_prefix_is_rejected(self):
+        # Same strict shape on the dashboard side: a bare
+        # ``startswith("reign-dashboard")`` gate would also accept the
+        # unrelated ``reign-dashboardd.service``.
+        seen: list[str] = []
+
+        _for_each_systemd_gateway_unit(
+            _list_units_stdout(["reign-dashboardd", "reign-dashboard-work"]),
+            process_unit=seen.append,
+            on_unit_timeout=lambda *_: pytest.fail("unexpected timeout"),
+        )
+
+        assert seen == ["reign-dashboard-work"]
+
     def test_reign_server_near_prefix_is_rejected(self):
         # Review on #83595: a bare ``startswith("reign-serve")`` gate also
         # accepts the unrelated ``reign-server.service``. Only the exact

@@ -29,8 +29,8 @@ _DISCOVERY_CONTEXT_LEAD = "Could not read authorization-server metadata"
 def _default_auth_request_user_agent() -> str:
     """``Reign/<version>`` for SDK-built OAuth requests that would otherwise carry no User-Agent at
     all; versioned so an operator debugging a WAF block can tell which client they are looking at."""
-    from reign_cli import __version__
-    return f"Reign/{__version__}"
+    from reign_cli.version_info import get_version_info
+    return f"Reign/{get_version_info().base_version}"
 
 
 DEFAULT_AUTH_REQUEST_USER_AGENT = _default_auth_request_user_agent()
@@ -603,7 +603,7 @@ def enforce_refresh_token_issuer(context: Any) -> None:
         tokens.refresh_token = None
 
 
-def prepare_oauth_config(server_name: str, server_url: str, oauth_config: dict | None) -> tuple[dict, "ReignTokenStorage"]:
+def prepare_oauth_config(server_name: str, server_url: str, oauth_config: dict | None) -> tuple[dict, ReignTokenStorage]:
     """Copy the ``oauth:`` block, apply provider defaults, open its token storage. The copy
     matters: later steps record ``_resolved_port`` / ``_cimd_url`` in the dict, which must
     never leak back into the caller's config."""
@@ -613,7 +613,7 @@ def prepare_oauth_config(server_name: str, server_url: str, oauth_config: dict |
     return cfg, mo.ReignTokenStorage(server_name)
 
 
-def build_provider_kwargs(cfg: dict, storage: "ReignTokenStorage", *, ssh_proxy_hint: bool) -> dict[str, Any]:
+def build_provider_kwargs(cfg: dict, storage: ReignTokenStorage, *, ssh_proxy_hint: bool) -> dict[str, Any]:
     """Resolve the callback port and return the shared provider constructor kwargs. Order
     matters: metadata needs the resolved port, pre-registration needs the metadata.
     ``ssh_proxy_hint`` lets the redirect handler tailor its remote-session hint to a configured

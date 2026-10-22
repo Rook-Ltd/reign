@@ -16,8 +16,8 @@ import time
 
 import pytest
 
-import reign_cli.auth as auth
-import reign_cli.auth_codex as auth_codex
+from reign_cli import auth
+from reign_cli import auth_codex
 from reign_cli.auth import AuthError, _refresh_codex_auth_tokens, resolve_codex_runtime_credentials
 
 STALE = {"access_token": "stale-access", "refresh_token": "stale-refresh"}

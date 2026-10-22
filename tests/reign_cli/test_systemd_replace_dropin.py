@@ -49,7 +49,7 @@ def test_refresh_retires_the_reign_replace_dropin_even_when_the_unit_text_is_cur
 
 def test_refresh_keeps_an_operator_written_dropin_of_the_same_name(tmp_path, monkeypatch):
     """Only the file Reign authored (recognised by its own comment) is retired."""
-    unit, dropin, calls = _current_unit_with_dropin(
+    _unit, dropin, calls = _current_unit_with_dropin(
         tmp_path, monkeypatch, "[Service]\nExecStart=\nExecStart=/opt/reign gateway run --replace\n")
 
     assert gateway_cli.refresh_systemd_unit_if_needed() is False

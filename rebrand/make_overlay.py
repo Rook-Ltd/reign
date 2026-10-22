@@ -26,7 +26,7 @@ def main() -> None:
     args = ap.parse_args()
     base = args.base or re.search(r"Forked at: ([0-9a-f]{40})", (ROOT / "rebrand/UPSTREAM.md").read_text()).group(1)
     wt = Path(tempfile.gettempdir()) / "reign-overlay-base"
-    subprocess.run(["git", "worktree", "remove", "--force", str(wt)], cwd=ROOT, capture_output=True)
+    subprocess.run(["git", "worktree", "remove", "--force", str(wt)], cwd=ROOT, capture_output=True, check=False)
     shutil.rmtree(wt, ignore_errors=True)
     subprocess.run(["git", "worktree", "add", "-q", "--detach", str(wt), base], cwd=ROOT, check=True)
     shutil.copytree(ROOT / "rebrand", wt / "rebrand", dirs_exist_ok=True)

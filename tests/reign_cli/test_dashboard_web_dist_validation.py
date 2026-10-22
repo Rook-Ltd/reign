@@ -18,7 +18,7 @@ import pytest
 
 @pytest.fixture()
 def main_mod():
-    import reign_cli.main as main
+    from reign_cli import main
     return main
 
 
