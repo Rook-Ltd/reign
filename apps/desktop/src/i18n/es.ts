@@ -1738,8 +1738,7 @@ export const esOverrides = {
         'Un ajuste de inicio externo a la app eligió esta conexión, así que las opciones de abajo son de solo lectura. Reinicia Reign sin ese ajuste (o pregunta a quien lo configuró) para cambiarla aquí.',
       modeTitle: 'Modo de conexión',
       localTitle: 'Gateway local',
-      localDesc:
-        'Inicia un backend privado de Reign en localhost. Es el valor predeterminado y funciona sin conexión.',
+      localDesc: 'Inicia un backend privado de Reign en localhost. Es el valor predeterminado y funciona sin conexión.',
       remoteTitle: 'Gateway remoto',
       remoteDesc: 'Conecta esta shell de escritorio a un backend remoto de Reign.',
       remoteAuthHint:
@@ -3656,8 +3655,7 @@ export const esOverrides = {
       title: 'La base de datos de sesiones está dañada',
       body: (profiles: string) =>
         `Reign no puede leer todo el historial de sesiones de ${profiles}. Los chats que faltan en esta lista no se eliminaron; el archivo donde se guardan está dañado.`,
-      action:
-        'Sal de Reign en este perfil y luego inspecciona el archivo sin modificarlo, o restaura una instantánea:',
+      action: 'Sal de Reign en este perfil y luego inspecciona el archivo sin modificarlo, o restaura una instantánea:',
       guide: 'Guía de recuperación'
     },
     noFilterMatches: 'Ninguna sesión coincide con estos filtros',

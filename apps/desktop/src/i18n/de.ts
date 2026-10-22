@@ -1466,16 +1466,14 @@ export const deOverrides = {
       options: {
         gui: {
           title: 'Nur die Chat-Oberfläche deinstallieren',
-          description:
-            'Entfernt diese Desktop-App. Der Reign, Ihre Konfiguration und Ihre Chats bleiben erhalten.',
+          description: 'Entfernt diese Desktop-App. Der Reign, Ihre Konfiguration und Ihre Chats bleiben erhalten.',
           consequence: 'die Desktop-Chat-Oberfläche (diese App und ihre Daten)'
         },
         lite: {
           title: 'Oberfläche + Agent deinstallieren, Daten behalten',
           description:
             'Entfernt die App und den Reign, behält aber Konfiguration, Chats und Geheimnisse für eine spätere Neuinstallation.',
-          consequence:
-            'die Chat-Oberfläche und den Reign (Konfiguration, Chats und Geheimnisse bleiben erhalten)'
+          consequence: 'die Chat-Oberfläche und den Reign (Konfiguration, Chats und Geheimnisse bleiben erhalten)'
         },
         full: {
           title: 'Alles deinstallieren',

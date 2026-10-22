@@ -98,9 +98,7 @@ describe('hub pick messages', () => {
 
     const frame = openHubBrowser()
 
-    await waitFor(() =>
-      expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/reign/docs/skills?embed=picker`)
-    )
+    await waitFor(() => expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/reign/docs/skills?embed=picker`))
   })
 
   it('uses GitHub Pages when the probe request fails', async () => {
@@ -108,9 +106,7 @@ describe('hub pick messages', () => {
 
     const frame = openHubBrowser()
 
-    await waitFor(() =>
-      expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/reign/docs/skills?embed=picker`)
-    )
+    await waitFor(() => expect(frame.getAttribute('src')).toBe(`${FALLBACK_HUB_ORIGIN}/reign/docs/skills?embed=picker`))
   })
 
   it('uses GitHub Pages when the probe hangs past its deadline', async () => {

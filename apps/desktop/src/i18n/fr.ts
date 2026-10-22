@@ -4274,8 +4274,7 @@ export const frOverrides = {
     manualBody:
       "Vous avez installé Reign depuis la ligne de commande, les mises à jour s'y effectuent donc aussi. Collez ceci dans votre terminal :",
     manualPickedUp: 'Reign prendra en compte la nouvelle version au prochain lancement.',
-    manualBodyBackend:
-      'Le backend Reign est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
+    manualBodyBackend: 'Le backend Reign est géré en dehors de cette app. Exécutez ceci sur le serveur qui l’héberge :',
     manualPickedUpBackend: 'Le backend chargera la nouvelle version une fois la mise à jour terminée.',
     guiSkewTitle: "Mettre à jour l'application de bureau",
     guiSkewBody:

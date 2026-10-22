@@ -699,9 +699,7 @@ test('platform detection preserves typed Windows probe failures', async () => {
 })
 
 test('helper command uses the fixed remote Python entry point and quotes path data', () => {
-  const command = helperCommand({ python: "C:\\Program Files\\Reign's\\python.exe" }, 'inspect', [
-    'C:\\x y\\reign.exe'
-  ])
+  const command = helperCommand({ python: "C:\\Program Files\\Reign's\\python.exe" }, 'inspect', ['C:\\x y\\reign.exe'])
 
   const encoded = command.split(' ').pop()!
   const script = Buffer.from(encoded, 'base64').toString('utf16le')

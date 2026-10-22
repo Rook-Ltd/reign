@@ -184,8 +184,7 @@ export const arBoot = {
     done: 'تم',
     applyingBody:
       'يتولّى مُحدِّث Reign المهمة في نافذته الخاصة ويعيد فتح Reign تلقائيا عند الانتهاء. الرجاء عدم إعادة فتح Reign بنفسك أثناء التحديث.',
-    applyingBodyBackend:
-      'تطبّق الواجهة الخلفية البعيدة التحديث وستعيد التشغيل. يعيد Reign الاتصال تلقائيا عند عودتها.',
+    applyingBodyBackend: 'تطبّق الواجهة الخلفية البعيدة التحديث وستعيد التشغيل. يعيد Reign الاتصال تلقائيا عند عودتها.',
     applyingClose: 'ستُغلق هذه النافذة أثناء تشغيل التحديث، ثم يعيد Reign فتح نفسه تلقائيا.',
     errorTitle: 'لم يكتمل التحديث',
     errorBody: 'لا داعي للقلق — لم يُفقد شيء. يمكنك إعادة المحاولة الآن.',
@@ -351,5 +350,12 @@ export const arBoot = {
   }
 } satisfies Pick<
   TranslationOverrides,
-  'boot' | 'remoteDisplayBanner' | 'butterbar' | 'promptNotices' | 'keepAwakeOffer' | 'updates' | 'install' | 'onboarding'
+  | 'boot'
+  | 'remoteDisplayBanner'
+  | 'butterbar'
+  | 'promptNotices'
+  | 'keepAwakeOffer'
+  | 'updates'
+  | 'install'
+  | 'onboarding'
 >

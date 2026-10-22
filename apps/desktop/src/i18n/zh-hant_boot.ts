@@ -141,8 +141,7 @@ export const zhHantBoot = {
     copy: '複製',
     copied: '已複製',
     done: '完成',
-    applyingBody:
-      'Reign 更新程式會在自己的視窗中接管，並在完成後自動重新開啟 Reign。更新期間請勿自行重新開啟 Reign。',
+    applyingBody: 'Reign 更新程式會在自己的視窗中接管，並在完成後自動重新開啟 Reign。更新期間請勿自行重新開啟 Reign。',
     applyingBodyBackend: '遠端後端正在套用更新並將重新啟動。恢復後 Reign 會自動重新連線。',
     applyingClose: '此視窗會在更新期間關閉，隨後 Reign 會自動重新開啟。',
     errorTitle: '更新未完成',
@@ -353,5 +352,12 @@ export const zhHantBoot = {
   }
 } satisfies Pick<
   TranslationOverrides,
-  'boot' | 'remoteDisplayBanner' | 'butterbar' | 'promptNotices' | 'keepAwakeOffer' | 'updates' | 'install' | 'onboarding'
+  | 'boot'
+  | 'remoteDisplayBanner'
+  | 'butterbar'
+  | 'promptNotices'
+  | 'keepAwakeOffer'
+  | 'updates'
+  | 'install'
+  | 'onboarding'
 >

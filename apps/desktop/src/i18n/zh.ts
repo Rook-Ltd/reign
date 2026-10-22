@@ -1614,8 +1614,7 @@ export const zhOverrides = {
       authenticate: '认证',
       noOutput: '暂无输出。',
       deepLinkTitle: '添加 MCP 服务器？',
-      deepLinkDescription:
-        '一个链接请求将此 MCP 服务器添加到 Reign。请检查下方的完整配置——它来自该链接，而非 Reign。',
+      deepLinkDescription: '一个链接请求将此 MCP 服务器添加到 Reign。请检查下方的完整配置——它来自该链接，而非 Reign。',
       deepLinkStdioWarning: '此服务器会使用下方所示命令在你的电脑上运行本地进程。仅在信任其来源时继续。',
       deepLinkConfirm: '添加服务器',
       deepLinkNameInvalid: '名称须为 1-64 个字母、数字、点、连字符或下划线。',
@@ -3672,8 +3671,7 @@ export const zhOverrides = {
     copy: '复制',
     copied: '已复制',
     done: '完成',
-    applyingBody:
-      'Reign 更新器会在自己的窗口中接管，并在完成后自动重新打开 Reign。更新期间请不要自行重新打开 Reign。',
+    applyingBody: 'Reign 更新器会在自己的窗口中接管，并在完成后自动重新打开 Reign。更新期间请不要自行重新打开 Reign。',
     applyingBodyBackend: '远程后端正在应用更新并将重启。恢复后 Reign 会自动重新连接。',
     applyingClose: '此窗口会在更新期间关闭，随后 Reign 会自动重新打开。',
     applyingBodyAppInstaller: 'Reign 会关闭，Windows 会完成更新，然后 Reign 自动重新打开——无需任何操作。',
