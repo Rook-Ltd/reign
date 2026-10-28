@@ -53,6 +53,10 @@ jobs:
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # 10.2.0
         with:
           python-version: '3.14'
+          # Pin uv: renaming the package makes the codemod re-resolve uv.lock from scratch, and
+          # uv 0.13 fails on upstream's android split (playwright has no wheel there). Same pin
+          # as upstream's tests.yml.
+          version: "0.12.13"
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
