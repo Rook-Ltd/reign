@@ -59,7 +59,10 @@ jobs:
           node-version-file: .nvmrc
 
       - name: Install project (for the codemod and lockfile regeneration)
-        run: uv sync --locked --python 3.14 --group dev
+        # The codemod reads mapping.yaml with PyYAML, which upstream no longer depends on.
+        run: |
+          uv sync --locked --python 3.14 --group dev
+          uv pip install --python .venv/bin/python 'pyyaml==6.0.3'
 
       - name: Fetch upstream and pick the target ref
         id: pick
