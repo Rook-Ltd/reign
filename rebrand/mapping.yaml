@@ -16,6 +16,8 @@ exclude_files:            # never touched by content replace
   - "rebrand/**"
   - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
   - ".github/workflows/desktop-windows-installer.yml"   # Rook-authored
+  - ".github/workflows/reign-release.yml"   # Rook-authored
+  - "scripts/ci/reign-image-smoke.sh"       # Rook-authored
   - "**/package-lock.json" # regenerated after the run
   - uv.lock
   - flake.lock
@@ -1026,6 +1028,17 @@ post_replace:
         with:  ""
       - regex: "if: github\\.event_name != 'workflow_dispatch' \\|\\| (contains\\(fromJSON\\('\\[\"all\", \"(?:windows|macos)-desktop\"\\]'\\), inputs\\.route\\))"
         with:  "if: github.event_name == 'workflow_dispatch' && \\1"
+  # Joel's call (2026-10-28): upstream's own release and site-maintenance timers don't apply to
+  # Reign (the canary publishes to Nous's release channel and fails "Channel repository authority
+  # mismatch"; the others skip off upstream's repo), so they run only on a manual dispatch.
+  - files:
+      - ".github/workflows/canary-release.yml"
+      - ".github/workflows/docs-search-monitor.yml"
+      - ".github/workflows/skills-index.yml"
+      - ".github/workflows/skills-index-freshness.yml"
+    replace:
+      - regex: "  schedule:\n(?:    #[^\n]*\n)*    - cron: [^\n]*\n"
+        with:  ""
   - files:
       - ".github/workflows/docker.yml"
     replace:

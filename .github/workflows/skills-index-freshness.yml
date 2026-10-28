@@ -12,8 +12,6 @@ name: Skills Index Freshness Check
 # its own issue when a browser would block the fetch.
 
 on:
-  schedule:
-    - cron: '0 */4 * * *'
   workflow_dispatch:
 
 permissions:

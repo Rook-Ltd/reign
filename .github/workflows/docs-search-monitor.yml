@@ -15,8 +15,6 @@ name: Docs Search Monitor
 # to the repository's `workflow_run` webhook events for this file.
 
 on:
-  schedule:
-    - cron: '17 */6 * * *'
   workflow_run:
     workflows: ['Deploy Site']
     types: [completed]
