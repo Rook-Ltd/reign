@@ -1,0 +1,123 @@
+name: Reign Release
+
+# Rook-authored. Promotes what lands on main to Rook's servers in two steps:
+#
+#   CI green on main ──► build + smoke-test image ──► ghcr.io/rook-ltd/reign:staging
+#                                                      (staging host pulls it on its timer)
+#                         Joel approves "production" ──► ghcr.io/rook-ltd/reign:stable
+#                                                      (client hosts pull it on their timer)
+#
+# Every image is also tagged sha-<commit>, so a host can pin or roll back to an exact build.
+# The servers sit on private networks GitHub can't reach, so nothing here deploys to them:
+# each host runs reign-update from the private reign-deploy repo, which follows one channel
+# tag, health-checks the containers and rolls back on failure.
+#
+# Setup (once): Settings → Environments → "production" with Joel as a required reviewer.
+# Approving a run promotes that exact build. A newer merge waits in its own run; approve the
+# newest one (older pending runs can be rejected).
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: 'Commit on main to build (default: main head)'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/rook-ltd/reign
+
+jobs:
+  staging:
+    name: Build and publish to staging
+    # Only main's own pushes: a workflow_run from a fork PR must never publish.
+    if: >-
+      github.repository == 'Rook-Ltd/reign' &&
+      (github.event_name == 'workflow_dispatch' ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: reign-release-staging
+      cancel-in-progress: false
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ inputs.commit || github.event.workflow_run.head_sha || github.sha }}
+
+      - id: meta
+        run: echo "tag=sha-$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build (amd64)
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          tags: reign:smoke
+          cache-from: type=gha,scope=reign-release
+          cache-to: type=gha,mode=max,scope=reign-release
+
+      - name: Smoke test the dashboard the way the servers run it
+        run: bash scripts/ci/reign-image-smoke.sh reign:smoke
+
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Push sha tag and move staging
+        id: push
+        run: |
+          set -euo pipefail
+          docker tag reign:smoke "$IMAGE:${{ steps.meta.outputs.tag }}"
+          docker push "$IMAGE:${{ steps.meta.outputs.tag }}"
+          digest=$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGE:${{ steps.meta.outputs.tag }}" | cut -d@ -f2)
+          docker buildx imagetools create -t "$IMAGE:staging" "$IMAGE@$digest"
+          echo "digest=$digest" >> "$GITHUB_OUTPUT"
+          {
+            echo "### Staging: \`$IMAGE:${{ steps.meta.outputs.tag }}\`"
+            echo "Digest \`$digest\`. The staging host picks it up on its next reign-update run."
+            echo "Approve the **production** job once staging looks right."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    name: Promote to production (stable)
+    needs: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    concurrency:
+      group: reign-release-production
+      cancel-in-progress: false
+    steps:
+      - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Move stable to this build
+        run: |
+          set -euo pipefail
+          docker buildx imagetools create -t "$IMAGE:stable" "$IMAGE@${{ needs.staging.outputs.digest }}"
+          echo "### Production: \`$IMAGE:stable\` = \`${{ needs.staging.outputs.tag }}\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "Client hosts pick it up on their next reign-update run." >> "$GITHUB_STEP_SUMMARY"

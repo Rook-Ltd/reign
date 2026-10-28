@@ -1,6 +1,7 @@
 name: Upstream Sync
 
-# Weekly re-cut of Reign from the newest upstream hermes-agent release tag.
+# Weekly re-cut of Reign from the newest upstream hermes-agent stable release tag
+# (vX.Y.Z; the daily vX.Y.Z+canary.* tags are skipped).
 #
 #   schedule ──► pick newest v* tag ──► rebrand/sync_upstream.py --ci
 #                                           │
@@ -17,11 +18,13 @@ name: Upstream Sync
 
 on:
   schedule:
-    - cron: '17 6 * * 1'        # Mondays 06:17 UTC
+    # Saturdays 09:17 UTC. GitHub often starts scheduled runs hours late, which is fine here:
+    # the PR is ready for review before the week starts.
+    - cron: '17 9 * * 6'
   workflow_dispatch:
     inputs:
       ref:
-        description: 'Upstream ref to sync to (default: newest v* release tag)'
+        description: 'Upstream ref to sync to (default: newest stable vX.Y.Z release tag)'
         required: false
         default: ''
 
@@ -49,14 +52,14 @@ jobs:
 
       - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # 10.2.0
         with:
-          python-version: '3.11'
+          python-version: '3.14'
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version-file: .nvmrc
 
       - name: Install project (for the codemod and lockfile regeneration)
-        run: uv sync --locked --python 3.11 --extra dev
+        run: uv sync --locked --python 3.14 --group dev
 
       - name: Fetch upstream and pick the target ref
         id: pick
@@ -68,7 +71,15 @@ jobs:
           git fetch -q upstream --tags
           REF='${{ inputs.ref }}'
           if [ -z "$REF" ]; then
-            REF=$(git tag -l 'v*' | sort -V | tail -1)
+            # Newest stable release by date. Upstream switched from v2026.M.D to vX.Y.Z tags,
+            # so a version sort would pick the old date-style tags.
+            REF=$(git tag -l 'v*' --sort=-creatordate | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          fi
+          # Never sync backwards: the target must contain the commit main was last synced to.
+          SYNCED=$(sed -n 's/^- Synced at: \([0-9a-f]*\).*/\1/p' rebrand/UPSTREAM.md)
+          if ! git merge-base --is-ancestor "$SYNCED" "$REF"; then
+            echo "::error::$REF does not contain the last synced upstream commit $SYNCED"
+            exit 1
           fi
           echo "ref=$REF" >> "$GITHUB_OUTPUT"
           echo "slug=$(echo "$REF" | tr '/' '-')" >> "$GITHUB_OUTPUT"
