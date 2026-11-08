@@ -113,7 +113,7 @@ jobs:
 
           echo "Changed catalog entries:"
           echo "${CHANGED:-<none>}"
-          MATRIX=$(printf '%s\n' "$CHANGED" | python3 scripts/ci/catalog_validation_batches.py)
+          MATRIX=$(printf '%s\n' "$CHANGED" | python3 "$GITHUB_WORKSPACE/scripts/ci/catalog_validation_batches.py")
           echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
           if [ -n "$CHANGED" ]; then echo 'has-entries=true'; else echo 'has-entries=false'; fi >> "$GITHUB_OUTPUT"
 

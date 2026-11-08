@@ -1,8 +1,8 @@
 name: talaria-webui
 repo: https://github.com/liamsmith86/talaria-webui
 sha: 04ebc042c43e3af07ccdc44fa30c1794f1b02c1e
-subdir: src/talaria/hermes_plugin
-description: "Extends Hermes Agent API capabilities to deliver a richer chat interface with Talaria WebUI. Disclosure — adds API_SERVER_KEY-authenticated /talaria/v1 routes to the Hermes API server (cross-session history search, rewind/compress of API sessions, branching any session into a new API session, runs with the profile's instructions and prefill); stores response metadata (no message bodies) in $HERMES_HOME/talaria/observations.db; relies on private api_server/AIAgent internals behind feature detection."
+subdir: src/talaria/reign_plugin
+description: "Extends Reign API capabilities to deliver a richer chat interface with Talaria WebUI. Disclosure — adds API_SERVER_KEY-authenticated /talaria/v1 routes to the Reign API server (cross-session history search, rewind/compress of API sessions, branching any session into a new API session, runs with the profile's instructions and prefill); stores response metadata (no message bodies) in $REIGN_HOME/talaria/observations.db; relies on private api_server/AIAgent internals behind feature detection."
 maintainer: liamsmith86
 tier: community
 category: web
