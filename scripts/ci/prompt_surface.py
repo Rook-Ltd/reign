@@ -95,6 +95,10 @@ def _pin_environment() -> None:
     # The toolchain probe line reports the host's python/node/pip; it is environment, not code.
     from tools import env_probe
     env_probe.get_environment_probe_line = lambda **_k: ""  # type: ignore[assignment]
+    # Render the canonical Linux schema without changing native host facts.
+    from tools import file_tools
+    schema = file_tools.SEARCH_FILES_SCHEMA
+    schema["description"] = schema["description"].replace(file_tools._MACOS_SEARCH_NOTE, "")
 
 
 class _ImportFailures(logging.Handler):

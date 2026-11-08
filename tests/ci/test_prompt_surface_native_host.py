@@ -19,6 +19,8 @@ import psutil
 from agent.skill_utils import skill_matches_platform_list
 assert sys.platform == native_platform
 assert psutil.Process().pid > 0
+from tools import file_tools
+assert not file_tools._MACOS_SEARCH_NOTE or file_tools._MACOS_SEARCH_NOTE not in file_tools.SEARCH_FILES_SCHEMA['description']
 assert skill_matches_platform_list(['linux'])
 assert not skill_matches_platform_list(['macos'])
 assert skill_matches_platform_list(['windows'], host_platform='win32')
