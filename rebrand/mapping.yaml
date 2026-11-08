@@ -15,6 +15,9 @@ exclude_files:            # never touched by content replace
   - "plugin-catalog/*.yaml" # remote plugin identities and paths are not Reign-owned
   - "plugin-catalog/*.yml"
   - "plugins/config_backends/remote/vendor/**" # checksummed upstream protocol fixtures
+  - "reign_cli/plugin_host_api.py" # public upstream API spellings are an intentional compatibility contract
+  - "tests/reign_cli/fixtures/upstream_api/**"
+  - "tests/reign_cli/test_upstream_plugin_api.py"
   - "brand/**"
   - "rebrand/**"
   - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
@@ -35,6 +38,8 @@ rename_exclude:           # never MOVED. Everything else in exclude_files still 
   - "plugin-catalog/*.yaml"
   - "plugin-catalog/*.yml"
   - "plugins/config_backends/remote/vendor/**"
+  - "tests/reign_cli/fixtures/upstream_api/**"
+  - "tests/reign_cli/test_upstream_plugin_api.py"
   - "brand/**"
   - "rebrand/**"
   - ".git/**"
