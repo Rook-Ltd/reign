@@ -231,6 +231,17 @@ check_allow:
 # distribution repo. Documentation links stay on upstream (decision 8).
 post_replace:
   - files:
+      - ".github/workflows/js-autofix.yml"
+    replace:
+      - plain: "    steps:\n      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n\n      - name: Get GitHub App token"
+        with: "    steps:\n      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n        with:\n          persist-credentials: false\n\n      - name: Get GitHub App token"
+      - plain: "          private-key: ${{ secrets.APP_PRIVATE_KEY }}\n\n      - name: Download patch"
+        with: "          private-key: ${{ secrets.APP_PRIVATE_KEY }}\n          fallback-token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}\n\n      - name: Download patch"
+      - plain: "      - name: Apply patch and push to bot branch\n        env:\n          BOT_BRANCH:"
+        with: "      - name: Apply patch and push to bot branch\n        env:\n          GH_TOKEN: ${{ steps.app-token.outputs.token }}\n          BOT_BRANCH:"
+      - plain: "          # recreates it.\n          git push --force origin HEAD:\"$BOT_BRANCH\""
+        with: "          # recreates it.\n          gh auth setup-git\n          git push --force origin HEAD:\"$BOT_BRANCH\""
+  - files:
       - "plugin-catalog/*.yaml"
       - "plugin-catalog/*.yml"
     replace:
