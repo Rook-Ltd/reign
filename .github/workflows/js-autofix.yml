@@ -142,6 +142,8 @@ jobs:
       pull-requests: write # needed for PR creation + auto-merge
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
 
       - name: Get GitHub App token
         id: app-token
@@ -149,6 +151,7 @@ jobs:
         with:
           client-id: ${{ vars.APP_CLIENT_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          fallback-token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}
 
       - name: Download patch
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
@@ -162,6 +165,7 @@ jobs:
 
       - name: Apply patch and push to bot branch
         env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BOT_BRANCH: bot/js-autofix
         run: |
           set -euo pipefail
@@ -188,6 +192,7 @@ jobs:
           # bot/js-autofix is a bot-only branch that gets rewritten each run.
           # If the branch was deleted after a previous PR merge, this
           # recreates it.
+          gh auth setup-git
           git push --force origin HEAD:"$BOT_BRANCH"
 
       - name: Create/update PR and enable auto-merge
