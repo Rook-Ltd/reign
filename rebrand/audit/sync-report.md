@@ -11,6 +11,13 @@
 
 Validation before PR:
 
-- 817 focused authentication, gateway, CLI, prompt, skill and model-picker tests passed; one platform-dependent test skipped.
+- 842 focused authentication, gateway, CLI, prompt, skill, model-picker, catalog and sync-tooling tests passed; one platform-dependent test skipped.
 - Rebranding gates: no unresolved conflict markers and no unexpected upstream brand images.
-- Full repository checks are running; an inherited silent fallback was corrected to log its traceback.
+- All 14 repository checks passed on the application integration; the final catalog-tooling revision is being rechecked. An inherited silent fallback now logs its traceback.
+
+Catalog handling:
+
+- Catalog entry YAML is carried in a separate data-only companion PR, preserving the admission gate.
+- External plugin names, repository paths, capabilities and credential identifiers are preserved; only the host compatibility field is translated.
+- The codemod uses the project's existing ruamel.yaml dependency.
+- Native PM bundle builds remain manually dispatched because the upstream private macOS runner is unavailable in this fork.

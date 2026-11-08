@@ -12,6 +12,8 @@ exclude_files:            # never touched by content replace
   - "**/NOTICE"
   - REIGN-REBRAND-PLAN.md
   - "contributors/**"     # git author identities, not branding
+  - "plugin-catalog/*.yaml" # remote plugin identities and paths are not Reign-owned
+  - "plugin-catalog/*.yml"
   - "brand/**"
   - "rebrand/**"
   - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
@@ -29,6 +31,8 @@ rename_exclude:           # never MOVED. Everything else in exclude_files still 
   - NOTICE
   - REIGN-REBRAND-PLAN.md
   - "contributors/**"
+  - "plugin-catalog/*.yaml"
+  - "plugin-catalog/*.yml"
   - "brand/**"
   - "rebrand/**"
   - ".git/**"
@@ -226,6 +230,19 @@ check_allow:
 # fallback, official-repo detection, release links, user agents) at the Rook
 # distribution repo. Documentation links stay on upstream (decision 8).
 post_replace:
+  - files:
+      - "plugin-catalog/*.yaml"
+      - "plugin-catalog/*.yml"
+    replace:
+      - regex: '(?m)^requires_hermes:'
+        with: 'requires_reign:'
+      - regex: '(?s)\A(\s*\{.*?)"requires_hermes"(?=\s*:)'
+        with: '\1"requires_reign"'
+  - files:                # Native bundle builders need upstream's private macOS runner; keep Rook builds manual
+      - ".github/workflows/pm-bundle.yml"
+    replace:
+      - regex: '(?m)^  pull_request:\n(?:    .*\n|[ \t]*\n)*'
+        with: ''
   - files:
       - "reign_cli/model_switch_providers.py"
     replace:
@@ -653,7 +670,6 @@ post_replace:
     - tests/tools/test_wake_word.py
     replace:
     - plain: assert ww._provider({}) == "openwakeword"
-      with: assert ww._provider({}) == "sherpa"
       with: 'assert ww._provider({}) == "sherpa"'
   - files:
     - website/src/**/*.css

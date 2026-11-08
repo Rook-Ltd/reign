@@ -7,7 +7,6 @@ Usage (from repo root, inside a git checkout):
   python rebrand/rebrand.py --check       # list residual hermes/nous hits not allowlisted
 
 Driven by rebrand/mapping.yaml. Idempotent: a second run is a no-op.
-Requires PyYAML (available in the project venv).
 """
 from __future__ import annotations
 
@@ -20,7 +19,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-import yaml
+from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parent.parent
 MAPPING = Path(__file__).resolve().parent / "mapping.yaml"
@@ -241,7 +240,7 @@ def main() -> None:
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--post-only", action="store_true", help="run only the post_replace stage on the current tree")
     args = ap.parse_args()
-    mapping = yaml.safe_load(MAPPING.read_text())
+    mapping = YAML(typ="safe").load(MAPPING.read_text())
     rb = Rebrander(mapping)
     files = tracked_files()
 
