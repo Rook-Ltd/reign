@@ -14,6 +14,9 @@ on:
   pull_request:
     paths:
       - "plugin-catalog/**"
+      - ".github/workflows/plugin-catalog-ci.yml"
+      - "scripts/ci/catalog_validation_batches.py"
+      - "tests/ci/test_catalog_validation_batches.py"
 
 permissions:
   contents: read
@@ -50,9 +53,12 @@ jobs:
           # the invariant that EVERYTHING in plugin-catalog/ stays valid.
           python3 scripts/validate_plugin_catalog.py plugin-catalog/
 
-  pinned-source-validate:
+  plan-pinned-source:
+    outputs:
+      matrix: ${{ steps.changed.outputs.matrix }}
+      has-entries: ${{ steps.changed.outputs.has-entries }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -107,23 +113,39 @@ jobs:
 
           echo "Changed catalog entries:"
           echo "${CHANGED:-<none>}"
-          {
-            echo 'files<<__EOF__'
-            echo "$CHANGED"
-            echo '__EOF__'
-          } >> "$GITHUB_OUTPUT"
+          MATRIX=$(printf '%s\n' "$CHANGED" | python3 scripts/ci/catalog_validation_batches.py)
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ -n "$CHANGED" ]; then echo 'has-entries=true'; else echo 'has-entries=false'; fi >> "$GITHUB_OUTPUT"
+
+  validate-batch:
+    name: validate catalog batch (${{ matrix.batch }})
+    needs: plan-pinned-source
+    if: needs.plan-pinned-source.outputs.has-entries == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan-pinned-source.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Fetch upstream release identity
+        run: git fetch --no-tags https://github.com/NousResearch/hermes-agent.git 'refs/tags/v*:refs/tags/v*'
 
       - name: Prepare Reign from the PR's own checkout
-        if: steps.changed.outputs.files != ''
         uses: ./.github/actions/setup-pm
         with:
           toolchain: python
           extras: '[]'
 
       - name: Clone each entry at its pinned sha and validate
-        if: steps.changed.outputs.files != ''
         env:
-          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          CHANGED_FILES: ${{ matrix.files }}
           # A hostile repo URL must never block the job on a credential prompt.
           GIT_TERMINAL_PROMPT: "0"
           # `gh attestation verify` (README rule 17) reads the attestation from
@@ -225,6 +247,14 @@ jobs:
 
             # The pin must name a commit object -- a tag-object sha would peel
             # to a commit the reviewer never declared as the pin.
+            # Pins can outlive their branch; fetch the declared object if the
+            # clone's advertised refs no longer include it.
+            if ! git -C "$CLONE_DIR" cat-file -e "$SHA" 2>/dev/null; then
+              if ! timeout 600 git -C "$CLONE_DIR" fetch --no-tags origin "$SHA" </dev/null; then
+                echo "::error file=$entry::cannot fetch pinned sha $SHA from $REPO"
+                FAILED=1; echo "::endgroup::"; continue
+              fi
+            fi
             if [ "$(git -C "$CLONE_DIR" cat-file -t "$SHA" 2>/dev/null)" != "commit" ]; then
               echo "::error file=$entry::pinned sha $SHA is not a commit object in $REPO"
               FAILED=1; echo "::endgroup::"; continue
@@ -366,3 +396,20 @@ jobs:
             exit 1
           fi
           echo "✅ PASS: all changed catalog entries validated at their pinned shas"
+
+  pinned-source-validate:
+    needs: [plan-pinned-source, validate-batch]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every admission batch to pass
+        env:
+          PLAN_RESULT: ${{ needs.plan-pinned-source.result }}
+          HAS_ENTRIES: ${{ needs.plan-pinned-source.outputs.has-entries }}
+          BATCH_RESULT: ${{ needs.validate-batch.result }}
+        run: |
+          test "$PLAN_RESULT" = success
+          if [ "$HAS_ENTRIES" = true ]; then
+            test "$BATCH_RESULT" = success
+          fi
