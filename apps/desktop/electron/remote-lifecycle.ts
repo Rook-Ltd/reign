@@ -379,7 +379,13 @@ async function assertRemoteInstallUpdateClear(ssh, reignHome, reignPath = '') {
   throw error
 }
 
-async function listRemoteReignProfiles(ssh) {
+async function listRemoteReignProfiles(ssh, platform: any = null) {
+  if (platform?.os === 'Windows') {
+    const { listWindowsRemoteProfiles } = await import('./windows-remote-inventory')
+
+    return listWindowsRemoteProfiles(ssh, platform)
+  }
+
   const home = assertSafeRemoteHome(await probeRemoteReignHome(ssh))
   const dir = expandRemotePath(`${home}/profiles`)
   let listing = ''
@@ -396,7 +402,13 @@ async function listRemoteReignProfiles(ssh) {
   return parseRemoteProfileListing(listing)
 }
 
-async function readRemoteInstallId(ssh) {
+async function readRemoteInstallId(ssh, platform: any = null) {
+  if (platform?.os === 'Windows') {
+    const { readWindowsRemoteInstallId } = await import('./windows-remote-inventory')
+
+    return readWindowsRemoteInstallId(ssh, platform)
+  }
+
   // The stable backend identity the roster collapses on (`reign_cli/install_identity.py`:
   // `<install root>/install_id`, opaque hex). Read from the INSTALL root, so an ssh connection
   // pinned to `<root>/profiles/<name>` reports the same id as one pointed at the root — they are
@@ -1139,9 +1151,14 @@ function buildSpawnCommand(reignPath, profile, opts: any = {}) {
   // when its owning remote shell is dead.
   const markerAbsent = `[ ! -e ${marker} ]`
 
+  // A dev build's renderer is served from REIGN_DESKTOP_DEV_SERVER, an http origin the backend
+  // trusts only when it inherits the variable, exactly as a locally spawned backend does. A value the
+  // remote login shell exports is cleared first, so a packaged build never hands one on.
+  const devServerEnv = opts.devServer ? ` REIGN_DESKTOP_DEV_SERVER=${shq(opts.devServer)}` : ''
+
   const dashCmd =
-    `ulimit -n ${REMOTE_NOFILE_SOFT_LIMIT} 2>/dev/null || true; ` +
-    `exec env REIGN_DESKTOP=1 ${reign} ${profileArgs}${subCmd}`
+    `ulimit -n ${REMOTE_NOFILE_SOFT_LIMIT} 2>/dev/null || true; unset REIGN_DESKTOP_DEV_SERVER; ` +
+    `exec env REIGN_DESKTOP=1${devServerEnv} ${reign} ${profileArgs}${subCmd}`
 
   const detachedShell: string = `eval "exec $1>&-"; ${dashCmd} </dev/null >> ${logPath} 2>&1 & echo $!`
   // The inner shell backgrounds Reign and reports its PID; backgrounding the
@@ -1283,7 +1300,15 @@ async function scrapeReadyPort(ssh, logPath, { timeoutMs = resolveReadyTimeoutMs
 
 async function spawnRemoteDashboard(
   ssh,
-  { reignPath, profile, token, ownershipId, reignHome = '~/.reign', assertInstallClear = async () => {} }
+  {
+    reignPath,
+    profile,
+    token,
+    ownershipId,
+    reignHome = '~/.reign',
+    devServer = '',
+    assertInstallClear = async () => {}
+  }
 ) {
   if (!(await remoteSupportsSshOwnership(ssh, reignPath))) {
     const err: any = new Error(
@@ -1353,6 +1378,7 @@ async function spawnRemoteDashboard(
         tokenFilePath,
         logPath,
         reignHome,
+        devServer,
         ownershipId,
         reservationNonce: spawnNonce,
         lockMetadata: {
@@ -1365,6 +1391,7 @@ async function spawnRemoteDashboard(
           logPath,
           tokenFingerprint: fingerprintToken(token),
           protocolVersion: PROTOCOL_VERSION,
+          devServer,
           startedAt: new Date().toISOString()
         }
       })
@@ -1489,6 +1516,22 @@ async function waitForRemoteSpawnCompletion(ssh, ownershipId, timeoutMs) {
   throw error
 }
 
+// Whether a published backend record serves this connect as-is. The backend trusts a dev
+// renderer's origin only from the REIGN_DESKTOP_DEV_SERVER it was spawned with; one spawned for
+// another renderer (or none, as older records and packaged builds are) would refuse every renderer
+// socket, so it is replaced rather than reused.
+function lockServesConnect(lock, { profile, reuseToken, reignPath, reignHome, devServer }) {
+  return (
+    lock.port > 0 &&
+    lock.profile === profile &&
+    Boolean(reuseToken) &&
+    lock.tokenFingerprint === fingerprintToken(reuseToken) &&
+    lock.reignPath === reignPath &&
+    lock.reignHome === reignHome &&
+    (lock.devServer ?? '') === devServer
+  )
+}
+
 async function connect(deps) {
   const {
     ssh,
@@ -1502,6 +1545,7 @@ async function connect(deps) {
     adoptServedToken,
     rememberLog = () => {},
     readyTimeoutMs = resolveReadyTimeoutMs(),
+    devServer = '',
     signal
   } = deps
 
@@ -1566,14 +1610,7 @@ async function connect(deps) {
       ))
 
     const reusable =
-      pidAlive &&
-      owned &&
-      lock.port > 0 &&
-      lock.profile === profile &&
-      Boolean(reuseToken) &&
-      lock.tokenFingerprint === fingerprintToken(reuseToken) &&
-      lock.reignPath === reignPath &&
-      lock.reignHome === reignHome
+      pidAlive && owned && lockServesConnect(lock, { profile, reuseToken, reignPath, reignHome, devServer })
 
     if (reusable) {
       const creationTime = lock.creationTime || (await remoteProcessCreationTime(ssh, lock.pid))
@@ -1662,6 +1699,7 @@ async function connect(deps) {
     token: spawnToken,
     ownershipId,
     reignHome,
+    devServer,
     assertInstallClear: () => assertRemoteInstallUpdateClear(ssh, reignHome, reignPath)
   })
 
@@ -1699,6 +1737,7 @@ async function connect(deps) {
     logPath,
     tokenFingerprint: fingerprintToken(spawnToken),
     protocolVersion: PROTOCOL_VERSION,
+    devServer,
     startedAt: new Date().toISOString(),
     ...(creationTime ? { creationTime } : {})
   }
@@ -1803,6 +1842,7 @@ export {
   locateReign,
   LOCKFILE_SCHEMA_VERSION,
   lockfilePath,
+  lockServesConnect,
   MIN_READY_TIMEOUT_MS,
   mintToken,
   openForward,

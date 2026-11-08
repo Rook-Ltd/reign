@@ -139,7 +139,9 @@ def relaunch(
             )
             sys.exit(1)
     else:
+        from reign_cli.cpu_profile import write_cpu_profile
         from reign_cli.observability.shared_metrics_startup import mark_in_place_relaunch
 
         mark_in_place_relaunch()
+        write_cpu_profile()  # exec skips atexit
         os.execvp(new_argv[0], new_argv)

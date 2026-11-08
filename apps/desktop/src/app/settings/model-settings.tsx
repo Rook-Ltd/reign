@@ -35,6 +35,7 @@ import type {
   ModelAssignmentRequest,
   StaleAuxAssignment
 } from '@/reign'
+import { showLargeModelNotice } from '@/store/agent-notices'
 import { $customModels, withCustomModels } from '@/store/custom-models'
 import { setMainModelAssignment } from '@/store/model-assignment'
 import { notify, notifyError, readableError } from '@/store/notifications'
@@ -902,6 +903,11 @@ export function ModelSettings({ onMainModelChanged, scopeProfile, subpage }: Mod
       const provider = result.provider || selectedProvider
       const model = result.model || selectedModel
       setMainModel({ provider, model })
+
+      if (result.notice) {
+        showLargeModelNotice(result.notice)
+      }
+
       setSwitchStaleAux(result.stale_aux ?? [])
       notify({ kind: 'success', title: m.mainAppliedTitle, message: m.mainAppliedMessage(model) })
 

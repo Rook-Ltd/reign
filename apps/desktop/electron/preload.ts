@@ -23,6 +23,10 @@ const launchFlags: { localModels?: boolean; assumeFreshInstall?: boolean } | und
 // the built-in palette over the skin configured on this machine.
 const localSkin = ipcRenderer.sendSync('reign:skin:local')
 
+// This machine's UI preferences store (#145213), read before the first paint so
+// a preference set in another window or in this machine's Webapp paints at once.
+const uiPreferencesSnapshot = ipcRenderer.sendSync('reign:ui-preferences:snapshot')
+
 import { unwrapExpectedNotFound } from './api-expected-404'
 
 contextBridge.exposeInMainWorld('reignDesktop', {
@@ -35,6 +39,17 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   // onboarding treats this launch as a fresh install. Always false when packaged.
   assumeFreshInstall: launchFlags?.assumeFreshInstall === true,
   localSkin: localSkin && typeof localSkin === 'object' ? localSkin : null,
+  uiPreferences: {
+    snapshot: uiPreferencesSnapshot && typeof uiPreferencesSnapshot === 'object' ? uiPreferencesSnapshot : null,
+    read: () => ipcRenderer.invoke('reign:ui-preferences:read'),
+    write: payload => ipcRenderer.invoke('reign:ui-preferences:write', payload),
+    onChanged: callback => {
+      const listener = (_event, snapshot) => callback(snapshot)
+      ipcRenderer.on('reign:ui-preferences:changed', listener)
+
+      return () => ipcRenderer.removeListener('reign:ui-preferences:changed', listener)
+    }
+  },
   getConnection: (profile, opts) => ipcRenderer.invoke('reign:connection', profile, opts),
   // Loopback origin that hosts YouTube's player for the file:// renderer.
   getEmbedHostOrigin: () => ipcRenderer.invoke('reign:embed-host:origin'),
@@ -331,6 +346,10 @@ contextBridge.exposeInMainWorld('reignDesktop', {
     },
     get: () => ipcRenderer.invoke('reign:profile:get'),
     remember: name => ipcRenderer.invoke('reign:profile:remember', name),
+    importConnections: (record: Record<string, string>) =>
+      ipcRenderer.invoke('reign:profile:connections:import', record),
+    rememberConnection: (connectionId: string, profile: string) =>
+      ipcRenderer.invoke('reign:profile:connections:remember', connectionId, profile),
     set: name => ipcRenderer.invoke('reign:profile:set', name)
   },
   // The handler resolves an expected 404 with a sentinel instead of rejecting
@@ -351,6 +370,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   readPluginSource: (filePath: string) => ipcRenderer.invoke('reign:readPluginSource', filePath),
   selectPaths: options => ipcRenderer.invoke('reign:selectPaths', options),
   selectSavePath: options => ipcRenderer.invoke('reign:selectSavePath', options),
+  saveTextFileAs: request => ipcRenderer.invoke('reign:saveTextFileAs', request),
   writeClipboard: text => ipcRenderer.invoke('reign:writeClipboard', text),
   readClipboard: () => ipcRenderer.invoke('reign:readClipboard'),
   saveGatewayFile: payload => ipcRenderer.invoke('reign:saveGatewayFile', payload),
@@ -359,6 +379,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   contextMenuCopyImage: () => ipcRenderer.invoke('reign:context-menu:copy-image'),
   contextMenuSpellcheck: action => ipcRenderer.invoke('reign:context-menu:spellcheck', action),
   contextMenuGuestAddWord: payload => ipcRenderer.invoke('reign:context-menu:guest-add-word', payload),
+  spellcheckDictionary: (op, word) => ipcRenderer.invoke('reign:spellcheck:dictionary', { op, word }),
   onContextMenuSpellcheck: callback => {
     const listener = (_event, payload) => callback(payload)
     ipcRenderer.on('reign:context-menu-spellcheck', listener)
@@ -381,6 +402,13 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   watchDirectory: dir => ipcRenderer.invoke('reign:watchDirectory', dir),
   stopPreviewFileWatch: id => ipcRenderer.invoke('reign:stopPreviewFileWatch', id),
   setActiveWork: payload => ipcRenderer.send('reign:active-work', payload),
+  scheduleStreamWorkWake: (token, delayMs) => ipcRenderer.send('reign:stream-work-wake', { token, delayMs }),
+  onStreamWorkWake: callback => {
+    const listener = (_event, token) => callback(token)
+    ipcRenderer.on('reign:stream-work-ready', listener)
+
+    return () => ipcRenderer.removeListener('reign:stream-work-ready', listener)
+  },
   setTitleBarTheme: payload => ipcRenderer.send('reign:titlebar-theme', payload),
   setNativeTheme: mode => ipcRenderer.send('reign:native-theme', mode),
   setTranslucency: payload => ipcRenderer.send('reign:translucency', payload),
@@ -413,6 +441,9 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   setPreviewShortcutActive: active => ipcRenderer.send('reign:previewShortcutActive', Boolean(active)),
   setPreviewGuestHidden: (webContentsId, hidden) =>
     ipcRenderer.send('reign:preview-guest-hidden', { webContentsId, hidden: Boolean(hidden) }),
+  beginPreviewGuestActivity: webContentsId => ipcRenderer.invoke('reign:preview-guest-activity:begin', webContentsId),
+  endPreviewGuestActivity: token => ipcRenderer.invoke('reign:preview-guest-activity:end', token),
+  executePreviewGuestScript: (token, code) => ipcRenderer.invoke('reign:preview-guest-activity:script', token, code),
   openExternal: url => ipcRenderer.invoke('reign:openExternal', url),
   freeTierChallenge: {
     // Load the account service's challenge page in a hidden window (revealed
@@ -471,11 +502,24 @@ contextBridge.exposeInMainWorld('reignDesktop', {
   revealPath: targetPath => ipcRenderer.invoke('reign:fs:reveal', targetPath),
   openDir: dirPath => ipcRenderer.invoke('reign:fs:openDir', dirPath),
   desktopPluginsRoot: () => ipcRenderer.invoke('reign:fs:desktopPluginsRoot'),
-  reconcileDesktopPlugins: () => ipcRenderer.invoke('reign:fs:reconcileDesktopPlugins'),
+  reconcileDesktopPlugins: async () => (await ipcRenderer.invoke('reign:fs:reconcileDesktopPlugins')).published,
+  reconcileDesktopPluginsReport: () => ipcRenderer.invoke('reign:fs:reconcileDesktopPlugins'),
   logsRoot: (profile?: string) => ipcRenderer.invoke('reign:fs:logsRoot', profile),
   renamePath: (targetPath, newName) => ipcRenderer.invoke('reign:fs:rename', targetPath, newName),
   writeTextFile: (filePath, content) => ipcRenderer.invoke('reign:fs:writeText', filePath, content),
   trashPath: targetPath => ipcRenderer.invoke('reign:fs:trash', targetPath),
+  pluginFiles: {
+    request: (pluginId, labels) => ipcRenderer.invoke('reign:pluginFiles:request', pluginId, labels),
+    grants: pluginId => ipcRenderer.invoke('reign:pluginFiles:grants', pluginId),
+    revoke: (pluginId, folderId) => ipcRenderer.invoke('reign:pluginFiles:revoke', pluginId, folderId),
+    op: (pluginId, request) => ipcRenderer.invoke('reign:pluginFiles:op', pluginId, request),
+    onChanged: callback => {
+      const listener = (_event, change) => callback(change)
+      ipcRenderer.on('reign:pluginFiles:changed', listener)
+
+      return () => ipcRenderer.removeListener('reign:pluginFiles:changed', listener)
+    }
+  },
   git: {
     worktreeList: repoPath => ipcRenderer.invoke('reign:git:worktreeList', repoPath),
     worktreeAdd: (repoPath, options) => ipcRenderer.invoke('reign:git:worktreeAdd', repoPath, options),
@@ -654,7 +698,7 @@ contextBridge.exposeInMainWorld('reignDesktop', {
 
     return () => ipcRenderer.removeListener('reign:bootstrap:event', listener)
   },
-  getVersion: () => ipcRenderer.invoke('reign:version'),
+  getVersion: (scope?: { connectionId?: string; profile?: string }) => ipcRenderer.invoke('reign:version', scope),
   relaunchApp: () => ipcRenderer.invoke('reign:app:relaunch'),
   getMachineProfile: () => ipcRenderer.invoke('reign:machine:profile'),
   getRemoteDisplayReason: () => ipcRenderer.invoke('reign:get-remote-display-reason'),

@@ -106,7 +106,7 @@ export function useQuickEntryBridge({ submitText, submitTextToNewSession }: Quic
         }
 
         acknowledged = true
-        window.reignDesktop?.quickEntry.ackSubmit(correlationId, result)
+        window.reignDesktop?.quickEntry?.ackSubmit(correlationId, result)
       }
 
       if (target === QUICK_TARGET_NEW) {

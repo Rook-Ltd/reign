@@ -1,3 +1,4 @@
+import { openGatewaySocket } from '@/api/canonical-protocol'
 import { resolveSiblingWsUrl } from '@/lib/sibling-ws-url'
 import type { ResolvedOwner } from '@/reign'
 
@@ -43,7 +44,7 @@ export async function openDictationStream(
     url.searchParams.set('profile', owner.profile)
   }
 
-  const ws = new WebSocket(url.toString())
+  const ws = openGatewaySocket(url.toString())
   ws.binaryType = 'arraybuffer'
 
   let settled = false

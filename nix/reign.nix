@@ -3,18 +3,24 @@
 # callPackage auto-wires nixpkgs args; flake inputs are passed explicitly.
 # Users override via:
 #   pkgs.reign.override { extraPythonPackages = [...]; }
-#   pkgs.reign.override { extraDependencyGroups = [ "voice" ]; }
+#   pkgs.reign.override { extraDependencyGroups = [ "google-meet" ]; }
+# Both extras add to what the package ships. The shipped groups live in
+# defaultDependencyGroups (set by packages.nix for `full`/`messaging`), so a
+# plain override of the extras never drops them.
 {
   lib,
   stdenv,
   makeWrapper,
   writeText,
   callPackage,
+  runCommand,
   electron,
-  ripgrep,
   git,
   openssh,
-  ffmpeg,
+  ffmpeg-headless,
+
+  # for pm
+  writeShellApplication,
 
   # linux-only deps
   wl-clipboard,
@@ -28,6 +34,8 @@
   pyproject-nix,
   pyproject-build-systems,
   npm-lockfile-fix,
+  # nix/pm-packages.nix output: every pm/lock.json pin as a derivation.
+  pmPackages,
   # Locked git revision of the flake source — embedded so banner.py can
   # check for updates without needing a local .git directory. Null for
   # impure / dirty builds where flakes can't determine a rev.
@@ -39,6 +47,9 @@
   version ? "0.0.0",
   distance ? 0,
   extraPythonPackages ? [ ],
+  # The optional groups this variant ships; packages.nix owns the lists.
+  defaultDependencyGroups ? [ ],
+  # The user's additions on top of defaultDependencyGroups.
   extraDependencyGroups ? [ ],
 }:
 let
@@ -47,10 +58,15 @@ let
   pythonLock = callPackage ./pythonLock.nix { };
   python = pythonLock.interpreter;
 
+  packageDependencyGroups = defaultDependencyGroups ++ extraDependencyGroups;
+
   # Install stamp values — written to install-stamp.json so the Python
   # runtime (CLI, TUI) reads one file instead of env vars or .git probes.
   stampDistance =
-    if builtins.isInt distance && distance >= 0 then distance else throw "distance must be a non-negative integer";
+    if builtins.isInt distance && distance >= 0 then
+      distance
+    else
+      throw "distance must be a non-negative integer";
   stampDisplayVersion =
     if stampDistance > 0 && rev != null then
       "${version}+${toString stampDistance}.g${builtins.substring 0 7 rev}"
@@ -60,32 +76,36 @@ let
       version;
 
   # CLI and Electron consume the same provenance and update owner.
-  installStampFile = writeText "reign-install-stamp.json" (builtins.toJSON {
-    schemaVersion = 2;
-    commit = rev;
-    commitDate = lastModified;
-    inherit branch dirty;
-    builtAt = null;
-    baseVersion = version;
-    displayVersion = stampDisplayVersion;
-    distance = stampDistance;
-    source = "nix";
-    distribution = "nix";
-    pmRuntime = toString pmRuntime;
-    updateMechanism = "external";
-    payload = "bootstrap";
-    tag = null;
-  });
+  installStampFile = writeText "reign-install-stamp.json" (
+    builtins.toJSON {
+      schemaVersion = 2;
+      commit = rev;
+      commitDate = lastModified;
+      inherit branch dirty;
+      builtAt = null;
+      baseVersion = version;
+      displayVersion = stampDisplayVersion;
+      distance = stampDistance;
+      source = "nix";
+      distribution = "nix";
+      pmRuntime = toString pmRuntime;
+      updateMechanism = "external";
+      payload = "bootstrap";
+      tag = null;
+    }
+  );
 
   mkReignVenv =
-    extraDependencyGroups:
+    groups:
     callPackage ./python.nix {
       inherit uv2nix pyproject-nix pyproject-build-systems;
       pythonSrc = reignNpmLib.pythonSrc;
-      dependency-groups = [ "all" ] ++ extraDependencyGroups;
+      # Deduplicated so naming a group the variant already ships leaves the
+      # venv derivation unchanged.
+      dependency-groups = lib.unique ([ "all" ] ++ groups);
     };
 
-  reignVenv = (mkReignVenv extraDependencyGroups).venv;
+  reignVenv = (mkReignVenv packageDependencyGroups).venv;
 
   pmRuntime = callPackage ./pm-runtime.nix {
     inherit uv2nix pyproject-nix pyproject-build-systems;
@@ -97,7 +117,7 @@ let
   };
 
   reignNpmLib = callPackage ./lib.nix {
-    inherit npm-lockfile-fix;
+    inherit npm-lockfile-fix pmPackages;
   };
 
   reignTui = callPackage ./tui.nix {
@@ -106,6 +126,11 @@ let
 
   reignWeb = callPackage ./web.nix {
     inherit reignNpmLib generatedIcons;
+  };
+
+  # The store is read-only, so the Webapp is built here and never by `reign webapp`.
+  reignWebapp = callPackage ./webapp.nix {
+    inherit reignNpmLib;
   };
 
   bundledSkills = lib.cleanSourceWith {
@@ -142,14 +167,26 @@ let
     filter = path: _type: !(lib.hasInfix "/__pycache__/" path);
   };
 
+  # Tools come from pm/lock.json, the same builds `reign pm install`
+  # provisions elsewhere. git and openssh are nixpkgs': the lock pins them for
+  # win32 only. reignNpmLib.nodejs is the pinned node with the pinned npm.
   runtimeDeps = [
     reignNpmLib.nodejs
-    ripgrep
+    pmPackages.ripgrep
+    pmPackages.ffmpeg
     git
     openssh
-    ffmpeg
   ]
-  ++ lib.optionals stdenv.isLinux [
+  # pm's macOS ffmpeg is a single binary with no ffprobe, which transcription
+  # needs to measure duration before splitting long recordings. Only ffprobe
+  # is linked, so `ffmpeg` on PATH stays the pinned build.
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    (runCommand "ffprobe-${ffmpeg-headless.version}" { } ''
+      mkdir -p $out/bin
+      ln -s ${lib.getBin ffmpeg-headless}/bin/ffprobe $out/bin/ffprobe
+    '')
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
     wl-clipboard
     xclip
   ];
@@ -169,38 +206,42 @@ let
     ];
   };
 
-  agentInputsFile = writeText "reign-inputs.json" (builtins.toJSON {
-    project = "${../pyproject.toml}";
-    code = "${reignVenv}/${sitePackagesPath}";
-    repo = "share/reign";
-    placement = "references";
-    target = "${if stdenv.hostPlatform.isDarwin then "darwin" else "linux"}-${
-      if stdenv.hostPlatform.isAarch64 then "arm64" else "x64"
-    }";
-    python = "${reignVenv}/bin/python3";
-    site_packages = "${reignVenv}/${sitePackagesPath}";
-    environment = toString reignVenv;
-    pm_runtime = toString pmRuntime;
-    command_dir = "${reignVenv}/bin";
-    resources = {
-      skills = toString bundledSkills;
-      optional-skills = toString bundledOptionalSkills;
-      plugins = toString bundledPlugins;
-      locales = toString bundledLocales;
-      optional-mcps = toString bundledOptionalMcps;
-    };
-    frontends = {
-      tui = "${reignTui}/lib/reign-tui";
-      web = toString reignWeb;
-    };
-    ref = if dirty then null else rev;
-    stamp = toString installStampFile;
-    env = {
-      REIGN_NODE = lib.getExe reignNpmLib.nodejs;
-    } // lib.optionalAttrs (rev != null && !dirty) {
-      REIGN_REVISION = rev;
-    };
-  });
+  agentInputsFile = writeText "reign-inputs.json" (
+    builtins.toJSON {
+      project = "${../pyproject.toml}";
+      code = "${reignVenv}/${sitePackagesPath}";
+      repo = "share/reign";
+      placement = "references";
+      target = "${if stdenv.hostPlatform.isDarwin then "darwin" else "linux"}-${
+        if stdenv.hostPlatform.isAarch64 then "arm64" else "x64"
+      }";
+      python = "${reignVenv}/bin/python3";
+      site_packages = "${reignVenv}/${sitePackagesPath}";
+      environment = toString reignVenv;
+      pm_runtime = toString pmRuntime;
+      command_dir = "${reignVenv}/bin";
+      resources = {
+        skills = toString bundledSkills;
+        optional-skills = toString bundledOptionalSkills;
+        plugins = toString bundledPlugins;
+        locales = toString bundledLocales;
+        optional-mcps = toString bundledOptionalMcps;
+      };
+      frontends = {
+        tui = "${reignTui}/lib/reign-tui";
+        web = toString reignWeb;
+        webapp = toString reignWebapp;
+      };
+      ref = if dirty then null else rev;
+      stamp = toString installStampFile;
+      env = {
+        REIGN_NODE = lib.getExe reignNpmLib.nodejs;
+      }
+      // lib.optionalAttrs (rev != null && !dirty) {
+        REIGN_REVISION = rev;
+      };
+    }
+  );
 
   # Walk propagatedBuildInputs to include transitive Python deps in PYTHONPATH.
   # Without this, a plugin listing e.g. requests as a dep would fail at runtime
@@ -273,8 +314,9 @@ stdenv.mkDerivation (finalAttrs: {
       makeWrapper "$source" "$out/$destination" "$@" \
         --suffix PATH : "${runtimePath}" \
         --set-default REIGN_BIN "$out/bin/reign"${
-          lib.optionalString (extraPythonPackages != [ ])
-            " \\\n        --suffix PYTHONPATH : \"${pythonPath}\""
+          lib.optionalString (
+            extraPythonPackages != [ ]
+          ) " \\\n        --suffix PYTHONPATH : \"${pythonPath}\""
         }
     }
     ${python}/bin/python3 - "$out/command-map.json" > "$TMPDIR/agent-wrappers.sh" <<'PY'
@@ -300,12 +342,58 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru =
     let
-      devPython = (mkReignVenv (extraDependencyGroups ++ [ "dev" ])).editableVenv;
+      # uv2nix builds the editable venv against the nixpkgs interpreter (it
+      # cannot build against a tarball one); devVenv re-homes it onto the
+      # interpreter pm/lock.json pins.
+      devPython = (mkReignVenv (packageDependencyGroups ++ [ "dev" ])).editableVenv;
+      pmPython = pmPackages.python;
+
+      # A real venv: pyvenv.cfg's `home` is the pinned interpreter and its
+      # site-packages are devPython's, so `.pth` files (the editable checkout)
+      # load and nothing depends on the caller's PYTHONPATH. Console scripts
+      # are re-shebanged onto it so `pytest` and `python -m pytest` agree.
+      devVenv = runCommand "reign-dev-venv" { } ''
+        mkdir -p $out/bin $out/lib/python${python.pythonVersion}
+        ln -s ${devPython}/${sitePackagesPath} $out/${sitePackagesPath}
+        cat > $out/pyvenv.cfg <<EOF
+        home = ${pmPython}/bin
+        include-system-site-packages = false
+        version = ${lib.head (lib.splitString "+" pmPython.version)}
+        EOF
+        for name in python python3 python${python.pythonVersion}; do
+          ln -s ${pmPython}/bin/python3 $out/bin/$name
+        done
+        # Every other command carries over: Python scripts re-shebanged onto
+        # this venv, native ones (ruff, ty) linked as-is. The activate scripts
+        # and devPython's own interpreter links would point back at devPython.
+        devInterpreter=$(readlink -f ${devPython}/bin/python3)
+        for script in ${devPython}/bin/*; do
+          name=$(basename "$script")
+          [ -e "$out/bin/$name" ] && continue
+          case "$name" in activate*|Activate*) continue ;; esac
+          [ "$(readlink -f "$script")" = "$devInterpreter" ] && continue
+          if head -n1 "$script" | grep -q '^#!.*python'; then
+            { echo "#!$out/bin/python3"; tail -n +2 "$script"; } > "$out/bin/$name"
+            chmod +x "$out/bin/$name"
+          else
+            ln -s "$script" "$out/bin/$name"
+          fi
+        done
+      '';
+
+      pm = writeShellApplication {
+        name = "pm";
+        text = ''
+          cd "$(git rev-parse --show-toplevel)"
+          exec ${devVenv}/bin/python3 -m pm.cli "$@"
+        '';
+      };
     in
     {
       inherit
         reignTui
         reignWeb
+        reignWebapp
         reignNpmLib
         reignVenv
         agentBuilderSrc
@@ -313,6 +401,9 @@ stdenv.mkDerivation (finalAttrs: {
         installStampFile
         pmRuntime
         python
+        devPython
+        devVenv
+        pmPython
         ;
 
       # `reignDesktop` references `finalAttrs.finalPackage` (this whole
@@ -323,21 +414,30 @@ stdenv.mkDerivation (finalAttrs: {
       # runtime PATH (ripgrep/git/ffmpeg/etc).  No re-implementation
       # of the agent resolution in the desktop wrapper.
       reignDesktop = callPackage ./desktop.nix {
-        inherit reignNpmLib electron installStampFile generatedIcons;
+        inherit
+          reignNpmLib
+          electron
+          installStampFile
+          generatedIcons
+          ;
         python3 = python;
         reignAgent = finalAttrs.finalPackage;
       };
 
       devShellHook = ''
-        export REIGN_PYTHON=${devPython}/bin/python3
+        export REIGN_PYTHON=${devVenv}/bin/python3
+        # `uv run --active --no-sync` reuses this venv instead of creating .venv.
+        export VIRTUAL_ENV=${devVenv}
       '';
 
       devDeps =
         runtimeDeps
         ++ [
-          devPython
+          pmPackages.uv
+          devVenv
+          pm
         ]
-        ++ lib.optionals stdenv.isLinux [
+        ++ lib.optionals stdenv.hostPlatform.isLinux [
           cage # for running e2e tests without popping windows
         ];
     };

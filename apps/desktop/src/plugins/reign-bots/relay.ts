@@ -334,12 +334,17 @@ async function relayAgentsOn(
     )
 
     const profiles = Array.isArray(res?.profiles) ? res.profiles : []
+    // This connection's default is @reign only while it has no real 'reign' profile.
+    const reignTaken = profiles.some(profile => profile?.name === 'reign')
     const label = labels.get(connection.id) || connection.id
 
     const rows = profiles
       .map(profile => ({
         profile: String(profile?.name || ''),
-        handle: botHandle(profile?.name, profile),
+        handle: botHandle(
+          profile?.name,
+          reignTaken && profile?.name === 'default' ? { ...profile, reignHandleTaken: true } : profile
+        ),
         connection_id: connection.id,
         connection_label: label,
         title: String(profile?.ui_meta?.['reign-bots']?.title || profile?.display_name || ''),

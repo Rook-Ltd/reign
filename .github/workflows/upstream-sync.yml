@@ -13,7 +13,8 @@ name: Upstream Sync
 #
 # The PR is the approval step: review, let CI run, merge to main. Nothing
 # reaches main without a human merging. Set the UPSTREAM_SYNC_TOKEN secret
-# (fine-grained PAT: contents + pull-requests write) so the PR triggers CI;
+# (fine-grained PAT: Contents, Pull requests and Workflows write) so the PR triggers CI;
+# conflict reports use GITHUB_TOKEN's Issues permission instead of the PAT.
 # PRs opened with the default GITHUB_TOKEN do not start pull_request workflows.
 
 on:
@@ -126,6 +127,8 @@ jobs:
 
       - name: Report a blocked sync
         if: steps.sync.outputs.code == '2'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           TITLE='Upstream sync blocked: ${{ steps.pick.outputs.ref }} needs manual conflict resolution'

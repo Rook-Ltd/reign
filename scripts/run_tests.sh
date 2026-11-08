@@ -53,6 +53,54 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 _has_pytest() { [ -n "$1" ] && [ -x "$1" ] && "$1" -c 'import pytest' 2>/dev/null; }
 # shellcheck source=scripts/_activation.sh
 . "$SCRIPT_DIR/_activation.sh"
+
+# A test run under a faked HOME (worktree lanes, probe homes) provisions its
+# test environment from the OS account's tool store instead of downloading
+# ~1 GB of tools into every temporary home, but only while that store already
+# records this checkout's pins (_store_has_pins). The check runs unlocked
+# before `pm install` takes the store's install lock, so it keeps runs that
+# START on different pins apart; it does not cover the window in between, where
+# the account's own `reign update` (or a run on other pins) can re-point
+# facts.json and this run's `pm install` then re-stages its pins over them.
+# Only this runner's own provisioning gets REIGN_RUNTIME_DIR: the pytest
+# children below start from `env -i` without it, so tests that exercise setup,
+# install or update resolve their own stores. Their PATH still holds the
+# account store's tool dirs, so a test writing through a PATH tool
+# (`pip install`, `npm -g`) would write into the account store. An explicit
+# REIGN_RUNTIME_DIR, a custom REIGN_HOME, a home that already holds a store,
+# or an account without a usable store keep today's per-home layout.
+# Prints the account home, then the pinned Python minor.
+_account_tool_store() {
+  local account py_minor
+  [ -z "${REIGN_RUNTIME_DIR:-}" ] || return 1
+  case "${REIGN_HOME:-}" in "" | "$HOME/.reign" | "$HOME/.reign/"*) ;; *) return 1 ;; esac
+  [ ! -f "$HOME/.reign/tools/facts.json" ] || return 1
+  account="$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6)"
+  [ -n "$account" ] || account="$(dscl . -read "/Users/$(id -un)" NFSHomeDirectory 2>/dev/null | sed -n 's/^NFSHomeDirectory: *//p')"
+  [ -n "$account" ] && [ -d "$account" ] && [ ! "$account" -ef "$HOME" ] || return 1
+  [ -f "$account/.reign/tools/facts.json" ] && [ -w "$account/.reign/tools" ] || return 1
+  py_minor="$(_store_has_pins "$account/.reign/tools")" || return 1
+  printf '%s\n%s\n' "$account" "$py_minor"
+}
+# Read-only check that the store already records this checkout's pins
+# (scripts/tool_store_pins.py says why and what counts); prints the Python minor.
+_store_has_pins() {
+  local python
+  python="$(REIGN_RUNTIME_DIR="$1" reign_bootstrap_python "$REPO_ROOT")" || return 1
+  PYTHONHOME= "$python" -I -B "$REPO_ROOT/scripts/tool_store_pins.py" "$REPO_ROOT" "$1" 2>/dev/null
+}
+if _shared="$(_account_tool_store)"; then
+  _account="${_shared%%$'\n'*}"
+  export REIGN_RUNTIME_DIR="$_account/.reign/tools"
+  # setup-reign.sh's uv-managed bootstrap interpreter is the same kind of
+  # cache, but only reused: a missing pinned minor would download into it.
+  if [ -z "${UV_PYTHON_INSTALL_DIR:-}" ] && [ -w "$_account/.local/share/uv/python" ] \
+      && compgen -G "$_account/.local/share/uv/python/cpython-${_shared#*$'\n'}[.-]*" >/dev/null; then
+    export UV_PYTHON_INSTALL_DIR="$_account/.local/share/uv/python"
+  fi
+  echo "▶ faked HOME: using the account's tool store $REIGN_RUNTIME_DIR"
+fi
+unset _account _shared
 if [ -z "${__REIGN_ACTIVATED:-}" ] && _has_pytest "${REIGN_PYTHON:-}"; then
   PYTHON="$REIGN_PYTHON"
   echo "▶ not activated — using REIGN_PYTHON: $PYTHON"
@@ -90,12 +138,16 @@ fi
 # and tempfile needs TEMP/TMP. Dropping them breaks collection on native
 # Windows (issues #67385, #70813). PATHEXT is also required: without .EXE,
 # PowerShell opens a native child as a document without waiting for its exit.
+# PSModuleAnalysisCachePath: the hosted Windows images point PowerShell at a
+# shared module analysis cache, which CI warms before the tests (tests-os.yml).
+# Without it a test's powershell.exe child falls back to a cold per-user cache
+# and re-analyses every installed module (~22s per launch on arm64 runners).
 # These are location variables, not
 # credentials, so forwarding them keeps the isolation intent intact. Each is
 # only forwarded when actually set, so POSIX runs are byte-for-byte unchanged.
 WIN_ENV=()
 for _win_var in USERPROFILE HOMEDRIVE HOMEPATH LOCALAPPDATA APPDATA SYSTEMROOT TEMP TMP \
-    ComSpec PATHEXT PROGRAMFILES ProgramFiles PROGRAMDATA ProgramData; do
+    ComSpec PATHEXT PROGRAMFILES ProgramFiles PROGRAMDATA ProgramData PSModuleAnalysisCachePath; do
   if [ -n "${!_win_var:-}" ]; then
     WIN_ENV+=("$_win_var=${!_win_var}")
   fi
@@ -160,7 +212,7 @@ _pf86="$(env | sed -n 's/^ProgramFiles(x86)=//p' | head -n1)"
 # credential can leak" property stays auditable at a glance.
 TEST_ENV=()
 for _test_var in REIGN_TEST_IMAGE REIGN_TEST_WORKERS REIGN_TEST_PATHS \
-  REIGN_TEST_FILE_TIMEOUT REIGN_TEST_FILE_RETRIES REIGN_TEST_SLICE \
+  REIGN_TEST_FILE_TIMEOUT REIGN_TEST_FILE_RETRIES REIGN_TEST_SLICE REIGN_TEST_FORKSERVER \
   SSL_CERT_FILE SSL_CERT_DIR REIGN_GATEWAY_LOCK_DIR REIGN_E2E_REQUIRE_TUI CI GITHUB_ACTIONS \
   REIGN_E2E_WINDOWS_INSTALL REIGN_E2E_MACHINE_ROOT REIGN_E2E_PROFILES_ROOT REIGN_E2E_ARTIFACTS \
   REIGN_E2E_STRICT_ACCEPTANCE REIGN_TEST_SSH_HOST REIGN_TEST_SSH_USER REIGN_TEST_SSH_PORT \
@@ -173,6 +225,8 @@ done
 # ── Run in hermetic env ──────────────────────────────────────────────────────
 # env -i: start with empty environment, opt-in only what we need.
 # No credential var can leak — you'd have to explicitly add it here.
+# Never forward REIGN_RUNTIME_DIR or UV_PYTHON_INSTALL_DIR: under a faked HOME
+# they point at the account's shared stores (see _account_tool_store).
 echo "▶ running per-file parallel test suite via run_tests_parallel.py"
 echo "  (TZ=UTC LANG=C.UTF-8 PYTHONHASHSEED=0; clean env)"
 

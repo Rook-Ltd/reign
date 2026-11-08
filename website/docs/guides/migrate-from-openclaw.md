@@ -6,10 +6,12 @@ description: "Complete guide to migrating your OpenClaw / Clawdbot setup to Reig
 
 # Migrate from OpenClaw
 
-`reign claw migrate` imports your OpenClaw (or legacy Clawdbot/Moldbot) setup into Reign. This guide covers exactly what gets migrated, the config key mappings, and what to verify after migration.
+`reign import-agent openclaw` imports your OpenClaw (or legacy Clawdbot/Moldbot) setup into Reign. This guide covers exactly what gets migrated, the config key mappings, and what to verify after migration.
 
-:::note
-Coming from **Claude Code** or **OpenAI Codex CLI** instead? Use [`reign import-agent`](../user-guide/import-from-other-agents.md).
+The command comes from the official **`agent-importers` plugin** in the [plugin catalog](../user-guide/features/plugins.md), which also imports Claude Code, Codex CLI and Cursor setups ([Import from Other Agents](../user-guide/import-from-other-agents.md)). The older spelling `reign claw migrate` still works once the plugin is installed and runs the same import.
+
+:::tip The easy way
+On a fresh install, run `reign setup`. When it finds `~/.openclaw` it asks **"Import your setup from OpenClaw?"**. Say yes and setup installs the plugin and runs `reign import-agent openclaw --migrate-secrets`, preview and confirmation included, then continues with the sections the import did not already fill in.
 :::
 
 :::tip
@@ -19,14 +21,17 @@ If your OpenClaw setup was multi-provider, `reign setup --portal` collapses it t
 ## Quick start
 
 ```bash
+# Once per profile: the command comes from this plugin
+reign plugins install agent-importers
+
 # Preview then migrate (always shows a preview first, then asks to confirm)
-reign claw migrate
+reign import-agent openclaw
 
 # Preview only, no changes
-reign claw migrate --dry-run
+reign import-agent openclaw --dry-run
 
 # Full migration including API keys, skip confirmation
-reign claw migrate --preset full --migrate-secrets --yes
+reign import-agent openclaw --preset full --migrate-secrets --yes
 ```
 
 The migration always shows a full preview of what will be imported before making any changes. Review the list, then confirm to proceed.
@@ -250,3 +255,7 @@ Imported skills land in `~/.reign/skills/openclaw-imports/`. Start a new session
 ### TTS voice not migrated
 
 OpenClaw stores TTS settings in two places: `messages.tts.providers.*` and the top-level `talk` config. The migration checks both. If your voice ID was set via the OpenClaw UI (stored in a different path), you may need to set it manually: `reign config set tts.elevenlabs.voice_id YOUR_VOICE_ID`.
+
+## Upgrading from a version with `reign claw` built in
+
+OpenClaw migration used to ship inside Reign core as `reign claw migrate` and the optional `openclaw-migration` skill. Both moved into the `agent-importers` plugin, with the same flags and the same secrets rule (keys come over only with `--migrate-secrets`). Running `reign claw` without the plugin prints the install command, and a fresh `reign setup` that finds `~/.openclaw` offers to install it. The guided migration skill comes with the plugin as `agent-importers:openclaw-migration`. The old `official/migration/openclaw-migration` optional skill is gone. Nothing changes for an OpenClaw setup you have already migrated.

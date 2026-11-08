@@ -14,7 +14,7 @@
 1. `reign doctor` — check config and dependencies
 2. `reign auth` — re-authenticate OAuth providers (or `reign auth add <provider>`)
 3. Check `.env` has the right API key
-4. **Copilot 403**: `gh auth login` tokens do NOT work for Copilot API. You must use the Copilot-specific OAuth device code flow via `reign model` → GitHub Copilot.
+4. **GitHub Copilot** (`copilot` / `copilot-acp`) lives in the `github-copilot` labs plugin (`reign plugins install github-copilot`); sign in with `reign auth add copilot` — `gh` CLI logins are not read.
 
 ### Changes not taking effect
 - **Tools/skills:** `/reset` starts a new session with updated toolset

@@ -45,9 +45,12 @@ _CHILD = textwrap.dedent('''
         # The selected interpreter is the shim: its SQLite probe is the runtime-safety fact.
         sys.executable = os.environ["PROBE_SHIM"]
     import reign_yaml as yaml
-    from reign_cli.config import DEFAULT_CONFIG
+    from reign_cli.config import DEFAULT_CONFIG, ensure_reign_home
     home = Path(os.environ["REIGN_HOME"])
     home.mkdir(parents=True, exist_ok=True)
+    # The process's first config read secures the home (0700) once. Do it now, as a real process
+    # has by the time it runs the update tail: config-ro's later chmod must stay in force.
+    ensure_reign_home()
     (home / "config.yaml").write_text(yaml.safe_dump({
         "_config_version": DEFAULT_CONFIG["_config_version"] - 1,
         "telemetry": {"shared_metrics": {"enabled": False}},
@@ -64,6 +67,9 @@ _CHILD = textwrap.dedent('''
     update_cmd._fleet_restart_skip_reason = lambda plan: None
     update_cmd._surviving_pre_update_serve_runtimes = lambda plan: []
     maint._refresh_dashboard_after_update = lambda **kwargs: None
+    # A detached git writer would outlive the test in its deleted tmp checkout.
+    from reign_cli import git_commit_graph
+    git_commit_graph.spawn_commit_graph_refresh = lambda root: False
     verify._print_legacy_units_warning = lambda: None
     verify._collect_fleet_snapshot = lambda *args: []
     windows_resume = None

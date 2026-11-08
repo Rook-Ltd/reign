@@ -31,7 +31,7 @@ function contains(parent, child) {
 
 const productMarker = '.reign-product'
 const productOwner = 'reign-frontend-product-v1\n'
-const developerOutputs = ['ui-tui/dist', 'reign_cli/web_dist', 'apps/desktop/dist', 'apps/desktop/build/native-deps']
+const developerOutputs = ['ui-tui/dist', 'reign_cli/web_dist', 'apps/desktop/dist', 'apps/desktop/dist-webapp', 'apps/desktop/build/native-deps']
 
 // `npm run builder -- --<platform> --<arch>` stages one native tree per target
 // (apps/desktop/scripts/run-electron-builder.mjs): build/native-deps-<platform>-<arch>.

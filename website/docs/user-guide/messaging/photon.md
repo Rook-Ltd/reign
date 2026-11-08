@@ -223,7 +223,7 @@ Common issues:
 - **Cron and standalone sends need the gateway running.** Out-of-process
   senders (cron jobs, `reign send`, the dashboard) reuse the sidecar the
   gateway spawned — they read its port/token from
-  `<reign-home>/runtime/photon-sidecar.json`, written once the sidecar
+  `<reign-home>/photon-sidecar.json`, written once the sidecar
   passes its health check and removed when it stops. If a standalone send
   reports the gateway appears to be down, start (or restart) the gateway
   first.

@@ -227,6 +227,35 @@ check_allow:
 # distribution repo. Documentation links stay on upstream (decision 8).
 post_replace:
   - files:
+      - "reign_cli/model_switch_providers.py"
+    replace:
+      - plain: "            model_ids = featured_first(model_ids, usage.featured_model_ids)\n    except Exception:\n        pass\n"
+        with: "            model_ids = featured_first(model_ids, usage.featured_model_ids)\n    except Exception:\n        logger.debug(\"Nous usage-window picker ordering failed\", exc_info=True)\n"
+  - files:
+      - "scripts/ci/prompt_surface.py"
+    replace:
+      - plain: "from collections import Counter\nfrom datetime"
+        with: "from collections import Counter\nfrom functools import partial\nfrom datetime"
+      - plain: "import os\nimport shutil\n"
+        with: "import os\nimport re\nimport shutil\n"
+      - plain: "    import platform as _platform\n    for raw, token in sorted({"
+        with: "    for raw, token in sorted({"
+      - plain: '        f"{_platform.system()} ({_platform.release()})": "<HOST_OS>",'
+        with: "        os.environ[\"REIGN_HOME\"]: \"<REIGN_HOME>\",\n        os.environ[\"HOME\"]: \"<HOME>\","
+      - plain: "        text = text.replace(raw, token)\n    return text\n"
+        with: "        text = text.replace(raw, token)\n    return re.sub(r\"(?m)^Host: .+$\", \"Host: <HOST_OS>\", text)\n"
+      - plain: '    sys.platform = "linux"  # skills index ``platforms:`` gate'
+        with: ''
+      - plain: "    from agent import skill_utils\n    skill_utils._ENV_DETECT_CACHE"
+        with: "    from agent import skill_utils\n    # Pin skill selection without making native extensions believe they run on another OS.\n    skill_utils.skill_matches_platform_list = partial(skill_utils.skill_matches_platform_list, host_platform=\"linux\")\n    skill_utils._ENV_DETECT_CACHE"
+  - files:
+      - "agent/skill_utils.py"
+    replace:
+      - plain: "def skill_matches_platform_list(platforms: Any) -> bool:"
+        with: "def skill_matches_platform_list(platforms: Any, *, host_platform: str | None = None) -> bool:"
+      - plain: "    current = sys.platform\n    for platform in platforms:"
+        with: "    current = sys.platform if host_platform is None else host_platform\n    for platform in platforms:"
+  - files:
       - "scripts/install.sh"
       - "scripts/install.ps1"
       - "scripts/dev-sandbox.sh"
@@ -915,10 +944,17 @@ post_replace:
       - regex: '(\ndef (?:_gate|owned)\(monkeypatch\):\n)(?!    monkeypatch\.setattr\("tools\.connectors\.gateway\.config\.ensure_guest_identity")'
         with:  '\1    monkeypatch.setattr("tools.connectors.gateway.config.ensure_guest_identity", lambda: None)\n'
   - files:                # Reign's basic dashboard auth takes a users map (multi-user), not one username
-      - "tests/gateway/test_authenticated_session_identity.py"
+      - "tests/**/*.py"
     replace:
-      - plain: "BasicAuthProvider(username='user-a', password_hash=hash_password('fixture-password'), secret="
-        with:  "BasicAuthProvider(users={'user-a': hash_password('fixture-password')}, secret="
+      - regex: '(BasicAuthProvider\(\s*)username=([^,\n]+), password_hash=([^\n]+?), secret='
+        with: '\1users={\2: \3}, secret='
+  - files:                # LAN fixture URLs must agree with the renamed bound-host strings
+      - "tests/**/*.py"
+    replace:
+      - plain: "http://hermes.lan"
+        with: "http://reign.lan"
+      - plain: "https://hermes.lan"
+        with: "https://reign.lan"
   - files:                # channel fixtures model the official repo, which stays NousResearch/hermes-agent
       - "tests/reign_cli/test_source_release_channels.py"
     replace:

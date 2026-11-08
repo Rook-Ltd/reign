@@ -68,7 +68,7 @@ reign bundles              Skill bundles (one /<name> alias loads several skills
 reign mcp add NAME (--url or --command) | remove | list | test NAME
 reign mcp catalog | install NAME     Curated catalog install
 reign mcp configure NAME             Toggle tool selection
-reign mcp serve                      Run Reign as an MCP server
+reign mcp-serve                      Run Reign as an MCP server (mcp-serve plugin)
 ```
 Details (transport, tool discovery, catalog): `references/native-mcp.md`.
 
@@ -121,7 +121,7 @@ reign dashboard            Web admin panel + embedded chat (--stop / --status)
 reign proxy                OpenAI-compatible local proxy backed by an OAuth provider
 reign portal               Quick setup / sign in via Nous Portal
 reign kanban <verb>        Multi-agent work-queue board
-reign project              Named multi-folder workspaces
+reign project              Named multi-folder workspaces (see references/projects-and-folders.md)
 reign skin list|use|set    Switch/tweak skins (see references/themes.md)
 reign pets <verb>          Pet mascots (see references/petdex.md)
 reign memory setup|status|off|reset   Memory provider
@@ -133,10 +133,10 @@ reign send                 One-off message through a gateway platform
 reign pairing / plugins / insights / journey / computer-use
 reign acp                  ACP server (IDE integration)
 reign completion bash|zsh|fish
-reign update / uninstall / claw migrate
+reign update / uninstall
 ```
 
-Plugin- and provider-supplied subcommands (e.g. `reign photon setup`) only appear once their plugin is installed/active.
+Plugin- and provider-supplied subcommands (e.g. `reign photon setup`) only appear once their plugin is installed/active. Importing from OpenClaw, Claude Code, Codex CLI or Cursor (`reign import-agent <agent>`, plus the older `reign claw migrate|cleanup`) comes from the `agent-importers` plugin; a fresh `reign setup` that finds one of those agents offers to install it.
 
 ### Where to Find Things
 

@@ -1,0 +1,29 @@
+{
+  "artwork": {
+    "skills": {
+      "autonomous-ai-agents/computer-use": "official-art-feature.jpg",
+      "autonomous-ai-agents/codex": "official-art.jpg",
+      "autonomous-ai-agents/reign": "official-art-card-one.jpg"
+    },
+    "plugins": {
+      "desktop:kanban": "official-art.jpg",
+      "desktop:reign-bots": "official-art-card-two.jpg",
+      "desktop:reign-radio": "official-art-card-one.jpg"
+    }
+  },
+  "featured": {
+    "skills": [
+      "autonomous-ai-agents/reign",
+      "autonomous-ai-agents/computer-use",
+      "autonomous-ai-agents/codex",
+      "autonomous-ai-agents/claude-code"
+    ],
+    "plugins": [
+      "claude-subscription-directsdk",
+      "reign-memory-wiki",
+      "blender",
+      "touchdesigner",
+      "reign-telegram-business"
+    ]
+  }
+}

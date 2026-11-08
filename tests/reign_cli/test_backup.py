@@ -2041,12 +2041,12 @@ class TestRunPreUpdateBackup:
 
 
 # ---------------------------------------------------------------------------
-# Pre-migration backup (reign claw migrate safety net)
+# Pre-migration backup (safety net for agent imports, e.g. reign import-agent openclaw)
 # ---------------------------------------------------------------------------
 
 class TestPreMigrationBackup:
     """Tests for create_pre_migration_backup — the auto-backup
-    ``reign claw migrate`` runs before mutating ~/.reign/."""
+    ``reign import-agent openclaw`` runs before mutating ~/.reign/."""
 
     @pytest.fixture
     def reign_home(self, tmp_path):

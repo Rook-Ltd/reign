@@ -1,7 +1,6 @@
 
 <binary path>
    apps/bootstrap-installer/public/nous-girl.png
-   apps/desktop/packaging/nous-dmg-2b.tiff
    apps/desktop/public/nous-girl-dark.png
    apps/desktop/public/nous-girl.png
    website/static/img/nous-logo-dark.png
@@ -9,11 +8,15 @@
 README.md
    246: Reign is built on [Hermes Agent](https://github.com/NousResearch/hermes-agent) by Nous Research, released under the MIT license. See [NOTICE](NOTICE) for detail
 
+apps/desktop/scripts/local-pack-publish.test.mjs
+   36: assert.equal(repositoryInfo.project, 'hermes-agent')
+   37: assert.deepEqual(await getPublishConfigs(packager, null, null, true), [{ owner: 'NousResearch', repo: 'hermes-agent', provider: 'github' }])
+
 apps/desktop/src/components/ui/decode-text.tsx
    11: *    (matches the nousnet-web download-button decode effect).
 
 locales/ko.yaml
-   3684: t184: "reign mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
+   3757: t184: "reign mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
 
 optional-skills/creative/pretext/templates/donut-orbit.html
    6: <title>NOUS · pretext</title>
@@ -41,7 +44,7 @@ tests/agent/test_credential_pool_profile_oauth_fork.py
    202: akid = _profile(fleet, "nousakid")
 
 tests/agent/test_skill_utils.py
-   277: "  hermes:\n"
+   431: "  hermes:\n"
 
 tests/cron/test_cron_prompt_injection_skill.py
    159: "  hermes:\n"
@@ -52,11 +55,14 @@ tests/reign_cli/test_curator_status.py
 tests/reign_cli/test_debug.py
    1082: c = self._captured("/debug NOUS")
 
-tests/scripts/install/test_install_sh_no_venv_entrypoint.py
-   4: PATH. A machine that also runs upstream Hermes has a `hermes` command there too,
-   5: so resolving the wrong name would point every Reign launcher at Hermes.
-   26: def test_no_venv_launcher_targets_reign_not_hermes(tmp_path):
-   29: _fake_command(bin_dir, "hermes")
+tests/scripts/test_release_r2.py
+   133: ('PUT', '/hermes-releases/HermesBundled-0.28.0-win-x64.msix', {},
+   136: ('GET', '/hermes-releases', {'list-type': '2', 'prefix': 'HermesBundled-0.28.0-', 'max-keys': '1000'},
+   138: ('DELETE', '/hermes-releases/HermesBundled-0.28.0+canary.20260818T000000Z-win-arm64.msix', {},
+   150: assert encoded == 'list-type=2&max-keys=1000&prefix=HermesBundled-0.28.0-'
+
+tests/test_external_network_fence.py
+   25: "portal.nousresearch.com", "inference-api.nousresearch.com", b"WELCOME-API.NOUSRESEARCH.COM.",
 
 web/src/index.css
    144: /* Nousnet's reign layout bumps `small` and `code` to readable
@@ -64,4 +70,4 @@ web/src/index.css
 website/docusaurus.config.ts
    195: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
 
-residual: 33 lines in 16 files
+residual: 35 lines in 18 files

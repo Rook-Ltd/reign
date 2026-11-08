@@ -1,6 +1,16 @@
-# Upstream sync report — v2026.9.24 (e3dd27ee2d) on 2026-10-06
+# Upstream sync report — v0.23.0 on 2026-11-08
 
-- overlay: 41 files, 0 with conflicts, 0 failed to apply
-- residual: residual: 17 lines in 9 files; 0 new line(s)
-- images surviving: 0; conflict-marker files: 0
+- Upstream source: `2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19` (stable `v0.23.0`).
+- Previous upstream source: `67481b6f37615e58f1434ba6a1528e4c6e9b754c`.
+- Replayed both sources with the Reign mapping and brand assets, then merged Reign's changes.
+- Regenerated Python/npm lockfiles, i18n key indexes and prompt fixtures; applied ESLint and RUF022 fixes.
+- Reconciled dashboard command registration and mobile WebSocket compatibility with upstream's socket-scoped ticket admission.
+- No unresolved conflict markers or surviving upstream brand images outside the neutral allowlist.
+- Sync conflict reporting now uses the built-in token's Issues permission; branch/PR publishing continues to use UPSTREAM_SYNC_TOKEN.
+- Native prompt rendering preserves the host OS and normalizes environment paths.
 
+Validation before PR:
+
+- 817 focused authentication, gateway, CLI, prompt, skill and model-picker tests passed; one platform-dependent test skipped.
+- Rebranding gates: no unresolved conflict markers and no unexpected upstream brand images.
+- Full repository checks are running; an inherited silent fallback was corrected to log its traceback.

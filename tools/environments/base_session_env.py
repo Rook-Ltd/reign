@@ -28,7 +28,7 @@ from typing import Iterable
 # name/prefix instead of grepping declare lines (see below / issue #71296).
 _SNAPSHOT_EXCLUDED_ENV_REGEX = (
     "^declare -x (REIGN_SESSION_|REIGN_UI_SESSION_ID|REIGN_CRON_AUTO_DELIVER_|"
-    "REIGN_CRON_SESSION|REIGN_BROWSER_CONTROL_|REIGN_DELEGATED_CHILD_CONTEXT|"
+    "REIGN_CRON_SESSION|REIGN_DELEGATED_CHILD_CONTEXT|"
     "REIGN_RPC_|REIGN_KERNEL_DIR)")
 _SHELL_ENV_NAME_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -39,6 +39,38 @@ _SNAP_TMP = '"$__reign_snap_tmp"'
 
 def _cwd_marker(session_id: str) -> str:
     return f"__REIGN_CWD_{session_id}__"
+
+
+def _pipe_marker(session_id: str) -> str:
+    return f"__REIGN_PIPE_{session_id}__"
+
+
+def _pipe_marker_printf(marker: str) -> str:
+    """Emit the pipeline's per-segment exit statuses (``PIPESTATUS``) on their own line.
+
+    ``cmd | tail`` exits with tail's status, so the shell's code cannot prove ``cmd``
+    passed. The array holds each segment's own status and is captured before anything
+    else runs.
+    """
+    return f"printf '\\n{marker}%s{marker}\\n' \"${{__reign_ps[*]-}}\""
+
+
+def _eval_capturing_pipestatus(escaped: str) -> str:
+    """``eval`` the command and keep its last pipeline's ``PIPESTATUS`` as side data.
+
+    The array must be read inside the same ``eval`` (afterwards it holds only ``eval``'s
+    status), while ``$?`` stays the exit code: the two differ for ``!``, ``if``/``while``,
+    ``pipefail`` and parse errors. The blank line stops the capture joining a command
+    continued by a trailing backslash. The restore sits on the left of ``&&`` so its
+    non-zero status fires neither a user's ``ERR`` trap a second time nor ``set -e``.
+    """
+    return f"eval '{escaped}\n\n__reign_rc=$? __reign_ps=(\"${{PIPESTATUS[@]}}\"); (exit $__reign_rc) && :'"
+
+
+def _can_capture_pipestatus(command: str) -> bool:
+    """An unterminated heredoc would read the capture line as its body (into the user's
+    file), and a trailing ``\\`` would join onto it: such commands run unchanged."""
+    return "<<" not in command and not command.endswith("\\")
 
 
 def _cwd_marker_printf(marker: str) -> str:
@@ -68,7 +100,6 @@ def _export_dump_excluding_session_vars(tmp_path: str, excluded_names: Iterable[
     extra_unset = "".join(f" {shlex.quote(name)}" for name in sorted(safe_names))
     return (
         "{ ( unset ${!REIGN_SESSION_*} ${!REIGN_CRON_AUTO_DELIVER_*} "
-        "${!REIGN_BROWSER_CONTROL_*} "
         # AI_AGENT / REIGN_AGENT are per-command attribution markers re-exported
         # by every wrapper with ${VAR:-default} semantics; persisting them would
         # let the FIRST command's value override a later outer-harness value.
@@ -132,7 +163,7 @@ def _passthrough_save_restore(names: Iterable[str]) -> tuple[list[str], list[str
 def _wrap_command_script(
     command: str, *, quoted_cwd: str, quoted_snap: str, snap_tmp_template: str,
     passthrough_names: Iterable[str], snapshot_ready: bool, cwd_marker: str,
-    persist_env: bool = True) -> str:
+    pipe_marker: str = "", persist_env: bool = True) -> str:
     """Per-command bash script: source snapshot, cd, run, re-dump env, emit CWD marker.
     ``persist_env=False`` skips the re-dump, so every command starts from the login-time
     snapshot and exports from one command never reach the next (the CWD marker still runs).
@@ -146,6 +177,7 @@ def _wrap_command_script(
     changing the command's umask.
     """
     escaped = command.replace("'", "'\\''")
+    capture = bool(pipe_marker) and _can_capture_pipestatus(command)
     save, restore = _passthrough_save_restore(passthrough_names)
     parts = list(save)
     if snapshot_ready:
@@ -156,7 +188,7 @@ def _wrap_command_script(
         'export GIT_PAGER="${GIT_PAGER:-cat}" PAGER="${PAGER:-cat}"',
         # ``--`` keeps hyphen-prefixed directory names from being parsed as options.
         f"builtin cd -- {quoted_cwd} || exit 126",
-        f"eval '{escaped}'",
+        _eval_capturing_pipestatus(escaped) if capture else f"eval '{escaped}'",
         "__reign_ec=$?",
         "umask 077"]
     if snapshot_ready and persist_env:
@@ -165,6 +197,8 @@ def _wrap_command_script(
             f"{{ {_export_dump_excluding_session_vars(_SNAP_TMP, passthrough_names)} "
             f"&& mv -f {_SNAP_TMP} {quoted_snap}; }} "
             f"2>/dev/null || rm -f {_SNAP_TMP} 2>/dev/null || true")
+    if capture:
+        parts.append(_pipe_marker_printf(pipe_marker))
     parts += [_cwd_marker_printf(cwd_marker), "exit $__reign_ec"]
     return "\n".join(parts)
 

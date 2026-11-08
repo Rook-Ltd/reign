@@ -120,9 +120,9 @@ reign acp --check
 
 ### Browser tools (optional)
 
-Browser tools (`browser_navigate`, `browser_click`, etc.) depend on the
-`agent-browser` npm package and Chromium, which aren't part of the Python
-wheel. Install them with:
+Browser tools (`browser_exec` and the CDP tools `browser_cdp`,
+`browser_dialog`, `browser_vault`) need a local Chromium, which isn't part of
+the Python wheel. Install it with:
 
 ```bash
 reign acp --setup-browser           # interactive (prompts before ~400 MB download)
@@ -133,9 +133,8 @@ This is the standalone command. The terminal-auth flow (`reign acp --setup`) als
 
 What it does:
 
-- Installs Node.js 26 into `~/.reign/node/` if missing
-- `npm install -g agent-browser @askjo/camofox-browser` into that prefix (no sudo needed — `npm`'s `--prefix` points at the user-writable Reign-managed Node)
-- Installs Playwright Chromium, or uses a detected system Chrome/Chromium when available
+- Installs Reign' pinned Chromium (the `chromium` package) through the package manager; no Node.js or npm involved
+- Reign launches that Chromium itself when `browser_exec` first needs a browser
 
 The bootstrap is idempotent — re-running it is fast and skips work that's already done.
 
@@ -333,6 +332,19 @@ ACP mode uses the same Reign configuration as the CLI:
 - `~/.reign/state.db`
 
 Provider resolution uses Reign' normal runtime resolver, so ACP inherits the currently configured provider and credentials. Reign also advertises a terminal auth method (`--setup`) for first-run ACP clients; this opens Reign' interactive model/provider setup.
+
+### Service-tier picker
+
+ACP clients that render `configOptions` can select **Service tier** for a supported
+model route: **Normal**, **Fast**, **Auto**, **Cold**, and **Ultrafast** when its
+model and account eligibility checks permit it. The gateway supplies the choices
+and validates each selection; unsupported routes do not show the picker.
+
+The selection applies to that session's next turn, not to every Reign session,
+and does not write `config.yaml`. Reloading the editor preserves the selection
+while the same gateway session remains alive. Changes from another attached
+client update the ACP picker as well. See [the `/fast` reference](../../reference/slash-commands.md)
+for the bounded Auto and Cold modes.
 
 ## Host integration
 

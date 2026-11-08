@@ -15,6 +15,7 @@ import { SanitizedInput } from '@/components/ui/sanitized-input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useI18n } from '@/i18n'
+import { dropBrowserProfilePrefs } from '@/lib/browser-profile-prefs'
 import { AlertTriangle } from '@/lib/icons'
 import { slug } from '@/lib/sanitize'
 import { createProfile, updateProfileSoul } from '@/reign'
@@ -78,6 +79,9 @@ export function CreateProfileDialog({
 
     try {
       const result = await createProfile({ name: trimmed, clone_from: cloneFrom, ...(soul.trim() ? { soul } : {}) })
+      // A create never lands on a live profile's name, so a folder or startup profile stored under
+      // it was left by a profile deleted before delete dropped them.
+      dropBrowserProfilePrefs(trimmed)
 
       // Older remote backends do not accept an initial persona in the create request.
       if (soul.trim() && !result.soul_set) {

@@ -19,7 +19,7 @@ _ARG_SYNONYMS = {
 
 _REIGN_TOOLS_CALLBACK_NOTE = (
     "Reign tool callback registered: codex can now use "
-    "web_search, web_extract, browser_*, vision_analyze, "
+    "web_search, web_extract, vision_analyze, "
     "image_generate, skill_view, skills_list, text_to_speech, "
     "kanban_* (worker + orchestrator) via MCP.",
     "  (delegate_task, memory, session_search, todo run "

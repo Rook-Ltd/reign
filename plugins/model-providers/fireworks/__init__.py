@@ -3,9 +3,9 @@
 
 from typing import Any
 
-from reign_cli.version_info import get_version_info
+from reign_cli.version_info import reign_user_agent
 from providers import register_provider
-from providers.base import ProviderProfile
+from providers.base import LazyHeaders, ProviderProfile
 
 
 class FireworksProfile(ProviderProfile):
@@ -33,11 +33,11 @@ fireworks = FireworksProfile(
     base_url="https://api.fireworks.ai/inference/v1", auth_type="api_key",
     # Attribution headers (canonical Reign set); via default_headers so they
     # survive switch_model and credential rotation.
-    default_headers={
+    default_headers=LazyHeaders({
         "HTTP-Referer": "https://hermes-agent.nousresearch.com",
         "X-Title": "Reign",
-        "User-Agent": f"ReignAgent/{get_version_info().base_version}",
-    },
+        "User-Agent": lambda: reign_user_agent("ReignAgent"),
+    }),
     default_aux_model="accounts/fireworks/models/glm-5p2",
     # Picker safety net when the live catalog fetch fails.
     fallback_models=(

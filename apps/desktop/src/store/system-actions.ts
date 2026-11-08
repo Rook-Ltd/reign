@@ -2,7 +2,8 @@ import { atom } from 'nanostores'
 
 import { translateNow } from '@/i18n'
 import { sharedGatewayProfiles } from '@/lib/shared-gateway-restart'
-import { getActionStatus, getStatus, restartGateway } from '@/reign'
+import { isSignedOutStatus } from '@/lib/signed-out-status'
+import { getActionStatus, getStatus, reignApi, restartGateway } from '@/reign'
 import { confirm } from '@/store/confirm'
 import { reconnectGateway } from '@/store/gateway-reconnect'
 import { notify, notifyError } from '@/store/notifications'
@@ -84,7 +85,17 @@ export async function confirmSharedGatewayRestart(): Promise<false | null | stri
   let shared: null | string[] = null
 
   try {
-    shared = sharedGatewayProfiles(await getStatus())
+    let status = await getStatus()
+
+    // A Webapp tab whose access token expired since its last gated request reads the signed-out
+    // body, which omits the served set. A gated read rotates the cookies; then ask again, so a
+    // restart of the shared multiplexer still asks first.
+    if (isSignedOutStatus(status)) {
+      await reignApi({ path: '/api/auth/me' })
+      status = await getStatus()
+    }
+
+    shared = sharedGatewayProfiles(status)
   } catch {
     // Status unavailable: fall back to the plain restart rather than blocking it.
     return null

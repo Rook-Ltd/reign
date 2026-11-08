@@ -50,6 +50,11 @@ vi.mock('@/reign', async importOriginal => {
   return { ...actual, ReignGateway: FakeReignGateway }
 })
 
+// A secondary's reopen does `await import('@/store/session-states')` (store/gateway.ts). Load that
+// graph at collection so the first reconnect test is not charged its cold transform, which times it
+// out on a loaded runner.
+import '@/store/session-states'
+
 import type * as ReignModule from '@/reign'
 import type { ReignGateway } from '@/reign'
 import {

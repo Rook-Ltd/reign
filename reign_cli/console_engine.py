@@ -355,7 +355,6 @@ _BLOCKED_TOP = frozenset(
 
 _BLOCKED_PAIRS = {
     ("config", "edit"): "`config edit` opens an editor and is not available in Reign Console.",
-    ("mcp", "serve"): "`mcp serve` starts a server and is not available in Reign Console.",
     ("profile", "alias"): "`profile alias` creates shell wrappers and is not available in Reign Console.",
     ("skills", "config"): "`skills config` is interactive and is not available in Reign Console.",
     ("skills", "publish"): "`skills publish` is not available in Reign Console.",

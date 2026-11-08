@@ -18,7 +18,7 @@ Not using OpenAI Codex? `reign setup --portal` configures a non-Codex backend wi
 - Run OpenAI agent turns against your **ChatGPT subscription** (no API key required) using the same auth flow Codex CLI uses.
 - Use **Codex's own toolset and sandbox** — `shell` for terminal/read/write/search, `apply_patch` for structured edits, `update_plan` for planning, all running inside seatbelt/landlock sandboxing.
 - **Native Codex plugins** — Linear, GitHub, Gmail, Calendar, Canva, etc. — installed via `codex plugin` are auto-migrated and active in your Reign session.
-- **Reign' richer tools come along** — web_search, web_extract, browser automation, vision, image generation, skills, and TTS work via an MCP callback. Codex calls back into Reign for tools it doesn't have built in.
+- **Reign' richer tools come along** — web_search, web_extract, vision, image generation, skills, and TTS work via an MCP callback. Codex calls back into Reign for tools it doesn't have built in.
 - **Memory and skill nudges keep working** — Codex's events are projected into Reign' message shape so the self-improvement loop sees a normal-looking transcript.
 - **Your Reign persona rides along** — the composed system prompt (SOUL.md, MEMORY.md/USER.md, per-channel `system_prompt` overrides) is sent to the codex thread once as developer instructions when the thread starts, and Codex's built-in personality is disabled so it cannot compete with yours.
 
@@ -61,7 +61,6 @@ What's NOT migrated:
 Reign registers itself as an MCP server so codex can call back for tools codex doesn't ship with. Available via the callback:
 
 - **`web_search`** / **`web_extract`** — Firecrawl-backed; tends to be cleaner than scraping for structured content.
-- **`browser_navigate` / `browser_click` / `browser_type` / `browser_press` / `browser_snapshot` / `browser_scroll` / `browser_back` / `browser_get_images` / `browser_console` / `browser_vision`** — full browser automation via Camofox or Browserbase.
 - **`vision_analyze`** — call a separate vision model to inspect an image (different from codex's `view_image` which loads it into the conversation).
 - **`image_generate`** — image generation through Reign' image_gen plugin chain.
 - **`skill_view` / `skills_list`** — read from Reign' skill library.
@@ -93,7 +92,7 @@ These four Reign tools require the running AIAgent context (mid-loop state) to d
 What works inside a codex-runtime worker:
 - Codex's full toolset (shell, apply_patch, update_plan, view_image, web_search) — the worker does its actual task work natively
 - The migrated codex plugins — Linear, GitHub, etc.
-- The Reign tool callback for browser_*, vision, image_gen, skills, TTS
+- The Reign tool callback for web, vision, image_gen, skills, TTS
 
 What also works because the MCP callback exposes them:
 - **`kanban_complete` / `kanban_request_review` / `kanban_request_changes` / `kanban_block` / `kanban_comment` / `kanban_heartbeat`** — the worker handoff tools. These read `REIGN_KANBAN_TASK` from env (set by the dispatcher), gate access correctly, and write to the per-board SQLite DB pinned by `REIGN_KANBAN_DB`. Without these in the callback, a worker on this runtime could do its task but couldn't report back, hanging until the dispatcher's timeout.
@@ -113,7 +112,7 @@ The kanban tools are gated by `REIGN_KANBAN_TASK` env var the dispatcher sets �
 | `delegate_task` subagents | yes | not available — needs agent loop context |
 | `memory`, `session_search`, `todo` | yes | not available — needs agent loop context |
 | `web_search`, `web_extract` | yes | yes (via MCP callback) |
-| Browser automation (Camofox/Browserbase) | yes | yes (via MCP callback) |
+| Browser automation (`browser_exec`, `browser_cdp`, `browser_dialog`, `browser_vault`) | yes | not available — not exposed through the MCP callback |
 | `vision_analyze`, `image_generate` | yes | yes (via MCP callback) |
 | Image attachments in the user turn (screenshots, pasted images, `/image`) | yes (native multimodal) | yes — sent natively as app-server image inputs (data/http URLs) or local-image paths, never flattened to a text marker |
 | `skill_view`, `skills_list` | yes | yes (via MCP callback) |
@@ -425,7 +424,7 @@ What's NOT migrated:
 
 ## Reign tool callback (the new MCP server)
 
-Codex's built-in toolset covers shell/file ops/patches but doesn't have web search, browser automation, vision, image generation, etc. To keep those usable in a codex turn, Reign registers itself as an MCP server in `~/.codex/config.toml`:
+Codex's built-in toolset covers shell/file ops/patches but doesn't have web search, vision, image generation, etc. To keep those usable in a codex turn, Reign registers itself as an MCP server in `~/.codex/config.toml`:
 
 ```toml
 [mcp_servers.reign-tools]
@@ -438,9 +437,9 @@ tool_timeout_sec = 600.0
 
 When the model calls `web_search` (or another exposed Reign tool), codex spawns the `reign_tools_mcp_server` subprocess via stdio, the request is dispatched through `model_tools.handle_function_call()`, and the result is projected back to codex like any other MCP response.
 
-**Tools available via the callback:** `web_search`, `web_extract`, `browser_navigate`, `browser_click`, `browser_type`, `browser_press`, `browser_snapshot`, `browser_scroll`, `browser_back`, `browser_get_images`, `browser_console`, `browser_vision`, `vision_analyze`, `image_generate`, `skill_view`, `skills_list`, `text_to_speech`.
+**Tools available via the callback:** `web_search`, `web_extract`, `vision_analyze`, `image_generate`, `skill_view`, `skills_list`, `text_to_speech`.
 
-**Tools NOT available:** `delegate_task`, `memory`, `session_search`, `todo`. These need the running AIAgent context to dispatch (mid-loop state) and a stateless MCP callback can't drive them. Use the default Reign runtime (`/codex-runtime auto`) when you need these.
+**Tools NOT available:** `delegate_task`, `memory`, `session_search`, `todo`, and the browser tools. These need the running AIAgent context to dispatch (mid-loop state) and a stateless MCP callback can't drive them. Use the default Reign runtime (`/codex-runtime auto`) when you need these.
 
 ## Disabling
 
@@ -517,7 +516,7 @@ If you find a bug, [open an issue](https://github.com/NousResearch/hermes-agent/
                                                         ▼
         ┌──────────────────────────────────────────────────────────┐
         │  reign_tools_mcp_server.py (subprocess on demand)        │
-        │   web_search, web_extract, browser_*, vision_analyze,    │
+        │   web_search, web_extract, vision_analyze,               │
         │   image_generate, skill_view, skills_list, text_to_speech│
         └──────────────────────────────────────────────────────────┘
 ```

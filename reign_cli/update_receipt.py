@@ -807,7 +807,7 @@ def _bare_collection_enabled() -> Optional[bool]:
     from reign_constants import get_reign_home
 
     try:
-        (get_reign_home() / "config.yaml").stat()
+        (get_reign_home() / "config.yaml").stat()  # config-reader: ok — bare interpreter has no config stack; presence probe only
     except FileNotFoundError:
         return False
     except OSError:

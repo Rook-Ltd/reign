@@ -155,6 +155,15 @@ test('resolveRemovableAppPath uses APPIMAGE on Linux when set', () => {
   )
 })
 
+// AppImage apps (terminals, IDEs) export APPIMAGE to everything they start;
+// uninstalling an unpacked Reign launched from one must never rm -rf that app.
+test('resolveRemovableAppPath ignores an APPIMAGE inherited from another AppImage', () => {
+  assert.equal(
+    resolveRemovableAppPath('/opt/reign/linux-unpacked/reign', 'linux', { APPIMAGE: '/home/x/Apps/Other.AppImage' }),
+    '/opt/reign/linux-unpacked'
+  )
+})
+
 test('resolveRemovableAppPath finds the unpacked dir on Linux', () => {
   assert.equal(resolveRemovableAppPath('/opt/reign/linux-unpacked/reign', 'linux', {}), '/opt/reign/linux-unpacked')
   // A system-package install (/usr/bin) → null, left to apt/dnf.
