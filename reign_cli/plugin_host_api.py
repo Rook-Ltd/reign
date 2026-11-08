@@ -35,8 +35,6 @@ def canonical_module_name(name: str) -> str:
 
 
 def canonical_export_name(name: str) -> str:
-    if name.startswith("_"):
-        return name
     return name.replace("hermes", "reign").replace("Hermes", "Reign").replace("HERMES", "REIGN")
 
 
