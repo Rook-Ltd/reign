@@ -121,8 +121,9 @@ class MemoryProvider(ABC):
     def initialize(self, session_id: str, **kwargs) -> None:
         """Initialize once at agent startup (connections, resources, threads).
 
-        kwargs always include ``reign_home`` (profile-scoped storage; never hardcode
-        ``~/.reign``) and ``platform``; may include ``agent_context`` ("primary" |
+        kwargs always include ``reign_home`` (and the upstream API alias pointing
+        to the same profile-scoped storage; never hardcode a home) and ``platform``;
+        may include ``agent_context`` ("primary" |
         "subagent" | "cron" | "flush" — skip writes for non-primary contexts),
         ``agent_identity``, ``agent_workspace``, ``parent_session_id``, ``user_id``, ``user_id_alt``.
         """

@@ -23,6 +23,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Dict, Iterable, List, Sequence, Set, Tuple
 
+from reign_cli.plugin_host_api import canonical_module_name
+
 _SKIP_DIRS = frozenset({"tests", "test", "node_modules", ".git", "__pycache__", ".venv", "venv", "site-packages"})
 
 
@@ -134,7 +136,7 @@ class _Analysis:
 
     # -- what counts as a core value -------------------------------------------------------------
     def _core_module_name(self, name: object) -> bool:
-        return isinstance(name, str) and name.split(".")[0] in self.core_roots
+        return isinstance(name, str) and canonical_module_name(name).split(".")[0] in self.core_roots
 
     def is_core(self, node: ast.AST, tainted: set[str]) -> bool:
         if isinstance(node, ast.Name):

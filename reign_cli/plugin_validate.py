@@ -113,7 +113,8 @@ def _check_manifest_fields(report: ValidationReport, manifest: dict) -> None:
 
 
 def _check_requires_reign(report: ValidationReport, manifest: dict) -> None:
-    spec = str(manifest.get("requires_reign") or "").strip()
+    from reign_cli.plugin_host_api import host_requirement
+    spec = str(host_requirement(manifest) or "").strip()
     if not spec:
         report.add("requires_reign", True, "not declared")
         return
@@ -204,14 +205,17 @@ def _check_oauth(report: ValidationReport, manifest: dict, plugin_dir: Path) -> 
 # Self-contained harness run in a scratch child process. Imports the plugin
 # module using the same file-location mechanics PluginManager uses, calls
 # register() against a recording stub ctx, and prints a sentinel-prefixed
-# JSON line of what was actually registered. Deliberately imports NOTHING
-# from reign so a hostile plugin only sees a bare interpreter — the one
-# exception is `providers` for `kind: model-provider`, whose contract IS
+# JSON line of what was actually registered. Only the import-safe public API
+# name bridge is bootstrapped before the plugin. The other host import is
+# `providers` for `kind: model-provider`, whose contract IS
 # calling providers.register_provider at import.
 _PROBE_SCRIPT = r"""
 import importlib.util
 import json
 import sys
+
+from reign_cli.plugin_host_api import install
+install()
 
 plugin_dir = sys.argv[1]
 sentinel = sys.argv[2]
