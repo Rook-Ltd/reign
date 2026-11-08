@@ -22,7 +22,7 @@ from tests.reign_cli.test_web_host_terminal_persistence import metadata
 from tests.reign_cli.test_webapp_sign_out_sockets import _close_code
 from tests.reign_cli.test_webapp_socket_tickets import _TOKEN, serve_webapp
 
-WEBAPP = "http://hermes.lan:9120"
+WEBAPP = "http://reign.lan:9120"
 USER, PASSWORD = "owner", "throwaway-test-password"
 
 
@@ -46,7 +46,7 @@ def gated(tmp_path, monkeypatch):
     webapp_sign_in._reset_for_tests()
     _reset_password_rate_limit()
     clear_providers()
-    register_provider(BasicAuthProvider(username=USER, password_hash=hash_password(PASSWORD), secret=b"k" * 32))
+    register_provider(BasicAuthProvider(users={USER: hash_password(PASSWORD)}, secret=b"k" * 32))
     register_provider(StubAuthProvider())
     webapp.browser = lambda: TestClient(webapp.server.app, base_url=WEBAPP)
     try:
@@ -202,7 +202,7 @@ def test_two_gateways_on_one_hostname_keep_their_own_sign_ins(gated, monkeypatch
         monkeypatch.setattr(state, "webapp_home", home)
         monkeypatch.setattr(state, "bound_port", port)
         monkeypatch.setattr(gated.server, "_SESSION_TOKEN", token)
-        return f"http://hermes.lan:{port}{path}"
+        return f"http://reign.lan:{port}{path}"
 
     for port in (9120, 9121):
         signed_in = browser.post(at(port, "/auth/password-login"),
@@ -225,7 +225,7 @@ def test_two_gateways_with_their_own_sign_in_on_one_hostname_keep_their_logins_a
     from plugins.dashboard_auth.basic import BasicAuthProvider, hash_password
 
     state = gated.server.app.state
-    providers = {port: BasicAuthProvider(username=USER, password_hash=hash_password(PASSWORD), secret=secret * 32)
+    providers = {port: BasicAuthProvider(users={USER: hash_password(PASSWORD)}, secret=secret * 32)
                  for port, secret in ((9120, b"1"), (9121, b"2"))}
     gateways = {9120: (tmp_path / ".reign", _TOKEN), 9121: (tmp_path / "other-home", "o" * 43)}
     browser = gated.browser()  # one cookie jar for both
@@ -237,7 +237,7 @@ def test_two_gateways_with_their_own_sign_in_on_one_hostname_keep_their_logins_a
         monkeypatch.setattr(gated.server, "_SESSION_TOKEN", token)
         clear_providers()
         register_provider(providers[port])
-        return f"http://hermes.lan:{port}{path}"
+        return f"http://reign.lan:{port}{path}"
 
     for port in (9120, 9121):
         signed_in = browser.post(at(port, "/auth/password-login"),
@@ -246,7 +246,7 @@ def test_two_gateways_with_their_own_sign_in_on_one_hostname_keep_their_logins_a
     assert browser.get(at(9121, "/api/auth/me")).status_code == 200
     first = browser.get(at(9120, "/api/auth/me"))
     assert first.status_code == 200, f"signing in to the second gateway signed the first out: {first.text}"
-    assert browser.post(at(9121, "/auth/logout"), headers={"Origin": "http://hermes.lan:9121"},
+    assert browser.post(at(9121, "/auth/logout"), headers={"Origin": "http://reign.lan:9121"},
                         follow_redirects=False).status_code == 302
     _signed_out(browser.get(at(9121, "/api/auth/me")))
     assert browser.get(at(9120, "/api/auth/me")).status_code == 200

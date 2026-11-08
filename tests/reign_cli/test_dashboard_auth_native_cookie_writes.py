@@ -52,7 +52,7 @@ def password_gate(request, password_hash, monkeypatch):
         monkeypatch.setattr(web_server.app.state, "listener_public_url", "", raising=False)
     clear_providers()
     register_provider(basic_plugin.BasicAuthProvider(
-        username="admin", password_hash=password_hash, secret=b"s" * 32))
+        users={"admin": password_hash}, secret=b"s" * 32))
     # The login limiter counts successful sign-ins too, and every test signs in once.
     _reset_password_rate_limit()
     yield

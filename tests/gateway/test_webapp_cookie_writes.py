@@ -17,12 +17,12 @@ import httpx
 from gateway.run_api import GatewayDashboardMount
 from gateway.webapp_listener import WebappMount
 
-WEBAPP = "http://hermes.lan:9120"
+WEBAPP = "http://reign.lan:9120"
 SKIN = {"config": {"display": {"skin": "mono"}}}
 OWN_PAGE = {"Origin": WEBAPP, "Sec-Fetch-Site": "same-origin"}
 FOREIGN_PAGES = (
     {"Origin": "https://evil.example", "Sec-Fetch-Site": "cross-site"},
-    {"Origin": "http://hermes.lan:8080", "Sec-Fetch-Site": "same-site"},
+    {"Origin": "http://reign.lan:8080", "Sec-Fetch-Site": "same-site"},
     {"Origin": "https://evil.example"},  # a browser without Fetch Metadata
     {"Origin": "null", "Sec-Fetch-Site": "cross-site"},
 )

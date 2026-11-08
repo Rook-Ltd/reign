@@ -486,7 +486,7 @@ def _nous_picker_model_ids(curated: dict, force_fresh_nous_tier: bool) -> list:
         if usage is not None:
             model_ids = featured_first(model_ids, usage.featured_model_ids)
     except Exception:
-        pass
+        logger.debug("Nous usage-window picker ordering failed", exc_info=True)
     return model_ids
 
 

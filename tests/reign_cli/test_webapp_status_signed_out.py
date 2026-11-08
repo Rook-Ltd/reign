@@ -45,7 +45,7 @@ def wildcard_gate(request, password_hash, monkeypatch):
         "gateways": []})
     clear_providers()
     register_provider(basic_plugin.BasicAuthProvider(
-        username="admin", password_hash=password_hash, secret=b"s" * 32))
+        users={"admin": password_hash}, secret=b"s" * 32))
     _reset_password_rate_limit()
     yield request.param
     clear_providers()

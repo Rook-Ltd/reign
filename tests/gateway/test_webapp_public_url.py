@@ -33,7 +33,7 @@ def test_the_webapp_has_no_public_url_unless_configured(tmp_path):
     ("https://webapp.example.net", "https://webapp.example.net"),
     ("https://webapp.example.net/", "https://webapp.example.net"),
     ("https://webapp.example.net:8443/reign/", "https://webapp.example.net:8443/reign"),
-    ("http://hermes.lan:9120", "http://hermes.lan:9120"),
+    ("http://reign.lan:9120", "http://reign.lan:9120"),
     ("''", ""),
 ])
 def test_the_webapp_reads_its_public_url(tmp_path, value, url):

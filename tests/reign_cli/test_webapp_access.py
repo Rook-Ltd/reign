@@ -220,7 +220,7 @@ def lan_browser(monkeypatch):
         monkeypatch.setattr(web_server.app.state, key, value, raising=False)
     clear_providers()
     register_provider(basic_plugin.BasicAuthProvider(
-        username="admin", password_hash=basic_plugin.hash_password("hunter2"), secret=b"s" * 32))
+        users={"admin": basic_plugin.hash_password("hunter2")}, secret=b"s" * 32))
     _reset_password_rate_limit()
     browser = TestClient(web_server.app, base_url="http://192.168.1.50:9120")
     login = browser.post("/auth/password-login", json={"provider": "basic", "username": "admin", "password": "hunter2"})

@@ -8,3 +8,9 @@
 - No unresolved conflict markers or surviving upstream brand images outside the neutral allowlist.
 - Sync conflict reporting now uses the built-in token's Issues permission; branch/PR publishing continues to use UPSTREAM_SYNC_TOKEN.
 - Native prompt rendering preserves the host OS and normalizes environment paths.
+
+Validation before PR:
+
+- 817 focused authentication, gateway, CLI, prompt, skill and model-picker tests passed; one platform-dependent test skipped.
+- Rebranding gates: no unresolved conflict markers and no unexpected upstream brand images.
+- Full repository checks are running; an inherited silent fallback was corrected to log its traceback.
