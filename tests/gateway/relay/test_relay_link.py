@@ -65,7 +65,7 @@ def connector(monkeypatch):
     _Connector.managed_by = None
     monkeypatch.setenv("GATEWAY_RELAY_URL", f"ws://127.0.0.1:{server.server_port}/relay")
     monkeypatch.setenv("GATEWAY_RELAY_PLATFORMS", "telegram")
-    monkeypatch.setenv("GATEWAY_RELAY_BOT_IDS", json.dumps({"telegram": {"botId": "42", "username": "@NousReignBot"}}))
+    monkeypatch.setenv("GATEWAY_RELAY_BOT_IDS", json.dumps({"telegram": {"botId": "42", "username": "@NousHermesBot"}}))
     monkeypatch.setenv("GATEWAY_RELAY_ID", _GATEWAY_ID)
     yield _Connector
     server.shutdown()

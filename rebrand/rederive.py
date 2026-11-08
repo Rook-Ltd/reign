@@ -8,7 +8,8 @@ matches what a fresh sync would produce, without re-running the whole sync.
 
     python rebrand/rederive.py --ref v2026.9.24 [--dry-run]
 """
-import argparse, re, subprocess, sys, yaml
+import argparse, re, subprocess, sys
+from ruamel.yaml import YAML
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from rebrand import Rebrander, MAPPING, ROOT, globs_match, is_binary, tracked_files
@@ -16,7 +17,7 @@ from rebrand import Rebrander, MAPPING, ROOT, globs_match, is_binary, tracked_fi
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--ref", required=True); ap.add_argument("--dry-run", action="store_true")
     a = ap.parse_args()
-    mp = yaml.safe_load(MAPPING.read_text()); rb = Rebrander(mp)
+    mp = YAML(typ="safe").load(MAPPING.read_text()); rb = Rebrander(mp)
     overlay = set(re.findall(r"^diff --git a/(.*?) b/", (ROOT / "rebrand/overlay/hand-edits.patch").read_text(errors="replace"), re.MULTILINE))
     def upstream_path(rel):  # reverse the path rename: reign_cli -> hermes_cli etc. (best effort)
         return rel.replace("reign_cli", "hermes_cli").replace("reign_state", "hermes_state").replace("reign-ink", "hermes-ink").replace("reign-achievements", "hermes-achievements").replace("reign-bots", "hermes-bots")

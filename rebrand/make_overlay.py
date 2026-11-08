@@ -36,8 +36,8 @@ def main() -> None:
     subprocess.run([str(PY), "rebrand/rebrand.py"], cwd=wt, check=True, capture_output=True)
     subprocess.run(["git", "add", "-A"], cwd=wt, check=True)
     tree = subprocess.run(["git", "write-tree"], cwd=wt, check=True, capture_output=True, text=True).stdout.strip()
-    import yaml
-    owned = yaml.safe_load((ROOT / "rebrand/mapping.yaml").read_text()).get("overlay_exclude", [])
+    from ruamel.yaml import YAML
+    owned = YAML(typ="safe").load((ROOT / "rebrand/mapping.yaml").read_text()).get("overlay_exclude", [])
     out = ROOT / "rebrand/overlay/hand-edits.patch"
     with out.open("w") as fh:
         subprocess.run(["git", "diff", "--binary", tree, "HEAD", "--", "."] + EXCLUDES + [f":(exclude){p}" for p in owned], cwd=ROOT, check=True, stdout=fh)

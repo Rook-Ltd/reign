@@ -12,6 +12,9 @@ exclude_files:            # never touched by content replace
   - "**/NOTICE"
   - REIGN-REBRAND-PLAN.md
   - "contributors/**"     # git author identities, not branding
+  - "plugin-catalog/*.yaml" # remote plugin identities and paths are not Reign-owned
+  - "plugin-catalog/*.yml"
+  - "plugins/config_backends/remote/vendor/**" # checksummed upstream protocol fixtures
   - "brand/**"
   - "rebrand/**"
   - ".github/workflows/upstream-sync.yml"   # Rook-authored; names upstream on purpose
@@ -29,6 +32,9 @@ rename_exclude:           # never MOVED. Everything else in exclude_files still 
   - NOTICE
   - REIGN-REBRAND-PLAN.md
   - "contributors/**"
+  - "plugin-catalog/*.yaml"
+  - "plugin-catalog/*.yml"
+  - "plugins/config_backends/remote/vendor/**"
   - "brand/**"
   - "rebrand/**"
   - ".git/**"
@@ -48,6 +54,7 @@ delete:
   - tests/scripts/test_install_sh_stable_default.py  # Reign has no releases: installs follow main, never a stable tag
 
 protect:                  # regex; matches are restored verbatim after replacement. ORDER MATTERS:
+  - '\bNousHermesBot\b'   # external Telegram account, including handles outside URLs
   # emails first, so the domain rule below cannot shield half of an address. These stay
   # unconditional: example.com addresses here are real commit identities (release.py AUTHOR_MAP).
   - '[\w.+\-]*(?:hermes|nous)[\w.+\-]*@[\w.\-]+\.\w+'
@@ -227,6 +234,30 @@ check_allow:
 # distribution repo. Documentation links stay on upstream (decision 8).
 post_replace:
   - files:
+      - ".github/workflows/js-autofix.yml"
+    replace:
+      - plain: "    steps:\n      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n\n      - name: Get GitHub App token"
+        with: "    steps:\n      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2\n        with:\n          persist-credentials: false\n\n      - name: Get GitHub App token"
+      - plain: "          private-key: ${{ secrets.APP_PRIVATE_KEY }}\n\n      - name: Download patch"
+        with: "          private-key: ${{ secrets.APP_PRIVATE_KEY }}\n          fallback-token: ${{ secrets.UPSTREAM_SYNC_TOKEN }}\n\n      - name: Download patch"
+      - plain: "      - name: Apply patch and push to bot branch\n        env:\n          BOT_BRANCH:"
+        with: "      - name: Apply patch and push to bot branch\n        env:\n          GH_TOKEN: ${{ steps.app-token.outputs.token }}\n          BOT_BRANCH:"
+      - plain: "          # recreates it.\n          git push --force origin HEAD:\"$BOT_BRANCH\""
+        with: "          # recreates it.\n          gh auth setup-git\n          git push --force origin HEAD:\"$BOT_BRANCH\""
+  - files:
+      - "plugin-catalog/*.yaml"
+      - "plugin-catalog/*.yml"
+    replace:
+      - regex: '(?m)^requires_hermes:'
+        with: 'requires_reign:'
+      - regex: '(?s)\A(\s*\{.*?)"requires_hermes"(?=\s*:)'
+        with: '\1"requires_reign"'
+  - files:                # Native bundle builders need upstream's private macOS runner; keep Rook builds manual
+      - ".github/workflows/pm-bundle.yml"
+    replace:
+      - regex: '(?m)^  pull_request:\n(?:    .*\n|[ \t]*\n)*'
+        with: ''
+  - files:
       - "reign_cli/model_switch_providers.py"
     replace:
       - plain: "            model_ids = featured_first(model_ids, usage.featured_model_ids)\n    except Exception:\n        pass\n"
@@ -248,6 +279,8 @@ post_replace:
         with: ''
       - plain: "    from agent import skill_utils\n    skill_utils._ENV_DETECT_CACHE"
         with: "    from agent import skill_utils\n    # Pin skill selection without making native extensions believe they run on another OS.\n    skill_utils.skill_matches_platform_list = partial(skill_utils.skill_matches_platform_list, host_platform=\"linux\")\n    skill_utils._ENV_DETECT_CACHE"
+      - plain: "    env_probe.get_environment_probe_line = lambda **_k: \"\"  # type: ignore[assignment]\n\n\nclass _ImportFailures"
+        with: "    env_probe.get_environment_probe_line = lambda **_k: \"\"  # type: ignore[assignment]\n    # Render the canonical Linux schema without changing native host facts.\n    from tools import file_tools\n    schema = file_tools.SEARCH_FILES_SCHEMA\n    schema[\"description\"] = schema[\"description\"].replace(file_tools._MACOS_SEARCH_NOTE, \"\")\n\n\nclass _ImportFailures"
   - files:
       - "agent/skill_utils.py"
     replace:
@@ -653,7 +686,6 @@ post_replace:
     - tests/tools/test_wake_word.py
     replace:
     - plain: assert ww._provider({}) == "openwakeword"
-      with: assert ww._provider({}) == "sherpa"
       with: 'assert ww._provider({}) == "sherpa"'
   - files:
     - website/src/**/*.css

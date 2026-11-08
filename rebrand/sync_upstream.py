@@ -44,6 +44,8 @@ import sys
 import tempfile
 from pathlib import Path
 
+from sync_catalog import record_sync_branches
+
 ROOT = Path(__file__).resolve().parent.parent
 REBRAND = ROOT / "rebrand"
 PY = ROOT / ".venv" / "bin" / "python"
@@ -239,6 +241,7 @@ def main() -> None:
     report += [f"- conflict: `{c}`" for c in conflicts]
     report += [f"- rule stopped matching (check it): `{r}`" for r in dead_rules]
     report += [f"- residual: `{f}`: `{l[:120]}`" for f, l in new_lines[:40]]
+    report += ["", "Catalog YAML changes are split into a data-only companion PR. Merge the code PR first, then its catalog companion."]
     (REBRAND / "audit" / "sync-report.md").write_text("\n".join(report) + "\n")
     if not args.keep_worktree:
         sh("git", "worktree", "remove", "--force", str(base_wt), check=False, quiet=True)
@@ -259,7 +262,7 @@ def main() -> None:
     commit = subprocess.run(["git", "commit-tree", tree, "-p", reign_head, "-p", upstream_sha, "-m", msg],
                             cwd=wt, text=True, capture_output=True, check=True).stdout.strip()
     branch = args.branch or f"sync/upstream-{date}"
-    sh("git", "branch", "-f", branch, commit, quiet=True)
+    commit = record_sync_branches(ROOT, commit, reign_head, branch)
     print(f"  {branch} -> {commit[:10]}  (review, run scripts/run_tests.sh, then open a PR)")
     if not args.keep_worktree:
         sh("git", "worktree", "remove", "--force", str(wt), quiet=True)

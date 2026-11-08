@@ -27,6 +27,10 @@ inputs:
     description: GitHub App installation owner. Empty scopes the token to the current repository.
     required: false
     default: ''
+  fallback-token:
+    description: Optional repository token for trusted callers on forks without a GitHub App.
+    required: false
+    default: ''
   repositories:
     description: Comma- or newline-separated repositories to scope within the installation owner.
     required: false
@@ -34,7 +38,7 @@ inputs:
 
 outputs:
   token:
-    description: A GitHub App installation access token (1-hour TTL), or GITHUB_TOKEN on forks.
+    description: A GitHub App installation token, caller fallback, or GITHUB_TOKEN.
     value: ${{ steps.app-token.outputs.token || steps.fallback.outputs.token }}
 
 runs:
@@ -62,8 +66,10 @@ runs:
         owner: ${{ inputs.owner }}
         repositories: ${{ inputs.repositories }}
 
-    - name: Fall back to GITHUB_TOKEN
+    - name: Select fallback token
       id: fallback
       if: steps.check.outputs.has_app != 'true'
       shell: bash
-      run: echo "token=${{ github.token }}" >> "$GITHUB_OUTPUT"
+      env:
+        FALLBACK_TOKEN: ${{ inputs.fallback-token || github.token }}
+      run: echo "token=$FALLBACK_TOKEN" >> "$GITHUB_OUTPUT"
