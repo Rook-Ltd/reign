@@ -7,6 +7,7 @@ git ``url.insteadOf`` rewrite. One case per closed bypass, plus the legitimate
 flows that must keep passing.
 """
 
+import json
 import os
 import subprocess
 import sys
@@ -317,9 +318,15 @@ def test_changed_entries_step(tmp_path, change, rc, listed, text):
     out = tmp_path / "gh-output.txt"
     out.touch()
     res = _run(_step("Find changed catalog"), tmp_path, repo,
-               {**os.environ, "GITHUB_OUTPUT": str(out)})
+               {**os.environ, "GITHUB_OUTPUT": str(out), "GITHUB_WORKSPACE": str(ROOT)})
     assert res.returncode == rc, res.stdout + res.stderr
     lines = out.read_text(encoding="utf-8").splitlines()
-    assert [f for f in lines if f and "__EOF__" not in f and f != "files<<__EOF__"] == listed
+    if rc == 0:
+        outputs = dict(line.split("=", 1) for line in lines)
+        batches = json.loads(outputs["matrix"])["include"]
+        assert [entry for batch in batches for entry in batch["files"].splitlines()] == listed
+        assert outputs["has-entries"] == str(bool(listed)).lower()
+    else:
+        assert not lines
     if text:
         assert text in res.stdout
