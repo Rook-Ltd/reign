@@ -57,6 +57,32 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           ref: ${{ inputs.commit || github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: "0.9.28"
+
+      - name: Set up Python 3.14
+        run: |
+          uv venv --seed --python 3.14 "$RUNNER_TEMP/py"
+          echo "$RUNNER_TEMP/py/bin" >> "$GITHUB_PATH"
+
+      - name: Write image identity
+        run: |
+          set -euo pipefail
+          # Upstream commits arrive through sync merges; their release tags are not pushed to this fork.
+          git fetch --no-tags https://github.com/NousResearch/hermes-agent.git 'refs/tags/v*:refs/tags/v*'
+          display=$(python3 -m scripts.releases.distance)
+          test -n "$display"
+          base="${display%%+*}"
+          development="${display#*+}"
+          if [ "$development" = "$display" ]; then distance=0; else distance="${development%%.*}"; fi
+          python3 scripts/write_install_stamp.py --output install-stamp.json \
+            --distribution docker --update-mechanism external --source ci \
+            --commit "$(git rev-parse HEAD)" --branch main \
+            --base-version "$base" --display-version "$display" --distance "$distance"
 
       - id: meta
         run: echo "tag=sha-$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
@@ -74,7 +100,19 @@ jobs:
           cache-to: type=gha,mode=max,scope=reign-release
 
       - name: Smoke test the dashboard the way the servers run it
-        run: bash scripts/ci/reign-image-smoke.sh reign:smoke
+        run: |
+          bash scripts/ci/reign-image-smoke.sh reign:smoke
+          docker run --rm --mount "type=bind,source=$PWD/install-stamp.json,target=/expected/install-stamp.json,readonly" \
+            --entrypoint /opt/reign/.venv/bin/python -w /opt/reign reign:smoke -c '
+          import json
+          from reign_cli.version_info import get_version_info
+          expected = json.load(open("/expected/install-stamp.json"))
+          actual = get_version_info()
+          assert actual.commit == expected["commit"], actual
+          assert actual.base_version == expected["baseVersion"], actual
+          assert actual.base_version != "unknown", actual
+          print("Image identity verified:", actual.display_version, actual.commit)
+          '
 
       - uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
         with:
