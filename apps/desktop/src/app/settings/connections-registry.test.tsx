@@ -84,7 +84,7 @@ describe('ConnectionsRegistrySection', () => {
     const applyConnectionConfig = vi.fn()
     const select = vi.fn()
     Object.assign(window.reignDesktop, { applyConnectionConfig })
-    Object.assign(window.reignDesktop.connections, { select })
+    Object.assign(window.reignDesktop.connections!, { select })
     render(<ConnectionsRegistrySection />)
     fireEvent.click(await screen.findByRole('button', { name: 'Edit' }))
     const values = screen.getAllByPlaceholderText('Saved — leave blank to keep')

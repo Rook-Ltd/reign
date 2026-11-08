@@ -36,7 +36,7 @@ _malformed_sleep_url_logged = False
 # Short is safe: real work always blocks the suspend, resume is sub-second; longer bills idle RAM.
 DEFAULT_IDLE_TIMEOUT_MINUTES = 2
 _TRUTHY = {"1", "true", "yes", "on"}
-# Dashboard-client liveness marker, touched by the (separate) dashboard process on every /api/ws
+# Dashboard-client liveness marker, touched by every /api/ws client socket on each
 # connect and inbound frame. Folded into the inbound clock so an open client holds the box awake —
 # otherwise it suspends under the client, whose reconnect re-pokes the wake URL and the instance
 # flaps every ~60s. Deliberately NO staleness cutoff: is_idle decides whether the mtime is recent.
@@ -90,10 +90,13 @@ def is_idle(*, active_work_count: int, seconds_since_last_inbound: float,
 
 
 def dashboard_client_heartbeat_path(reign_home: Optional[os.PathLike | str] = None):
-    """Path of the dashboard-client liveness marker under REIGN_HOME."""
+    """Path of the dashboard-client liveness marker under the process's own REIGN_HOME.
+
+    One marker per process, never per profile scope: the gateway's idle watcher reads it with no
+    override, so a socket served in a secondary profile's scope must stamp the same file."""
     if reign_home is None:
-        from reign_constants import get_reign_home
-        reign_home = get_reign_home()
+        from reign_constants import get_process_reign_home
+        reign_home = get_process_reign_home()
     return Path(reign_home) / DASHBOARD_CLIENT_HEARTBEAT_REL
 
 

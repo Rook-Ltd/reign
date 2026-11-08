@@ -616,7 +616,7 @@ def _uninstall_profile(profile) -> None:
     log_info(f"Uninstalling profile '{name}'...")
 
     # 1. Gateway service, via `python -m reign_cli.main` (the `reign` wrapper may be half-gone).
-    reign_invocation = [sys.executable, "-m", "reign_cli.main", "--profile", name]
+    reign_invocation = [sys.executable, "-P", "-m", "reign_cli.main", "--profile", name]
     for subcmd in ("stop", "uninstall"):
         try:
             subprocess.run(

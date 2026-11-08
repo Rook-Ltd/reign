@@ -236,7 +236,8 @@
       commonUnitEnvironment = {
         HOME = cfg.stateDir;
       }
-      // common.processEnvironment { inherit reignHome; };
+      // common.processEnvironment { inherit reignHome; }
+      // common.backendSessionEnvironment { inherit cfg; };
 
       unitPath = common.processPath { inherit pkgs cfg; };
 

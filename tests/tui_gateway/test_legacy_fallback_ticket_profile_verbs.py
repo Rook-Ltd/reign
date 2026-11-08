@@ -37,6 +37,7 @@ def test_secondary_ticket_runs_connectors_and_billing_in_its_own_profile(homes, 
     import reign_cli.nous_billing
     import tools.connectors
     import tools.connectors.managed
+    import tools.managed_tool_gateway
     from reign_constants import get_reign_home
     server, launch, bee = homes
     seen = []
@@ -46,8 +47,9 @@ def test_secondary_ticket_runs_connectors_and_billing_in_its_own_profile(homes, 
 
     monkeypatch.setattr(tools.connectors, 'connectors_available', lambda *a, **k: True)
     monkeypatch.setattr(tools.connectors, 'ensure_guest_identity', lambda: None)
+    monkeypatch.setattr(tools.managed_tool_gateway, 'read_nous_access_token', lambda: 'token')
     monkeypatch.setattr(tools.connectors.managed, 'managed_client',
-                        lambda: types.SimpleNamespace(list_connectors=lambda: rec('list') or []))
+                        lambda **_: types.SimpleNamespace(list_connectors=lambda: rec('list') or []))
     monkeypatch.setattr(reign_cli.nous_billing, 'post_charge', lambda **k: rec('charge') or {'chargeId': 'c'})
     for method, params in (('connectors.list', {'owner': {'type': 'account'}}), ('billing.charge', {'amount_usd': 5})):
         _call(server, bee, method, params)

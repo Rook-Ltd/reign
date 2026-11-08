@@ -3,7 +3,7 @@
 - Upstream: https://github.com/NousResearch/hermes-agent
 - Branch: main
 - Forked at: 00b2e03c8028cbe9e6b59b03306be300c6a6df8c
-- Synced at: 67481b6f37615e58f1434ba6a1528e4c6e9b754c (upstream/main, 2026-10-19)
+- Synced at: 2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19 (v0.23.0, 2026-11-08)
 - Upstream commit date: 2026-09-01 21:46:46 -0500
 - Cloned: 2026-09-02T02:52Z
 - Remotes: `upstream` = Nous, `origin` = https://github.com/rook-ltd/reign
