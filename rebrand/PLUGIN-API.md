@@ -10,7 +10,7 @@ Reign modules. It does not install or execute a second copy of Hermes.
 
 - A legacy module and its canonical module are the same object. Classes, registries,
   context variables and configuration caches therefore keep one identity.
-- Public exported names renamed by branding resolve to their Reign equivalents.
+- Existing exported names renamed by branding resolve to their Reign equivalents.
   Public module functions accept the original branded keyword arguments too;
   supplying both spellings of one argument is an error.
 - Memory-provider initialization supplies `hermes_home` and `reign_home` with the
@@ -31,8 +31,10 @@ has not imported Reign does not gain these imports automatically.
 
 ## Boundaries
 
-This preserves branded names of APIs that exist today. It does not restore removed
-upstream APIs, synthesize private exports, alias third-party packages, install
+This preserves branded names of APIs that exist today. Private imports still produce
+admission warnings and gain no stability guarantee: an alias disappears when its
+canonical implementation disappears. This does not restore removed upstream APIs,
+alias third-party packages, install
 missing dependencies, rewrite arbitrary environment reads, or alter distribution
 metadata. For example, a plugin reading `os.environ['HERMES_HOME']` directly should
 use the public home resolver to work correctly across profiles.
