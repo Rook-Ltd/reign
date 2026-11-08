@@ -52,7 +52,7 @@ NEUTRAL_IMAGE_RE = re.compile(
     r"feature-(automation|connect|memory|sandbox)|session-source-folders|reign-achievements/docs"
 )
 LOCKFILE_RE = re.compile(r"(^|/)(uv\.lock|package-lock\.json)$")
-ENV = dict(os.environ, PATH="/opt/homebrew/bin:" + os.environ.get("PATH", ""))
+ENV = dict(os.environ)
 
 
 def sh(*cmd: str, cwd: Path = ROOT, check: bool = True, quiet: bool = False) -> str:
@@ -72,7 +72,9 @@ def add_worktree(wt: Path, ref: str) -> None:
 
 
 def regenerate_lockfiles(wt: Path) -> None:
-    subprocess.run(["uv", "lock"], cwd=wt, env=ENV, check=True)
+    import pm
+
+    pm.lock_project(wt, python=Path(sys.executable), explicit=True)
     for d in (".", "plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge"):
         subprocess.run(["npm", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
                        cwd=wt / d, env=ENV, check=True)
@@ -115,6 +117,9 @@ def replay(ref: str, wt: Path, args: argparse.Namespace) -> tuple[str, dict[str,
         if pin.startswith("ruff=="):
             subprocess.run(["uvx", "--from", pin, "ruff", "check", "--fix", "--select", "RUF022", "--exit-zero", "--quiet", "."],
                            cwd=wt, env=ENV, check=False)
+    # Renamed skills sort differently, and rebranding tool descriptions changes their hashes.
+    # Render both merge inputs so generated fixtures cannot masquerade as Reign hand edits.
+    subprocess.run([sys.executable, "scripts/ci/prompt_surface.py", "render"], cwd=wt, env=ENV, check=True, timeout=660)
     sh("git", "add", "-A", cwd=wt, quiet=True)
     return sh("git", "write-tree", cwd=wt, quiet=True).strip(), hits
 

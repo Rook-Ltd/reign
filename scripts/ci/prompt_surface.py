@@ -27,12 +27,14 @@ import difflib
 import json
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
 import sys
 import tempfile
 from collections import Counter
+from functools import partial
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -79,7 +81,6 @@ def _pin_environment() -> None:
     socket.socket.connect = refuse  # type: ignore[method-assign]
     socket.create_connection = refuse  # type: ignore[assignment]
     socket.getaddrinfo = refuse  # type: ignore[assignment]
-    sys.platform = "linux"  # skills index ``platforms:`` gate
 
     import reign_time
     reign_time.now = lambda: FIXED_NOW  # type: ignore[assignment]
@@ -88,6 +89,8 @@ def _pin_environment() -> None:
     import tools.registry as registry_module
     registry_module._check_fn_cached = lambda _fn: True  # type: ignore[assignment]
     from agent import skill_utils
+    # Pin skill selection without making native extensions believe they run on another OS.
+    skill_utils.skill_matches_platform_list = partial(skill_utils.skill_matches_platform_list, host_platform="linux")
     skill_utils._ENV_DETECT_CACHE.update({"docker": False, "s6": False})
     # The toolchain probe line reports the host's python/node/pip; it is environment, not code.
     from tools import env_probe
@@ -106,14 +109,14 @@ class _ImportFailures(logging.Handler):
 
 
 def _scrub(text: str, home: Path) -> str:
-    import platform as _platform
     for raw, token in sorted({
         str(home / ".reign"): "<REIGN_HOME>",
         str(home): "<HOME>",
-        f"{_platform.system()} ({_platform.release()})": "<HOST_OS>",
+        os.environ["REIGN_HOME"]: "<REIGN_HOME>",
+        os.environ["HOME"]: "<HOME>",
     }.items(), key=lambda kv: -len(kv[0])):
         text = text.replace(raw, token)
-    return text
+    return re.sub(r"(?m)^Host: .+$", "Host: <HOST_OS>", text)
 
 
 def _enabled_toolsets(platform: str) -> list[str]:
