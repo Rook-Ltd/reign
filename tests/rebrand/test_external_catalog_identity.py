@@ -39,3 +39,20 @@ def test_catalog_rebranding_preserves_external_plugin_identity(tmp_path, monkeyp
     assert result.pop("requires_reign") == original.pop("requires_hermes")
     assert result == original
     assert rebrander.post_replace_files([relative], apply=False) == []
+
+
+def test_checksummed_vendor_data_is_not_rebranded(tmp_path, monkeypatch):
+    mapping = YAML(typ="safe").load((Path(codemod.__file__).parent / "mapping.yaml").read_text())
+    relative = "plugins/config_backends/remote/vendor/hermes-fixture.json"
+    fixture = tmp_path / relative
+    fixture.parent.mkdir(parents=True)
+    original = b'{"service.name": "hermes", "bot": "NousHermesBot"}\n'
+    fixture.write_bytes(original)
+    monkeypatch.setattr(codemod, "ROOT", tmp_path)
+    rebrander = codemod.Rebrander(mapping)
+
+    assert rebrander.rewrite_files([relative], apply=True) == []
+    assert rebrander.rename_files([relative], apply=False) == []
+    assert rebrander.post_replace_files([relative], apply=True) == []
+    assert fixture.read_bytes() == original
+    assert rebrander.transform_text('username="NousHermesBot"') == 'username="NousHermesBot"'
