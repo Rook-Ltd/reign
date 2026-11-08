@@ -2,17 +2,17 @@ name: orcaslicer
 repo: https://github.com/mazzanfar/hermes-orcaslicer
 sha: 8fc3a5a40ef4e0c639b76cefd90ad9a48a1a51ec
 version: "0.5.1"
-title: OrcaSlicer for Reign
+title: OrcaSlicer for Hermes
 description: >-
   Prepare, slice, preflight and export 3D prints with stock OrcaSlicer profiles.
   Includes explicit printer upload/control, camera snapshots and monitoring
   through supported protocols. Protocol and hardware limits are documented.
-  Independent of OrcaSlicer and Rook.
+  Independent of OrcaSlicer and Nous Research.
   Disclosure — executes the installed local slicer and exposes printer upload,
   start, pause, resume and cancel; agent-supplied confirmation is not independent
-  human authentication. Printer/camera credentials are read from ORCA_*/REIGN_ORCA_*
+  human authentication. Printer/camera credentials are read from ORCA_*/HERMES_ORCA_*
   environment variables named in tool arguments (HTTPS required unless allow_plaintext_credentials
-  is set); plugin state lives in ~/.reign-orca (REIGN_ORCA_HOME), outside REIGN_HOME.
+  is set); plugin state lives in ~/.hermes-orca (HERMES_ORCA_HOME), outside HERMES_HOME.
 maintainer: mazzanfar
 tier: community
 category: tools

@@ -24,7 +24,7 @@ capabilities:
   provides_middleware: []
   requires_env: []
 known_issues:
-  - "The Desktop half needs a Reign build with the composer draft API (`host.composer`); on an older Desktop the sparkle reports that an update is needed."
+  - "The Desktop half needs a Hermes build with the composer draft API (`host.composer`); on an older Desktop the sparkle reports that an update is needed."
   - "One model call per click, and the score is an extra call. Cancel stops the client-side wait only — the in-flight call may still finish."
   - "Uses the chat's model; there is no separate model setting. Switch the chat model first to enhance with another one."
   - "Not a fork of `prompt-enhancer`: this one is a separate plugin with an agent tool, a slash command, three deepening stages and a scorer."

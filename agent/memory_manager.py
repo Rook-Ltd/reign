@@ -923,9 +923,11 @@ class MemoryManager:
 
     def initialize_all(self, session_id: str, **kwargs) -> None:
         """Initialize all providers, injecting ``reign_home`` so they resolve profile-scoped paths."""
+        from reign_cli.plugin_host_api import LEGACY_HOME_ARGUMENT
         if "reign_home" not in kwargs:
             from reign_constants import get_reign_home
-            kwargs["reign_home"] = str(get_reign_home())
+            kwargs["reign_home"] = kwargs.get(LEGACY_HOME_ARGUMENT) or str(get_reign_home())
+        kwargs[LEGACY_HOME_ARGUMENT] = kwargs["reign_home"]
         self._bound_scope = bound_scope(kwargs["reign_home"], kwargs.get("agent_identity"))
         # One instance, one profile: never rebind an instance another profile's manager bound (#140058).
         for provider in [p for p in self._providers if p.name != "builtin"]:

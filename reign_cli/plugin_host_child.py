@@ -477,7 +477,8 @@ async def _on_behalf_of(awaitable: Any, origin: Optional[int]) -> Any:
 def _import_plugin(params: dict[str, Any]) -> Any:
     """Import a directory plugin under the module name Reign assigned, or resolve an entry point."""
     if params.get("entrypoint"):
-        for ep in importlib.metadata.entry_points().select(group=_ENTRY_POINTS_GROUP):
+        from reign_cli.plugin_host_api import select_entry_points
+        for ep in select_entry_points(importlib.metadata.entry_points(), _ENTRY_POINTS_GROUP):
             if ep.name == params.get("name"):
                 return ep.load()
         raise ImportError(f"Entry point '{params.get('name')}' not found in group '{_ENTRY_POINTS_GROUP}'")

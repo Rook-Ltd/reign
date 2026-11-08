@@ -2,6 +2,10 @@
 
 import sys
 
+from reign_cli.plugin_host_api import install as _install_plugin_host_api
+
+_install_plugin_host_api()
+
 __release_date__ = "2026.9.24"
 # Declared for type checkers and the old-updater surface audit; served lazily by __getattr__.
 __version__: str

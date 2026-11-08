@@ -16,6 +16,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Set, Tuple, Uni
 
 from utils import fast_safe_load
 from reign_cli.plugin_capabilities import parse_declared_capabilities as _parse_declared_capabilities
+from reign_cli.plugin_host_api import LEGACY_HOST_REQUIREMENT, host_requirement
 
 try:
     import reign_yaml as yaml
@@ -35,7 +36,7 @@ _KNOWN_MANIFEST_FIELDS: set[str] = {
     "pip_dependencies", "provides_browser_providers", "provides_web_providers",
     "manifest_version", "api_version", "requires_plugins", "python_dependencies", "config_schema",
     "license", "homepage", "tags", "capabilities", "emits", "listens", "reign", "depends",
-    "requires_reign", "python_runtime", "provides_locales", "requires_auth", "oauth", "config_keys",
+    "requires_reign", LEGACY_HOST_REQUIREMENT, "python_runtime", "provides_locales", "requires_auth", "oauth", "config_keys",
 }
 
 # Highest manifest schema version this Reign understands.
@@ -501,7 +502,7 @@ def version_satisfies(spec: str, current: str) -> bool:
 
 def requires_reign_error(manifest: PluginManifest | Mapping[str, Any]) -> Optional[str]:
     """Load-blocking reason when the manifest's ``requires_reign`` rejects the running version."""
-    spec = manifest.get("requires_reign", "") if isinstance(manifest, Mapping) else manifest.requires_reign
+    spec = host_requirement(manifest) if isinstance(manifest, Mapping) else manifest.requires_reign
     if not spec:
         return None
     current = running_reign_version()
@@ -575,7 +576,7 @@ def parse_manifest_file(
             # ``hooks:`` is the spelling the bundled manifests carried for months; external copies of it
             # must keep declaring the same thing (#108371).
             provides_hooks=data.get("provides_hooks", data.get("hooks", [])), source=source, path=str(plugin_dir),
-            kind=kind, key=key, requires_reign=str(data.get("requires_reign") or "").strip(),
+            kind=kind, key=key, requires_reign=str(host_requirement(data) or "").strip(),
             capabilities=_parse_declared_capabilities(data.get("capabilities"), name),
             **_parse_manifest_v2_fields(data, key), emits=data.get("emits") or [],
             listens=data.get("listens") or [],
