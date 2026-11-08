@@ -1,12 +1,27 @@
 import { type ChildProcess, execFileSync, spawn } from 'node:child_process'
 
 import type { GatewayEndpoint } from './local-gateway'
-import { configurePythonGatewayTicketClient, createLocalGatewayDials, createStaleGatewayRestarter, ensureLocalGateway, gatewayOwnerProfile, localGatewayDial, nativeGatewayHttpHeaders, redialLocalGateway, runGatewayEnsure, runGatewayOwnerRestart } from './local-gateway'
+import {
+  configurePythonGatewayTicketClient,
+  createLocalGatewayDials,
+  createStaleGatewayRestarter,
+  ensureLocalGateway,
+  gatewayOwnerProfile,
+  localGatewayDial,
+  nativeGatewayHttpHeaders,
+  redialLocalGateway,
+  runGatewayEnsure,
+  runGatewayOwnerRestart
+} from './local-gateway'
 import { closeGatewayTicketBridges, createGatewayTicketResolver } from './local-gateway-python'
 import { createPluginWsUrlHandler } from './plugin-ws-url'
 const localGatewayDials = createLocalGatewayDials()
-configurePythonGatewayTicketClient(createGatewayTicketResolver(
-  async () => ensureRuntime(await resolveReignBackend([]), () => undefined), resolveReignCwd))
+configurePythonGatewayTicketClient(
+  createGatewayTicketResolver(
+    async () => ensureRuntime(await resolveReignBackend([]), () => undefined),
+    resolveReignCwd
+  )
+)
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import http from 'node:http'
@@ -66,22 +81,13 @@ import {
 import { runAppInstallerChecker } from './appinstaller-checker'
 import { installApplicationMenuAfterFirstWindow } from './application-menu-startup'
 import { stopBackendChild as stopBackendChildImpl, waitForBackendExit } from './backend-child'
-import {
-  execText,
-  isPidOnlyStartMarker,
-  processStartMarker,
-  REAP_PROBE_TIMEOUT_MS
-} from './backend-claim'
+import { execText, isPidOnlyStartMarker, processStartMarker, REAP_PROBE_TIMEOUT_MS } from './backend-claim'
 import { createBackendConnectionState } from './backend-connection-state'
 import { assertDescriptorStillOwned, forgetFailedDescriptor } from './backend-descriptor-cache'
 import { BackendDialClaims } from './backend-dial-claim'
 import { buildDesktopBackendEnv, profileBackendParentEnv } from './backend-env'
 import { isReauthRequiredError, waitForReignReady } from './backend-health'
-import {
-  backendCommandMatches,
-  createBackendOwnership,
-  createBackendShutdownCoordinator
-} from './backend-ownership'
+import { backendCommandMatches, createBackendOwnership, createBackendShutdownCoordinator } from './backend-ownership'
 import { canImportReignCli, PROBE_TIMEOUT_MS, shouldTrustReignOverride, verifyReignCli } from './backend-probes'
 import { recycleOwnedBackend } from './backend-recycle'
 import { isPidAliveWindows, waitForBackendRelease } from './backend-release-gate'
@@ -2816,7 +2822,12 @@ async function waitForUpdateToFinish() {
     dialog,
     shell,
     openUpdates: sendOpenUpdatesRequested,
-    closeHoldersAndRetry: releaseHolderRetry({ isWindows: IS_WINDOWS, resolveUpdateRoot, applyUpdates, log: rememberLog })
+    closeHoldersAndRetry: releaseHolderRetry({
+      isWindows: IS_WINDOWS,
+      resolveUpdateRoot,
+      applyUpdates,
+      log: rememberLog
+    })
   })
 
   if (outcome === 'cancelled') {
@@ -4900,10 +4911,7 @@ async function resolveReignBackend(backendArgs: string[]): Promise<ResolvedReign
 
         const shellForProbe: boolean = isCommandScript(reignCommand)
 
-        if (
-          shouldTrustReignOverride(reignOverride) ||
-          (await verifyReignCli(reignCommand, { shell: shellForProbe }))
-        ) {
+        if (shouldTrustReignOverride(reignOverride) || (await verifyReignCli(reignCommand, { shell: shellForProbe }))) {
           return {
             label: `existing Reign CLI at ${reignCommand}`,
             command: reignCommand,
@@ -4912,7 +4920,8 @@ async function resolveReignBackend(backendArgs: string[]): Promise<ResolvedReign
             env: {},
             kind: 'command',
             shell: shellForProbe,
-            local: 'installed', root: await launcherInstallRoot(reignCommand) // ticket minting needs it (#138774)
+            local: 'installed',
+            root: await launcherInstallRoot(reignCommand) // ticket minting needs it (#138774)
           }
         }
 
@@ -5190,7 +5199,13 @@ function fetchJson(url, token, options: any = {}) {
     async (requestState: any) => {
       // Mint inside each retry: a grant authorizes exactly one HTTP request.
       const nativeHeaders = options.gatewayDescriptor
-        ? await nativeGatewayHttpHeaders(options.gatewayDescriptor, url, REIGN_HOME, options.method || 'GET', options.upload ? undefined : options.body)
+        ? await nativeGatewayHttpHeaders(
+            options.gatewayDescriptor,
+            url,
+            REIGN_HOME,
+            options.method || 'GET',
+            options.upload ? undefined : options.body
+          )
         : null
 
       return new Promise((resolve, reject) => {
@@ -7588,8 +7603,13 @@ async function freshGatewayWsUrl(profile, webContentsId) {
   const connection = await ensureBackend(profile)
 
   if (connection.gatewayEndpoint) {
-    return localGatewayDial({ ensure: () => ensureBackend(profile), forget: () => forgetLocalGatewayDescriptor(profile), launchHome: REIGN_HOME,
-      prepare: (baseUrl, ticket) => localGatewayDials.prepare(baseUrl, ticket, webContentsId), profile: String(profile ?? '') })
+    return localGatewayDial({
+      ensure: () => ensureBackend(profile),
+      forget: () => forgetLocalGatewayDescriptor(profile),
+      launchHome: REIGN_HOME,
+      prepare: (baseUrl, ticket) => localGatewayDials.prepare(baseUrl, ticket, webContentsId),
+      profile: String(profile ?? '')
+    })
   }
 
   if (connection.authMode === 'oauth') {
@@ -7694,9 +7714,7 @@ async function discoverCloudAgents(org?: string) {
       // A 401 means the portal session lapsed (and silent renewal could not
       // recover it) — surface it as a re-login, not a generic failure.
       if (error && error.statusCode === 401) {
-        const err = new Error(
-          'Your Reign Cloud session has expired. Open Settings → Gateway and sign in again.'
-        ) as any
+        const err = new Error('Your Reign Cloud session has expired. Open Settings → Gateway and sign in again.') as any
 
         err.needsCloudLogin = true
         err.cause = error
@@ -10494,7 +10512,9 @@ async function forgetRegistryLocalGatewayDescriptor(connectionId, profile) {
   }
 
   if (backendPool.delete(localRoute.poolKey)) {
-    rememberLog(`[gateway] forgot stale canonical endpoint for connection "${String(connectionId || '').trim() || 'primary'}" profile "${profileKey}"; re-ensuring`)
+    rememberLog(
+      `[gateway] forgot stale canonical endpoint for connection "${String(connectionId || '').trim() || 'primary'}" profile "${profileKey}"; re-ensuring`
+    )
   }
 }
 
@@ -10706,10 +10726,12 @@ async function ensureRegistryBackend(
   const existing = backendPool.get(key)
 
   // One remote `reign serve` per SSH host: a named profile rides the default backend when it can.
-  const shared = existing ? null : await resolveSharedSshProfileBackend(source, profile, {
-    ensureDefault: (): Promise<any> => ensureRegistryBackend(id, 'default', managedUpdateCorrelation, { passive }),
-    listProfiles: descriptor => getJsonForBackend(descriptor, '/api/profiles', { timeoutMs: 8_000 })
-  })
+  const shared = existing
+    ? null
+    : await resolveSharedSshProfileBackend(source, profile, {
+        ensureDefault: (): Promise<any> => ensureRegistryBackend(id, 'default', managedUpdateCorrelation, { passive }),
+        listProfiles: descriptor => getJsonForBackend(descriptor, '/api/profiles', { timeoutMs: 8_000 })
+      })
 
   if (shared) {
     setWslBridgeProfileState(shared.profile, false)
@@ -11417,41 +11439,47 @@ async function dialPoolBackend(profile, entry, opts: { forceLocal?: boolean; poo
     directoryExists(path.join(REIGN_HOME, 'profiles', key))
   )
 
-  const connection = await ensureLocalGateway(async () => {
-    const backend = await ensureRuntime(
-      await resolveReignBackend(['--profile', profile, 'gateway', 'ensure', '--json']),
-      () => assertPoolEntryStillOwned(poolKey, entry)
-    )
+  const connection = await ensureLocalGateway(
+    async () => {
+      const backend = await ensureRuntime(
+        await resolveReignBackend(['--profile', profile, 'gateway', 'ensure', '--json']),
+        () => assertPoolEntryStillOwned(poolKey, entry)
+      )
 
-    profileDeletionGate.assertCanStart(profile)
-    assertPoolEntryStillOwned(poolKey, entry)
+      profileDeletionGate.assertCanStart(profile)
+      assertPoolEntryStillOwned(poolKey, entry)
 
-    // Never another profile's dotenv credentials from the Desktop env (#68367).
-    return runGatewayEnsure(
-      { ...backend, env: desktopBackendSpawnEnv(backend.env || {}) },
-      resolveReignCwd(),
-      REIGN_HOME,
-      profileBackendParentEnv({ reignHome: REIGN_HOME, profile })
-    )
-  }, async () => {
-    // Same update mutual exclusion as the primary's waitForLocalStart (#73822);
-    // a held update shows the window's blocked screen for this profile too.
-    await waitForPoolUpdateClearance({
-      profile,
-      poolKey,
-      gateDeps: updateGateDeps,
-      signal: localBackendLifecycle.signal,
-      isCancelled: (): boolean => backendPool.get(poolKey) !== entry,
-      log: rememberLog,
-      showHold: showUpdateHold,
-      clearHold: clearUpdateHold,
-      pollMs: UPDATE_WAIT_POLL_MS,
-      timeoutMs: UPDATE_WAIT_TIMEOUT_MS
-    })
-    // Update waits yield: retirement or profile deletion may win in that gap.
-    assertPoolEntryStillOwned(poolKey, entry)
-    assertLocalProfileCanStart(profile, profileDeletionGate, key => directoryExists(path.join(REIGN_HOME, 'profiles', key)))
-  }, restartStaleLocalGateway)
+      // Never another profile's dotenv credentials from the Desktop env (#68367).
+      return runGatewayEnsure(
+        { ...backend, env: desktopBackendSpawnEnv(backend.env || {}) },
+        resolveReignCwd(),
+        REIGN_HOME,
+        profileBackendParentEnv({ reignHome: REIGN_HOME, profile })
+      )
+    },
+    async () => {
+      // Same update mutual exclusion as the primary's waitForLocalStart (#73822);
+      // a held update shows the window's blocked screen for this profile too.
+      await waitForPoolUpdateClearance({
+        profile,
+        poolKey,
+        gateDeps: updateGateDeps,
+        signal: localBackendLifecycle.signal,
+        isCancelled: (): boolean => backendPool.get(poolKey) !== entry,
+        log: rememberLog,
+        showHold: showUpdateHold,
+        clearHold: clearUpdateHold,
+        pollMs: UPDATE_WAIT_POLL_MS,
+        timeoutMs: UPDATE_WAIT_TIMEOUT_MS
+      })
+      // Update waits yield: retirement or profile deletion may win in that gap.
+      assertPoolEntryStillOwned(poolKey, entry)
+      assertLocalProfileCanStart(profile, profileDeletionGate, key =>
+        directoryExists(path.join(REIGN_HOME, 'profiles', key))
+      )
+    },
+    restartStaleLocalGateway
+  )
 
   assertPoolEntryStillOwned(poolKey, entry)
 
@@ -11480,7 +11508,9 @@ async function restartLocalGatewayOwner(ownerProfile: string): Promise<void> {
   }, ownerProfile)
 
   const reason = `${result.stdout}\n${result.stderr}`.trim().split(/\r?\n/).filter(Boolean).pop()
-  rememberLog(`[gateway] reign --profile ${ownerProfile} gateway restart exited ${result.code}${reason ? `: ${reason}` : ''}`)
+  rememberLog(
+    `[gateway] reign --profile ${ownerProfile} gateway restart exited ${result.code}${reason ? `: ${reason}` : ''}`
+  )
 }
 
 // A ready gateway whose boot commit differs from this Reign (it outlived `reign update`) is
@@ -11490,9 +11520,12 @@ const restartStaleLocalGateway = createStaleGatewayRestarter(restartLocalGateway
 // Models-page "Restart Reign": restart the local gateway behind `profile`'s cached descriptor.
 // A remote/SSH descriptor has no gatewayEndpoint, so nothing local is touched for it.
 async function restartAttachedLocalGateway(profile: string): Promise<void> {
-  const pending = profile === primaryProfileKey()
-    ? backendConnectionState.getPromise()
-    : localProfilePoolKeys(profile).map(key => backendPool.get(key)?.connectionPromise).find(Boolean)
+  const pending =
+    profile === primaryProfileKey()
+      ? backendConnectionState.getPromise()
+      : localProfilePoolKeys(profile)
+          .map(key => backendPool.get(key)?.connectionPromise)
+          .find(Boolean)
 
   const connection = await pending?.catch(() => null)
   const endpoint = connection?.gatewayEndpoint
@@ -11787,7 +11820,12 @@ async function startReign(requestedProfile?: string, inheritsPrimary = false) {
       connectPrimaryRemote(remote, {
         profile: primaryProfile,
         restoreRememberedProfile: () =>
-          primaryProfileRestorable(requestedProfile, inheritsPrimary, parseLaunchProfile(process.argv), readDesktopConnectionConfig()),
+          primaryProfileRestorable(
+            requestedProfile,
+            inheritsPrimary,
+            parseLaunchProfile(process.argv),
+            readDesktopConnectionConfig()
+          ),
         signal: localBackendLifecycle.signal,
         assertCurrentAttempt: () => backendConnectionState.assertCurrentAttempt(connectionAttempt),
         advanceBootProgress,
@@ -11894,18 +11932,29 @@ async function startReign(requestedProfile?: string, inheritsPrimary = false) {
     // Local WSL backend — paths are bridgeable.
     setWslBridgeProfileState(primaryProfile, true)
 
-    const connection = await ensureLocalGateway(() => runGatewayEnsure(
-      { ...setup.backend, env: desktopBackendSpawnEnv(setup.backend.env || {}) },
-      resolveReignCwd(),
-      REIGN_HOME,
-      profileBackendParentEnv({ reignHome: REIGN_HOME, profile: primaryProfile })
-    ), undefined, restartStaleLocalGateway)
+    const connection = await ensureLocalGateway(
+      () =>
+        runGatewayEnsure(
+          { ...setup.backend, env: desktopBackendSpawnEnv(setup.backend.env || {}) },
+          resolveReignCwd(),
+          REIGN_HOME,
+          profileBackendParentEnv({ reignHome: REIGN_HOME, profile: primaryProfile })
+        ),
+      undefined,
+      restartStaleLocalGateway
+    )
 
     backendConnectionState.assertCurrentAttempt(connectionAttempt)
 
     backendStartFailure = null
     rememberLog('[backend] Reign gateway is ready')
-    updateBootProgress({ phase: 'backend.ready', message: 'Reign gateway is ready', progress: 94, running: true, error: null })
+    updateBootProgress({
+      phase: 'backend.ready',
+      message: 'Reign gateway is ready',
+      progress: 94,
+      running: true,
+      error: null
+    })
     bootstrapRepairAttempt = 0
 
     // The primary descriptor names its own profile: a profile-less descriptor
@@ -14043,7 +14092,10 @@ ipcMain.handle('reign:connection:for', async (event, payload) => {
   const registry = readDesktopConnectionsRegistry()
   const id = registryDialConnectionId(connectionId, registry.primary)
 
-  return connectDesktopProfileRoute({ connectionId: id, profile: String(profile ?? '').trim() || 'default' }, event.sender)
+  return connectDesktopProfileRoute(
+    { connectionId: id, profile: String(profile ?? '').trim() || 'default' },
+    event.sender
+  )
 })
 
 const windowConnectionRoutes = new WindowConnectionRouteRegistry()
@@ -15000,17 +15052,27 @@ ipcMain.handle('reign:gateway:ws-url-for', async (_event, payload) => {
     const connection = await ensureRegistryBackend(payload?.connectionId, payload?.profile)
 
     if (connection.gatewayEndpoint) {
-      return localGatewayDial({ ensure: () => ensureRegistryBackend(payload?.connectionId, payload?.profile), launchHome: REIGN_HOME,
-        forget: () => forgetRegistryLocalGatewayDescriptor(payload?.connectionId, payload?.profile), profile: String(payload?.profile ?? ''),
-        prepare: (baseUrl, ticket) => localGatewayDials.prepare(baseUrl, ticket, _event.sender.id) })
+      return localGatewayDial({
+        ensure: () => ensureRegistryBackend(payload?.connectionId, payload?.profile),
+        launchHome: REIGN_HOME,
+        forget: () => forgetRegistryLocalGatewayDescriptor(payload?.connectionId, payload?.profile),
+        profile: String(payload?.profile ?? ''),
+        prepare: (baseUrl, ticket) => localGatewayDials.prepare(baseUrl, ticket, _event.sender.id)
+      })
     }
 
     return registryGatewayWsUrlHandler(payload)
   })
 })
 
-const pluginWsUrl = createPluginWsUrlHandler({ ensureBackend, ensureRegistryBackend, forgetLocalGatewayDescriptor,
-  forgetRegistryLocalGatewayDescriptor, launchHome: REIGN_HOME, prepare: localGatewayDials.preparePlugin })
+const pluginWsUrl = createPluginWsUrlHandler({
+  ensureBackend,
+  ensureRegistryBackend,
+  forgetLocalGatewayDescriptor,
+  forgetRegistryLocalGatewayDescriptor,
+  launchHome: REIGN_HOME,
+  prepare: localGatewayDials.preparePlugin
+})
 
 ipcMain.handle('reign:plugin:ws-url', (event, payload) => pluginWsUrl(payload ?? {}, event.sender.id))
 
@@ -15174,7 +15236,12 @@ async function fetchJsonForBackend(
         .filter(name => typeof name === 'string' && name)
 
       const readProfile = (_profile, scoped) =>
-        fetchJsonForBackend(descriptor, scoped, { method: opts.method, body: opts.body, timeoutMs: opts.timeoutMs, profileScoped: true })
+        fetchJsonForBackend(descriptor, scoped, {
+          method: opts.method,
+          body: opts.body,
+          timeoutMs: opts.timeoutMs,
+          profileScoped: true
+        })
 
       return sessions
         ? fetchAllProfilesSessionsPerProfile(path, profiles, readProfile)
@@ -15768,7 +15835,12 @@ async function remoteOwnerProfileForSession(sessionId: string) {
 // returns data (never `undefined`) so a batched caller can compose slices. A
 // specific local profile reads from the local primary; a remote-override profile
 // reads from its remote; 'all' merges every remote into the primary aggregate.
-async function fetchProfilesSessionSlice(searchParams, remoteProfiles, registrySources = null, pinnedConnectionId = null) {
+async function fetchProfilesSessionSlice(
+  searchParams,
+  remoteProfiles,
+  registrySources = null,
+  pinnedConnectionId = null
+) {
   const requested = (searchParams.get('profile') || 'all').trim() || 'all'
 
   if (requested !== 'all') {
@@ -15842,7 +15914,14 @@ async function mergeRemoteProfileSessions(searchParams, remoteProfiles, registry
     const getRegistryJson = (descriptor, path) => getJsonForBackend(descriptor, path, { timeoutMs: 10_000 })
     // RT-42: count each backend (install_id) once; remote-override profiles are another backend.
     const identity = { primaryBackendId: await primaryBackendInstallId(), unknownPrimaryProfiles: remoteProfiles }
-    total += await mergeRegistrySessionRows(registrySources, remoteParams, getRegistryJson, merged, profileTotals, identity)
+    total += await mergeRegistrySessionRows(
+      registrySources,
+      remoteParams,
+      getRegistryJson,
+      merged,
+      profileTotals,
+      identity
+    )
   }
 
   const recency = s => s?.[order] ?? s?.started_at ?? 0
@@ -15850,7 +15929,9 @@ async function mergeRemoteProfileSessions(searchParams, remoteProfiles, registry
 
   const archivedOnly = searchParams.get('archived') === 'only'
 
-  return composeUnifiedSessionResponse(base, merged, offset, limit, total, profileTotals, remoteErrors, { archivedOnly })
+  return composeUnifiedSessionResponse(base, merged, offset, limit, total, profileTotals, remoteErrors, {
+    archivedOnly
+  })
 }
 
 // Every CONNECTED registry gateway as a session source (see the module); never dials.
@@ -16027,12 +16108,13 @@ async function handleReignApiRequest(request) {
     // Main's shared transport for every descriptor: configured headers, a native
     // gateway grant per attempt, and the OAuth bearer→cookie fallback that
     // survives refresh failures and login races (requestWithOauthFallback).
-    const send = current => fetchJsonForBackend(current, apiRoute.requestPath, {
-      method: request?.method,
-      body: request?.body,
-      upload: request?.upload,
-      timeoutMs
-    })
+    const send = current =>
+      fetchJsonForBackend(current, apiRoute.requestPath, {
+        method: request?.method,
+        body: request?.body,
+        upload: request?.upload,
+        timeoutMs
+      })
 
     response = connection.gatewayEndpoint
       ? await redialLocalGateway({
@@ -17616,8 +17698,14 @@ ipcMain.handle('reign:deep-link-ready', () => {
 
 function registerDeepLinkProtocol() {
   registerDeepLinkProtocolWith({
-    app, protocol: REIGN_PROTOCOL, env: process.env, defaultApp: Boolean(process.defaultApp),
-    argv: process.argv, execPath: process.execPath, resolve: entry => path.resolve(entry), log: rememberLog
+    app,
+    protocol: REIGN_PROTOCOL,
+    env: process.env,
+    defaultApp: Boolean(process.defaultApp),
+    argv: process.argv,
+    execPath: process.execPath,
+    resolve: entry => path.resolve(entry),
+    log: rememberLog
   })
 }
 

@@ -22,8 +22,7 @@ export const esDelegationRouting: DelegationRoutingTranslations = {
   plugin: 'Plugin',
   pluginMissing: 'Rutas de modelo y Rutas de perfil provienen del plugin Advanced Delegation.',
   pluginDisabled: 'Advanced Delegation está instalado, pero desactivado para este perfil.',
-  pluginNotLoaded:
-    'Advanced Delegation está activado, pero Reign aún no lo ha cargado. Reinicia Reign para terminar.',
+  pluginNotLoaded: 'Advanced Delegation está activado, pero Reign aún no lo ha cargado. Reinicia Reign para terminar.',
   installPlugin: 'Instalar plugin',
   installUnavailable:
     'Advanced Delegation aún no está en el catálogo de plugins. Instálalo desde Capacidades › Plugins.',

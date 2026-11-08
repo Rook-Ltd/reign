@@ -40,9 +40,7 @@ it('keeps @default and @reign apart in a room whose live roster rows are gone', 
 
   for (const members of [stored, repersisted]) {
     expect(members.map(member => botMentionTag(member))).toEqual(['default', 'reign', 'researcher'])
-    expect([...parseGroupChatMentions('@reign please review', members).mentioned]).toEqual([
-      groupMemberKey(members[1])
-    ])
+    expect([...parseGroupChatMentions('@reign please review', members).mentioned]).toEqual([groupMemberKey(members[1])])
     expect([...parseGroupChatMentions('@default please review', members).mentioned]).toEqual([
       groupMemberKey(members[0])
     ])

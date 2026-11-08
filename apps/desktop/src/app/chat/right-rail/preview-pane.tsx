@@ -1379,7 +1379,7 @@ export function PreviewPane({
   // rebuild it. Per-page state (annotate pins, console log, history) resets
   // around the load so nothing bleeds across pages. Skipped when the guest
   // already shows the address (an in-page navigation got there first).
-   
+
   useEffect(() => {
     if (!isWebPreview || isRemoteHtml) {
       return

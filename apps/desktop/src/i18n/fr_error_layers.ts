@@ -24,8 +24,7 @@ export const frErrorLayers: Pick<ThreadCopy, 'errorLayerBodies' | 'errorLayers'>
       "Reign ne parvient pas à joindre votre serveur de modèle personnalisé. Vérifiez qu'il fonctionne, puis renvoyez votre message.",
     gateway:
       'Reign a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',
-    generic:
-      "Une erreur s'est produite pendant la réponse de Reign. Réessayez ou copiez les détails si cela persiste.",
+    generic: "Une erreur s'est produite pendant la réponse de Reign. Réessayez ou copiez les détails si cela persiste.",
     provider: "Le service d'IA n'a pas pu traiter cette demande. Réessayez dans un instant ou changez de fournisseur.",
     runtime:
       'Reign a rencontré un problème interne au démarrage de cette réponse. Renvoyez votre message ; si cela persiste, envoyez les diagnostics.',

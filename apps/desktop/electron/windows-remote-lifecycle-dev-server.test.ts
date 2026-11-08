@@ -56,7 +56,13 @@ function ownedWindowsSsh(lock: null | Record<string, unknown>) {
       }
 
       if (script.includes('Get-Command reign')) {
-        return JSON.stringify({ os: 'Windows', arch: 'AMD64', reignHome: REIGN_HOME, reignPath: REIGN_PATH, python: 'C:\\h\\python.exe' })
+        return JSON.stringify({
+          os: 'Windows',
+          arch: 'AMD64',
+          reignHome: REIGN_HOME,
+          reignPath: REIGN_PATH,
+          python: 'C:\\h\\python.exe'
+        })
       }
 
       if (script.includes('.reign-update-in-progress')) {
@@ -105,7 +111,9 @@ const spawnOf = (ssh: ReturnType<typeof ownedWindowsSsh>) =>
 
 const writtenLocks = (ssh: ReturnType<typeof ownedWindowsSsh>) =>
   ssh.execs
-    .filter(({ script }) => script.includes("'reign_cli.windows_ssh_runtime' 'write-lock'") && !script.includes("'spawn'"))
+    .filter(
+      ({ script }) => script.includes("'reign_cli.windows_ssh_runtime' 'write-lock'") && !script.includes("'spawn'")
+    )
     .map(({ stdinData }) => JSON.parse(stdinData))
 
 for (const [label, devServer, expected] of [
