@@ -10,7 +10,7 @@ requires_reign: ">=0.19"
 version: "0.1.3"
 known_issues:
   - "Reads the Mnemosyne SQLite schema directly (mode=ro); a Mnemosyne schema change degrades recall to the safe fallback"
-  - "Mnemosyne profile-isolation bank layouts (mnemosyne/data/banks/<profile>/) are not followed; only the active Reign home's default per-profile database is read (see README)"
+  - "Mnemosyne profile-isolation bank layouts (mnemosyne/data/banks/<profile>/) are not followed; only the active Hermes home's default per-profile database is read (see README)"
 capabilities:
   provides_tools:
     - mnemosyne_fts_recall
