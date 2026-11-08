@@ -22,4 +22,5 @@ Catalog handling:
 - The codemod uses the project's existing ruamel.yaml dependency.
 - Native PM bundle builds remain manually dispatched because the upstream private macOS runner is unavailable in this fork.
 - The formatting bot uses the existing UPSTREAM_SYNC_TOKEN when no GitHub App is configured, including for its Git push; its privileged job remains isolated from npm execution.
+- Reign Release now fetches upstream release tags and writes the canonical install stamp before building; image smoke checks verify the exact commit and base version. The fork does not publish upstream's tags, and the new Dockerfile otherwise falls back to unknown provenance.
 - Main's JavaScript suites passed. Its packaging download failed; the same Electron, icon and archive-tool downloads subsequently completed through the real Linux preparation path. Retry CI after the remaining Python shards finish.
