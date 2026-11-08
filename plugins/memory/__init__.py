@@ -136,9 +136,8 @@ def _iter_entry_points():
     """Yield pip-installed memory provider entry points."""
     try:
         eps = importlib.metadata.entry_points()
-        if hasattr(eps, "select"):
-            return list(eps.select(group=ENTRY_POINTS_GROUP))
-        return list(eps.get(ENTRY_POINTS_GROUP, [])) if isinstance(eps, dict) else [ep for ep in eps if ep.group == ENTRY_POINTS_GROUP]
+        from reign_cli.plugin_host_api import select_entry_points
+        return select_entry_points(eps, ENTRY_POINTS_GROUP)
     except Exception as exc:
         logger.debug("Memory provider entry-point scan failed: %s", exc)
         return []

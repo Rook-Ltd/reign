@@ -100,7 +100,8 @@ class _SourceVisitor(ast.NodeVisitor):
         self.ctx_methods: set[str] = set()
 
     def _reign(self, module: str) -> bool:
-        return module.split(".")[0] in REIGN_PACKAGES
+        from reign_cli.plugin_host_api import canonical_module_name
+        return canonical_module_name(module).split(".")[0] in REIGN_PACKAGES
 
     def visit_Import(self, node: ast.Import) -> None:
         for alias in node.names:

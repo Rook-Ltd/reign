@@ -1,0 +1,4 @@
+name: upstream-api-fixture
+version: '1.0'
+requires_hermes: '>=0.1'
+provides_hooks: [on_session_start]

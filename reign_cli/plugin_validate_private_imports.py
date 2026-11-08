@@ -16,6 +16,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from reign_cli.plugin_validate_core_override import _reign_top_level, _python_files
+from reign_cli.plugin_host_api import canonical_module_name, canonical_export_name
 
 # WHY: "public" must mean what Reign documents for plugin authors, not a reviewer's taste.
 # Derived from every Reign-module ``import`` in website/docs/developer-guide/**/*.md and
@@ -130,6 +131,9 @@ def _is_own_module_path(module: str, local: set[str]) -> bool:
 
 def _private_target(module: str, name: str, core: frozenset, local: set[str]) -> str:
     """The dotted target to report, or "" when the import is public, local or not Reign's."""
+    canonical = canonical_module_name(module)
+    if canonical != module:
+        module, name = canonical, canonical_export_name(name)
     target = f"{module}.{name}" if name else module
     own = _is_own_module_path(module, local) or bool(name) and _is_own_module_path(target, local)
     reign = module.split(".")[0] in core and module not in local and not own

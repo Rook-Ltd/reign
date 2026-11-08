@@ -13,6 +13,8 @@
 - A sync carries every Reign hand edit since the previous sync by three-way merging HEAD onto the
   rebranded new upstream, with the rebranded previous upstream as the base (see the
   `sync_upstream.py` docstring). `overlay/hand-edits.patch` is no longer applied.
+- [Plugin API compatibility](PLUGIN-API.md) preserves public upstream Python names for external
+  plugins. Its bridge and frozen consumers are intentionally excluded from content rebranding.
 
 ## Re-syncing with upstream (future)
 ```

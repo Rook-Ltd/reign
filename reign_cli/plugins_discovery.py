@@ -61,12 +61,8 @@ def plugin_discovery_suppressed() -> bool:
 
 
 def _select_entry_point_group(entry_points: Any, group: str) -> list:
-    """Return one metadata entry-point group across supported Python APIs."""
-    if hasattr(entry_points, "select"):
-        return list(entry_points.select(group=group))
-    if isinstance(entry_points, dict):
-        return list(entry_points.get(group, []))
-    return [ep for ep in entry_points if ep.group == group]
+    from reign_cli.plugin_host_api import select_entry_points
+    return select_entry_points(entry_points, group)
 
 
 def discover_entrypoint_manifests() -> list[PluginManifest]:

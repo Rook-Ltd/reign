@@ -752,11 +752,8 @@ def _discover_entry_point_providers() -> None:
     group = "reign_agent.plugins"
     try:
         eps = _md.entry_points()
-        # Python 3.10+ exposes .select(); older returns a dict-like mapping.
-        if hasattr(eps, "select"):
-            group_eps = list(eps.select(group=group))
-        else:  # pragma: no cover — legacy interpreters
-            group_eps = list(eps.get(group, []))  # type: ignore[attr-defined]
+        from reign_cli.plugin_host_api import select_entry_points
+        group_eps = select_entry_points(eps, group)
     except Exception as exc:
         logger.debug("entry-point provider scan skipped: %s", exc)
         return
