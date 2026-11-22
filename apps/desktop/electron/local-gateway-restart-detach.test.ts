@@ -12,13 +12,21 @@ async function fakeReign(kind: 'new' | 'old') {
   const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'gw-detach-'))
   const calls = path.join(dir, 'calls')
 
-  const reject = kind === 'old'
-    ? 'case " $* " in *" --detach "*) echo "reign: error: unrecognized arguments: --detach" >&2; exit 2;; esac\n'
-    : ''
+  const reject =
+    kind === 'old'
+      ? 'case " $* " in *" --detach "*) echo "reign: error: unrecognized arguments: --detach" >&2; exit 2;; esac\n'
+      : ''
 
   const bin = path.join(dir, 'reign')
   await fs.writeFile(bin, `#!/bin/sh\necho "$*" >> "${calls}"\n${reject}echo "✓ restarted"\n`, { mode: 0o755 })
-  const run = (args: string[]) => runGatewayEnsure({ command: bin, args, env: {}, shell: false }, dir, dir, {}, { timeoutMs: 5000, label: 'reign gateway restart' })
+  const run = (args: string[]) =>
+    runGatewayEnsure(
+      { command: bin, args, env: {}, shell: false },
+      dir,
+      dir,
+      {},
+      { timeoutMs: 5000, label: 'reign gateway restart' }
+    )
 
   return { run, calls: async () => (await fs.readFile(calls, 'utf8')).trim().split('\n') }
 }
@@ -38,5 +46,8 @@ test.skipIf(process.platform === 'win32')('a runtime that predates --detach stil
   const result = await runGatewayOwnerRestart(reign.run, 'default')
 
   expect(result.code).toBe(0)
-  expect(await reign.calls()).toEqual(['--profile default gateway restart --detach', '--profile default gateway restart'])
+  expect(await reign.calls()).toEqual([
+    '--profile default gateway restart --detach',
+    '--profile default gateway restart'
+  ])
 })

@@ -99,11 +99,7 @@ it('a removal another writer (the Webapp) made reaches the cleanup with the list
   desktop.read()
 
   const jars = cookieJars()
-  jars.seed(
-    resolveOauthPartition(URL_A, { registry: list('local', [gateway]) }),
-    'gw.example.invalid',
-    'reign_session'
-  )
+  jars.seed(resolveOauthPartition(URL_A, { registry: list('local', [gateway]) }), 'gw.example.invalid', 'reign_session')
   jars.seed(LEGACY_OAUTH_PARTITION, 'gw.example.invalid', 'reign_session')
   let cleaned: Promise<void> = Promise.resolve()
 

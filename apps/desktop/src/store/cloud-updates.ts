@@ -21,7 +21,10 @@ function connectedToReignCloud(connection: ReignConnection | null): boolean {
 }
 
 /** Whether Reign Cloud owns updates for `target` under `connection`. */
-export function cloudOwnsUpdates(target: UpdateTarget, connection: ReignConnection | null = $connection.get()): boolean {
+export function cloudOwnsUpdates(
+  target: UpdateTarget,
+  connection: ReignConnection | null = $connection.get()
+): boolean {
   return servedByReignCloud() || (target === 'backend' && connectedToReignCloud(connection))
 }
 

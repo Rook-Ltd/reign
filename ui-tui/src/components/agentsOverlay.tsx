@@ -1,6 +1,10 @@
 import { useStore } from '@nanostores/react'
 import { Box, NoSelect, ScrollBox, type ScrollBoxHandle, Text, useInput, useStdout } from '@reign/ink'
-import type { DelegationPauseResponse, DelegationStatusResponse, SubagentInterruptResponse } from '@reign/shared/gateway-types'
+import type {
+  DelegationPauseResponse,
+  DelegationStatusResponse,
+  SubagentInterruptResponse
+} from '@reign/shared/gateway-types'
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAgentRoster } from '../app/agentRoster.js'

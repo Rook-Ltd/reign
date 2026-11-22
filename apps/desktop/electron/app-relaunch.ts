@@ -87,9 +87,7 @@ export function createAppRelauncher(
           return
         } catch (error) {
           // A synchronous spawn throw (E2BIG) must not cost the restart.
-          console.error(
-            `[reign] relaunching ${target} failed (${String(error)}); relaunching through Electron instead`
-          )
+          console.error(`[reign] relaunching ${target} failed (${String(error)}); relaunching through Electron instead`)
         }
       }
 

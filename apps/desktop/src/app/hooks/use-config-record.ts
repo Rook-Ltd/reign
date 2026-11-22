@@ -132,8 +132,7 @@ export const useReignConfigRecord = (profile?: ProfileScope) => {
 const writeReignConfigCache =
   (keyFor: () => ReturnType<typeof reignConfigKey>) =>
   (
-    next:
-      ReignConfigRecord | undefined | ((previous: ReignConfigRecord | undefined) => ReignConfigRecord | undefined)
+    next: ReignConfigRecord | undefined | ((previous: ReignConfigRecord | undefined) => ReignConfigRecord | undefined)
   ) =>
     void queryClient.setQueryData<ReignConfigRecord>(keyFor(), previous => {
       const record = typeof next === 'function' ? next(previous) : next
@@ -147,8 +146,7 @@ const writeReignConfigCache =
     })
 
 export const setReignConfigCache = writeReignConfigCache(() => reignConfigKey())
-export const reignConfigCacheWriter = (profile?: ProfileScope) =>
-  writeReignConfigCache(() => reignConfigKey(profile))
+export const reignConfigCacheWriter = (profile?: ProfileScope) => writeReignConfigCache(() => reignConfigKey(profile))
 
 export const invalidateReignConfig = (profile?: ProfileScope) =>
   queryClient.invalidateQueries({ queryKey: reignConfigKey(profile) })

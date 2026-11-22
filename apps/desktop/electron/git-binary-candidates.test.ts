@@ -59,10 +59,9 @@ describe('managedGitBinaries', () => {
   test('finds the newest PM-managed Git under Reign tools', () => {
     const managed = path.join(LAD, 'reign', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
 
-    const fs = fakeFs(
-      { [path.join(LAD, 'reign', 'tools')]: ['git-2.52.0+2-win32-x64', 'git-2.53.0+3-win32-x64'] },
-      [managed]
-    )
+    const fs = fakeFs({ [path.join(LAD, 'reign', 'tools')]: ['git-2.52.0+2-win32-x64', 'git-2.53.0+3-win32-x64'] }, [
+      managed
+    ])
 
     assert.deepEqual(managedGitBinaries(LAD, fs), [managed])
   })
@@ -102,10 +101,7 @@ describe('windowsGitCandidates (#61494)', () => {
     const managed = path.join(LAD, 'reign', 'tools', 'git-2.53.0+3-win32-x64', 'cmd', 'git.exe')
     const portable = path.join(env.localAppData, 'reign', 'git', 'cmd', 'git.exe')
 
-    const fs = fakeFs(
-      { [path.join(LAD, 'reign', 'tools')]: ['git-2.53.0+3-win32-x64'] },
-      [managed, portable]
-    )
+    const fs = fakeFs({ [path.join(LAD, 'reign', 'tools')]: ['git-2.53.0+3-win32-x64'] }, [managed, portable])
 
     const candidates = windowsGitCandidates(env, fs)
 

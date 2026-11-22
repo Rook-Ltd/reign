@@ -100,7 +100,9 @@ export function overlayInstallScript(source: string, session = ++nextOverlaySess
     `if ((window.__reignAnnotateSession || 0) >= ${session}) return;` +
     `window.__reignAnnotateSession = ${session};` +
     'if (window.__reignAnnotate) window.__reignAnnotate.teardown();' +
-    'var api=' + source + ';window.__reignAnnotate=api;api.install();})()'
+    'var api=' +
+    source +
+    ';window.__reignAnnotate=api;api.install();})()'
   )
 }
 

@@ -331,7 +331,7 @@ export function PreviewPane({
   // the live address through this mirror instead of a stale closure.
   const targetUrlRef = useRef(target.url)
   targetUrlRef.current = target.url
-  const ownerSessionIdRef = useRef(sessionId)  // tab owner, read by the guest effect to resolve its partition
+  const ownerSessionIdRef = useRef(sessionId) // tab owner, read by the guest effect to resolve its partition
   ownerSessionIdRef.current = sessionId
   const [devtoolsOpen, setDevtoolsOpen] = useState(false)
   const [history, setHistory] = useState({ back: false, forward: false })
@@ -1402,7 +1402,7 @@ export function PreviewPane({
   // rebuild it. Per-page state (annotate pins, console log, history) resets
   // around the load so nothing bleeds across pages. Skipped when the guest
   // already shows the address (an in-page navigation got there first).
-   
+
   useEffect(() => {
     if (!isWebPreview || isRemoteHtml) {
       return

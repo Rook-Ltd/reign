@@ -1,4 +1,3 @@
-
 import { resolveSessionRpcOwner } from '@/app/contrib/wiring-routing'
 import { textWithoutReferenceLines } from '@/components/assistant-ui/reference-kinds'
 import { concatPartsByToolCall, sameAttachmentTurn, spliceOlderPreservedRows } from '@/lib/chat-messages'
@@ -740,7 +739,10 @@ export function preserveLocalPendingTurnMessages(
       continue
     }
 
-    if (isOptimisticUser && optimisticUserAlreadyRepresented(message, liveOptimisticUsers, contentRefusedCounterparts)) {
+    if (
+      isOptimisticUser &&
+      optimisticUserAlreadyRepresented(message, liveOptimisticUsers, contentRefusedCounterparts)
+    ) {
       continue
     }
 

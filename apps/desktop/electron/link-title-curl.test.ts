@@ -60,9 +60,7 @@ describe('parseCurlTitleResponse', () => {
   test('keeps an unparseable HTTP status at 0 without failing the parse', () => {
     const body = Buffer.concat([
       Buffer.from('<title>ok</title>'),
-      Buffer.from(
-        '\nreign-content-type:text/html\nreign-url-effective:https://a.test/\nreign-http-code:not-a-number'
-      )
+      Buffer.from('\nreign-content-type:text/html\nreign-url-effective:https://a.test/\nreign-http-code:not-a-number')
     ])
 
     assert.equal(parseCurlTitleResponse(body, Buffer.alloc(0)).httpCode, 0)

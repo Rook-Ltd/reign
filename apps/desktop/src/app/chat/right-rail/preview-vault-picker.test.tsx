@@ -34,7 +34,12 @@ vi.mock('@/store/session-request-router', async () => {
 
   return {
     ...actual,
-    requestForSessionProfile: (owner: unknown, _ambient: unknown, method: string, params: Record<string, unknown> = {}) =>
+    requestForSessionProfile: (
+      owner: unknown,
+      _ambient: unknown,
+      method: string,
+      params: Record<string, unknown> = {}
+    ) =>
       new Promise(resolve => {
         calls.push({ method, owner, params })
         resolvers.push(resolve)
@@ -242,4 +247,3 @@ describe('PreviewVaultButton unlock owner fence (#150283 P1-2 SECURITY)', () => 
     expect(unlock!.params.password).toBe('hunter2')
   })
 })
-

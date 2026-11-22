@@ -56,7 +56,9 @@ describe('the @reign handle', () => {
     const byName = Object.fromEntries(rows.map(row => [row.name, botHandle(row.name, row)]))
 
     expect(byName).toEqual({ default: 'default', reign: 'reign', researcher: 'researcher' })
-    expect(resolveRosterMentions('@default ping', rows, { name: 'researcher' }).map(row => row.name)).toEqual(['default'])
+    expect(resolveRosterMentions('@default ping', rows, { name: 'researcher' }).map(row => row.name)).toEqual([
+      'default'
+    ])
   })
 
   it('keeps each source separate: a remote reign profile does not rename the local default', () => {

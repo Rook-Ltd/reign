@@ -1,7 +1,4 @@
-import type {
-  SessionActiveItem,
-  SessionActiveListResponse
-} from '@reign/shared/gateway-types'
+import type { SessionActiveItem, SessionActiveListResponse } from '@reign/shared/gateway-types'
 
 import type { GatewayClient } from '../gatewayClient.js'
 

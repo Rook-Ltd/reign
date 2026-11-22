@@ -19,6 +19,8 @@ export function clearWebappSession(): void {
   delete (window as WebappWindow).__REIGN_UI_SURFACE__
 
   for (const key of Object.keys(sessionStorage)) {
-    if (key.startsWith('reign.webapp.session.v1:')) {sessionStorage.removeItem(key)}
+    if (key.startsWith('reign.webapp.session.v1:')) {
+      sessionStorage.removeItem(key)
+    }
   }
 }

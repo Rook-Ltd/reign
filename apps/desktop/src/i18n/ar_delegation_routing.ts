@@ -27,8 +27,7 @@ export const arDelegationRouting: DelegationRoutingTranslations = {
   blockedDetail: 'هذا الوضع محفوظ، لذا يرفض Reign كل وكيل فرعي بدلًا من استخدام الوضع الافتراضي بصمت.',
   blockedMissing: 'لن يبدأ الوكلاء الفرعيون حتى تُثبَّت الإضافة Advanced Delegation.',
   blockedDisabled: 'لن يبدأ الوكلاء الفرعيون حتى تُفعَّل الإضافة Advanced Delegation لهذا الملف الشخصي.',
-  blockedNotLoaded:
-    'لن يبدأ الوكلاء الفرعيون حتى يحمّل Reign الإضافة Advanced Delegation. أعد تشغيل Reign لإكمال ذلك.',
+  blockedNotLoaded: 'لن يبدأ الوكلاء الفرعيون حتى يحمّل Reign الإضافة Advanced Delegation. أعد تشغيل Reign لإكمال ذلك.',
   blockedUnavailable: label => `لن يبدأ الوكلاء الفرعيون حتى يتمكن ${label} من العمل هنا. تفيد إضافته بأنه لا يستطيع.`,
   blockedUnregistered: name => `لن يبدأ الوكلاء الفرعيون حتى تُثبَّت وتُفعَّل إضافة توفّر «${name}».`,
   thirdPartyDescription: 'من إضافة. إعداداته موجودة في تلك الإضافة.',

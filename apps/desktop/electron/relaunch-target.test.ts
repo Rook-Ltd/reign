@@ -287,11 +287,7 @@ describe('mountFreeEnv', () => {
 
   it('drops this app mount from a command run from outside it', () => {
     expect(
-      mountFreeEnv(
-        env,
-        '/home/x/.local/share/reign/bundles/k/agent-payload/bin/reign',
-        '/tmp/.mount_ReignAb12/reign'
-      )
+      mountFreeEnv(env, '/home/x/.local/share/reign/bundles/k/agent-payload/bin/reign', '/tmp/.mount_ReignAb12/reign')
     ).toEqual({
       APPIMAGE: '/home/x/Reign.AppImage',
       PATH: '/usr/bin'
@@ -307,9 +303,7 @@ describe('mountFreeEnv', () => {
       EDITOR: '/tmp/.mount_TermCd34/usr/bin/nvim'
     }
 
-    expect(mountFreeEnv(terminal, '/opt/Reign/resources/agent-payload/bin/reign', '/opt/Reign/reign')).toBe(
-      terminal
-    )
+    expect(mountFreeEnv(terminal, '/opt/Reign/resources/agent-payload/bin/reign', '/opt/Reign/reign')).toBe(terminal)
   })
 
   it('keeps the env whole outside an AppImage', () => {

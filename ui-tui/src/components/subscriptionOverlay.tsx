@@ -1,7 +1,11 @@
 import { randomUUID } from 'node:crypto'
 
 import { Box, Text, useInput } from '@reign/ink'
-import type { SubscriptionStateResponse, SubscriptionTierOption, SubscriptionUpgradeResponse } from '@reign/shared/gateway-types'
+import type {
+  SubscriptionStateResponse,
+  SubscriptionTierOption,
+  SubscriptionUpgradeResponse
+} from '@reign/shared/gateway-types'
 import { useEffect, useRef, useState } from 'react'
 
 import type {
