@@ -53,9 +53,15 @@ jobs:
           # the invariant that EVERYTHING in plugin-catalog/ stays valid.
           python3 scripts/validate_plugin_catalog.py plugin-catalog/
 
-  pinned-source-validate:
+  # Reign: large upstream syncs change hundreds of entries at once, so admission runs in bounded
+  # batches (scripts/ci/catalog_validation_batches.py). pinned-source-validate stays the single
+  # required check and passes only when every batch passed.
+  plan-pinned-source:
+    outputs:
+      matrix: ${{ steps.batches.outputs.matrix }}
+      has-entries: ${{ steps.batches.outputs.has-entries }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -73,17 +79,45 @@ jobs:
         id: changed
         run: python3 -I "$GITHUB_WORKSPACE/scripts/ci/catalog_changed_entries.py"
 
+      - name: Plan validation batches
+        id: batches
+        env:
+          CHANGED: ${{ steps.changed.outputs.files }}
+        run: |
+          set -euo pipefail
+          MATRIX=$(printf '%s\n' "$CHANGED" | python3 -I "$GITHUB_WORKSPACE/scripts/ci/catalog_validation_batches.py")
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ -n "$CHANGED" ]; then echo 'has-entries=true'; else echo 'has-entries=false'; fi >> "$GITHUB_OUTPUT"
+
+  validate-batch:
+    name: validate catalog batch (${{ matrix.batch }})
+    needs: plan-pinned-source
+    if: needs.plan-pinned-source.outputs.has-entries == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.plan-pinned-source.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          persist-credentials: false
+
+      - name: Fetch upstream release identity
+        run: git fetch --no-tags https://github.com/NousResearch/hermes-agent.git 'refs/tags/v*:refs/tags/v*'
+
       - name: Prepare Reign from the PR's own checkout
-        if: steps.changed.outputs.files != ''
         uses: ./.github/actions/setup-pm
         with:
           toolchain: python
           extras: '[]'
 
       - name: Clone each entry at its pinned sha and validate
-        if: steps.changed.outputs.files != ''
         env:
-          CHANGED_FILES: ${{ steps.changed.outputs.files }}
+          CHANGED_FILES: ${{ matrix.files }}
           # A hostile repo URL must never block the job on a credential prompt.
           GIT_TERMINAL_PROMPT: "0"
           # `gh attestation verify` (README rule 17) reads the attestation from
@@ -91,3 +125,20 @@ jobs:
           # pinned-repo code, so nothing broader is exposed here.
           GH_TOKEN: ${{ github.token }}
         run: python3 -I "$GITHUB_WORKSPACE/scripts/ci/catalog_validate_pinned_entries.py"
+
+  pinned-source-validate:
+    needs: [plan-pinned-source, validate-batch]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every admission batch to pass
+        env:
+          PLAN_RESULT: ${{ needs.plan-pinned-source.result }}
+          HAS_ENTRIES: ${{ needs.plan-pinned-source.outputs.has-entries }}
+          BATCH_RESULT: ${{ needs.validate-batch.result }}
+        run: |
+          test "$PLAN_RESULT" = success
+          if [ "$HAS_ENTRIES" = true ]; then
+            test "$BATCH_RESULT" = success
+          fi

@@ -447,13 +447,19 @@ def test_changed_entries_step(tmp_path, change, rc, listed, text):
         "PATH": f"{Path(sys.executable).parent}:{os.environ['PATH']}"})
     assert res.returncode == rc, res.stdout + res.stderr
     lines = out.read_text(encoding="utf-8").splitlines()
+    assert [f for f in lines if f and "__EOF__" not in f and f != "files<<__EOF__"] == listed
     if rc == 0:
-        outputs = dict(line.split("=", 1) for line in lines)
+        # Reign: the listed entries are split into bounded admission batches.
+        plan_out = tmp_path / "plan-output.txt"
+        plan_out.touch()
+        plan = _run(_step("Plan validation batches"), tmp_path, repo, {
+            **os.environ, "GITHUB_OUTPUT": str(plan_out), "GITHUB_WORKSPACE": str(ROOT),
+            "CHANGED": "\n".join(listed)})
+        assert plan.returncode == 0, plan.stdout + plan.stderr
+        outputs = dict(line.split("=", 1) for line in plan_out.read_text(encoding="utf-8").splitlines())
         batches = json.loads(outputs["matrix"])["include"]
         assert [entry for batch in batches for entry in batch["files"].splitlines()] == listed
         assert outputs["has-entries"] == str(bool(listed)).lower()
-    else:
-        assert not lines
     if text:
         assert text in res.stdout
 

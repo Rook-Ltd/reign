@@ -153,6 +153,11 @@ def _checkout_pin(repo: str, sha: str, clone_dir: str) -> None:
     # Full clone (no --depth 1): the pinned sha may not be the branch tip.
     if _run(["git", "clone", repo, clone_dir], timeout=_CLONE_SECONDS).returncode != 0:
         raise EntryRejected(f"clone failed for {repo}")
+    # Pins can outlive their branch: fetch the declared object when the clone's advertised refs
+    # no longer include it.
+    if _run(["git", "-C", clone_dir, "cat-file", "-e", sha], stderr=subprocess.DEVNULL).returncode != 0:
+        if _run(["git", "-C", clone_dir, "fetch", "--no-tags", "origin", sha], timeout=_CLONE_SECONDS).returncode != 0:
+            raise EntryRejected(f"cannot fetch pinned sha {sha} from {repo}")
     # The pin must name a commit object -- a tag-object sha would peel to a commit the reviewer
     # never declared as the pin.
     kind = _run(["git", "-C", clone_dir, "cat-file", "-t", sha],
