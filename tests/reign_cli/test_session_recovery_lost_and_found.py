@@ -225,6 +225,9 @@ def test_unreadable_schema_without_cli_names_the_sqlite3_requirement(
     import reign_cli.session_lost_and_found as laf
 
     monkeypatch.setattr(laf, "find_sqlite3_cli", lambda: None)
+    # An earlier real probe in this process may have refused the host's sqlite3 for another reason
+    # (e.g. a WAL-reset-vulnerable runner image); this test is about a missing CLI.
+    monkeypatch.setattr(laf, "_last_cli_refusal", {"reason": "missing"})
     with pytest.raises(SessionRecoverySourceError) as excinfo:
         recover_session_database(
             source,
