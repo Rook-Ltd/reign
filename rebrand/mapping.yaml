@@ -25,6 +25,7 @@ exclude_files:            # never touched by content replace
   - ".github/workflows/reign-release.yml"   # Rook-authored
   - "scripts/ci/reign-image-smoke.sh"       # Rook-authored
   - "**/package-lock.json" # regenerated after the run
+  - pnpm-lock.yaml          # regenerated after the run; holds third-party hermes-parser/hermes-estree
   - uv.lock
   - flake.lock
   - "tools/wakewords/**"  # deleted below

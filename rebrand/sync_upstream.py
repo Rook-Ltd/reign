@@ -36,6 +36,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import hashlib
+import json
 import os
 import re
 import shutil
@@ -73,11 +74,25 @@ def add_worktree(wt: Path, ref: str) -> None:
     sh("git", "worktree", "add", "-q", "--detach", str(wt), ref, quiet=True)
 
 
+def pnpm_cmd(wt: Path) -> list[str] | None:
+    """The pinned pnpm (pm/lock.json), run against `wt`, when upstream's root is a pnpm workspace."""
+    if not (wt / "pnpm-lock.yaml").exists():
+        return None
+    version = json.loads((wt / "pm/lock.json").read_text())["packages"]["pnpm"]["version"]
+    # npx runs from the temp dir: the root .npmrc's engine-strict would refuse it inside wt.
+    return ["npx", "-y", f"pnpm@{version}", "--dir", str(wt)]
+
+
 def regenerate_lockfiles(wt: Path) -> None:
     import pm
 
     pm.lock_project(wt, python=Path(sys.executable), explicit=True)
-    for d in (".", "plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge"):
+    # Upstream moved the root workspace to pnpm (v0.23.1+); its .npmrc makes npm refuse there.
+    pnpm = pnpm_cmd(wt)
+    if pnpm:
+        subprocess.run([*pnpm, "install", "--lockfile-only", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True)
+    for d in (("plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge") if pnpm else
+              (".", "plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge")):
         subprocess.run(["npm", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
                        cwd=wt / d, env=ENV, check=True)
     subprocess.run(["npx", "-y", "npm@12", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
@@ -104,15 +119,22 @@ def replay(ref: str, wt: Path, args: argparse.Namespace) -> tuple[str, dict[str,
         regenerate_lockfiles(wt)
     if args.lint_fix:
         print("  eslint --fix (renames change sort order)")
-        subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=ENV, check=True,
-                       stdout=subprocess.DEVNULL)
+        pnpm = pnpm_cmd(wt)
+        if pnpm:
+            subprocess.run([*pnpm, "install", "--frozen-lockfile", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True,
+                           stdout=subprocess.DEVNULL)
+        else:
+            subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=ENV, check=True,
+                           stdout=subprocess.DEVNULL)
         for d, paths in (("apps/shared", ["src/"]), ("apps/desktop", ["src/", "electron/"]), ("ui-tui", ["src/", "packages/"])):
-            r = subprocess.run(["npx", "eslint", "--fix", *paths], cwd=wt / d, env=ENV, text=True, capture_output=True, check=False)
+            eslint = [*pnpm[:-1], str(wt / d), "exec", "eslint"] if pnpm else ["npx", "eslint"]
+            r = subprocess.run([*eslint, "--fix", *paths], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, text=True, capture_output=True, check=False)
             if r.returncode:
                 print(f"   {d}: errors eslint cannot fix remain (JS & TS checks will fail)")
         # Renamed strings in the English catalog change the committed i18n key index.
         for d in ("apps/desktop", "ui-tui"):
-            subprocess.run(["npm", "run", "i18n:keys"], cwd=wt / d, env=ENV, check=False, stdout=subprocess.DEVNULL)
+            run = [*pnpm[:-1], str(wt / d), "run"] if pnpm else ["npm", "run"]
+            subprocess.run([*run, "i18n:keys"], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, check=False, stdout=subprocess.DEVNULL)
         # Same for Python: renamed names reorder sorted __all__ lists (RUF022), which the
         # blocking `ruff check .` rejects. Uses the ruff CI pins.
         pin = sh(str(PY), "-m", "scripts.code_health", "--print-pins", cwd=wt, check=False, quiet=True).strip()
