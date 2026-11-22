@@ -9,12 +9,14 @@ import type {
   RelayLinksResponse,
   TelegramOnboardingApplyResponse,
   TelegramOnboardingStartResponse,
-  TelegramOnboardingStatusResponse,
+  TelegramOnboardingStatusResponse
+} from '@/types/reign'
+import type {
   WebhookCreatePayload,
   WebhookCreateResponse,
   WebhookEnableResponse,
   WebhooksResponse
-} from '@/types/reign'
+} from '@/types/webhooks'
 
 import { profileScoped, reignApi } from './client'
 

@@ -155,7 +155,9 @@ are documented in the [plugin's README](https://github.com/NousResearch/hermes-o
 
 ### NeMo Relay native integration (migration note)
 
-NeMo Relay is no longer a bundled Reign plugin. Do not run `reign plugins enable observability/nemo_relay`; Reign core now owns the Relay session, turn, LLM, and tool lifecycles.
+NeMo Relay no longer uses a bundled Reign plugin. Reign supports it directly, so do not run `reign plugins enable observability/nemo_relay`.
+
+See the [NeMo Relay guide](../../integrations/nemo-relay.md) for setup, plugin configuration, and trace export.
 
 Configure Relay middleware or exporters through a standard Relay `plugins.toml`. Reign loads Relay's user configuration (`~/.config/nemo-relay/plugins.toml`) and then its machine-wide system configuration (`/etc/nemo-relay/plugins.toml`, or `%ProgramData%\nemo-relay\plugins.toml` on Windows). Set `REIGN_NEMO_RELAY_PLUGINS_TOML` before starting Reign only when you want an explicit file to replace the user configuration; the system configuration still has higher precedence. The policy is process-wide for every profile hosted by that Reign process. Run `reign doctor` to see which files apply. See the [NeMo Relay observability configuration](https://docs.nvidia.com/nemo/relay/configure-plugins/observability/about) for ATOF, ATIF, and OpenTelemetry options.
 

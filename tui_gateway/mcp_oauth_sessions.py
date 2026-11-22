@@ -81,7 +81,7 @@ def start_flow(
 
     session_id = secrets.token_urlsafe(24)
     flow = DashboardOAuthFlow(
-        flow_id=session_id, server_name=server_name, profile=None, reign_home=reign_home,
+        flow_id=session_id, server_name=server_name, reign_home=reign_home,
         redirect_uri="", reconnect_live=reconnect_live)
     httpd = choose_callback_receiver(flow, cfg, client_redirect_uri)
     rec = register_flow(flow, httpd=httpd)

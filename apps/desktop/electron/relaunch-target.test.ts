@@ -6,7 +6,7 @@ import path from 'node:path'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { ownAppImage, spawnRelaunch } from './relaunch-target'
+import { mountFreeEnv, ownAppImage, spawnRelaunch } from './relaunch-target'
 
 vi.mock('node:child_process', async importOriginal => {
   const actual = await importOriginal<typeof childProcess>()
@@ -268,5 +268,53 @@ describe('spawnRelaunch', () => {
       fs.closeSync(fd)
       fs.rmSync(dir, { recursive: true, force: true })
     }
+  })
+})
+
+describe('mountFreeEnv', () => {
+  const env = {
+    APPIMAGE: '/home/x/Reign.AppImage',
+    APPDIR: '/tmp/.mount_ReignAb12',
+    LD_LIBRARY_PATH: '/tmp/.mount_ReignAb12/usr/lib',
+    PATH: '/tmp/.mount_ReignAb12:/usr/bin'
+  }
+
+  it('keeps the env whole for a command that still runs from the mount', () => {
+    expect(
+      mountFreeEnv(env, '/tmp/.mount_ReignAb12/resources/agent-payload/bin/reign', '/tmp/.mount_ReignAb12/reign')
+    ).toBe(env)
+  })
+
+  it('drops this app mount from a command run from outside it', () => {
+    expect(
+      mountFreeEnv(
+        env,
+        '/home/x/.local/share/reign/bundles/k/agent-payload/bin/reign',
+        '/tmp/.mount_ReignAb12/reign'
+      )
+    ).toEqual({
+      APPIMAGE: '/home/x/Reign.AppImage',
+      PATH: '/usr/bin'
+    })
+  })
+
+  it('leaves a mount inherited from another AppImage alone', () => {
+    // A .deb Reign started from a terminal AppImage inherits the terminal's APPIMAGE and APPDIR.
+    const terminal = {
+      APPIMAGE: '/home/x/Term.AppImage',
+      APPDIR: '/tmp/.mount_TermCd34',
+      PATH: '/tmp/.mount_TermCd34/usr/bin:/usr/bin',
+      EDITOR: '/tmp/.mount_TermCd34/usr/bin/nvim'
+    }
+
+    expect(mountFreeEnv(terminal, '/opt/Reign/resources/agent-payload/bin/reign', '/opt/Reign/reign')).toBe(
+      terminal
+    )
+  })
+
+  it('keeps the env whole outside an AppImage', () => {
+    const plain = { PATH: '/tmp/.mount_x:/usr/bin', LD_LIBRARY_PATH: '/opt/lib' }
+
+    expect(mountFreeEnv(plain, '/home/x/.local/share/reign/bundles/k/agent-payload/bin/reign')).toBe(plain)
   })
 })

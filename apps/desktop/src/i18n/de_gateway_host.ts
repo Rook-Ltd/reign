@@ -6,7 +6,14 @@ export const deGatewayHost: GatewayHostTranslations = {
   unavailableDesc: 'Die Desktop-IPC-Brücke stellt keine Gateway-Einstellungen bereit.',
   webappHostTitle: 'Reign-Host',
   webappHostDesc:
-    'Die Webapp nutzt immer den Reign-Host, der sie ausliefert. Um das Gateway zu wechseln, sich bei Reign Cloud anzumelden oder gespeicherte Verbindungen zu verwalten, verwenden Sie die Reign-Desktop-App.',
+    'Die Webapp läuft immer auf dem Reign-Host, der sie bereitstellt. Die gespeicherten Verbindungen unten sind die Liste dieses Rechners, geteilt mit der Reign-Desktop-App; andere Gateways werden über diesen Host erreicht.',
+  webappOauthPaste: {
+    title: 'Anmeldung abschließen',
+    description: 'Wenn der Anmelde-Tab auf einer Adresse endete, die nicht lädt (dieser Browser läuft nicht auf dem Rechner des Gateways), füge diese Adresse hier ein.',
+    placeholder: 'http://127.0.0.1:…/webapp/gateway-connections/oauth/callback?…',
+    finish: 'Abschließen',
+    failed: 'Anmeldung konnte nicht abgeschlossen werden'
+  },
   webAccess: {
     title: 'Webzugriff',
     intro: 'Öffne Reign auf diesem Computer vom Handy oder einem anderen Computer aus, angemeldet mit deinem Nous-Konto. Wer sich anmeldet, kann Befehle auf diesem Computer ausführen.',

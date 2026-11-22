@@ -69,16 +69,11 @@ def test_chat_error_response_returns_site_copy_verbatim_instead_of_double_wrappi
 
 def test_sessions_db_open_failure_points_to_repair(monkeypatch, capsys):
     from reign_cli import sessions_cmd
+    from reign_constants import get_reign_home
 
-    class _Boom:
-        def __init__(self, *a, **k):
-            raise RuntimeError("database disk image is malformed")
-
-    monkeypatch.setattr("reign_state.SessionDB", _Boom)
-    import reign_state
     # `list` is read-only: a missing store prints "empty" instead; make the file exist so the
     # open failure is the real corrupt-database case this copy is for.
-    db_path = reign_state._default_db_path()
+    db_path = get_reign_home() / "state.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)
     db_path.write_bytes(b"not a database")
     import argparse

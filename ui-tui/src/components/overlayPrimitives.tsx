@@ -1,9 +1,9 @@
 import type { Key } from '@reign/ink'
 import { Text, useInput } from '@reign/ink'
 import { mix } from '@reign/shared/color'
+import type { UsageModelData } from '@reign/shared/gateway-types'
 import { type ReactNode, useState } from 'react'
 
-import type { UsageModelData } from '../gatewayTypes.js'
 import { liftForContrast } from '../lib/color.js'
 import type { Theme } from '../theme.js'
 

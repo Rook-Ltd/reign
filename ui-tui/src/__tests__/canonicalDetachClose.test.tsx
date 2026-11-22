@@ -4,12 +4,12 @@ import { join } from 'node:path'
 import { PassThrough } from 'node:stream'
 
 import { renderSync, Text } from '@reign/ink'
+import { canonicalRequest, canonicalResult } from '@reign/shared/gateway-canonical'
 import React from 'react'
 import { expect, it, vi } from 'vitest'
 
 import { getUiState, resetUiState } from '../app/uiStore.js'
 import { useSessionLifecycle } from '../app/useSessionLifecycle.js'
-import { canonicalRequest, canonicalResult } from '../canonicalGateway.js'
 
 type AttachmentAction = 'resumeById' | 'activateLiveSession'
 

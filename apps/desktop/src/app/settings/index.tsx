@@ -11,6 +11,7 @@ import {
   Archive,
   BarChart3,
   Bell,
+  CloudUpload,
   Cpu,
   Download,
   Globe,
@@ -28,6 +29,7 @@ import {
 } from '@/lib/icons'
 import { isEditableTarget } from '@/lib/keybinds/combo'
 import { typeToFocusChar } from '@/lib/keybinds/composer-focus-keys'
+import { servedByReignCloud } from '@/lib/reign-cloud-host'
 import { cn } from '@/lib/utils'
 import { getReignConfigDefaults, getReignConfigRecord, saveReignConfig } from '@/reign'
 import { $commandPaletteOpen, openCommandPalettePage } from '@/store/command-palette'
@@ -46,6 +48,7 @@ import { OverlayView } from '../overlays/overlay-view'
 
 import { AboutSettings } from './about-settings'
 import { AppearanceSettings } from './appearance-settings'
+import { BackupSettings } from './backup-settings'
 import { BILLING_VIEWS, BillingSettings, type BillingSubView } from './billing'
 import { deriveBillingView, useBillingState, useSubscriptionState } from './billing/use-billing-state'
 import { ConfigSettings } from './config-settings'
@@ -85,6 +88,7 @@ const SETTINGS_VIEWS: readonly SettingsViewId[] = [
   'notifications',
   'billing',
   'sessions',
+  'backup',
   'plugins',
   'about'
 ]
@@ -421,6 +425,14 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
             label: t.settings.nav.sessions,
             onSelect: () => setActiveView('sessions')
           },
+          // On a Webapp Reign Cloud serves, the page is backup only: that tab IS a cloud agent.
+          {
+            active: activeView === 'backup',
+            icon: servedByReignCloud() ? Archive : CloudUpload,
+            id: 'backup',
+            label: servedByReignCloud() ? t.settings.nav.backupOnly : t.settings.nav.backup,
+            onSelect: () => setActiveView('backup')
+          },
           {
             active: activeView === 'plugins',
             children: pluginSettingsNavChildren(plugins.entries, plugins.target, plugins.open),
@@ -597,6 +609,8 @@ export function SettingsView({ onClose, onConfigSaved, onMainModelChanged }: Set
     />
   ) : activeView === 'vault' ? (
     <VaultSettings key={vaultOwnerKey(activeConnectionId, scopeProfile)} subpage={subpage} />
+  ) : activeView === 'backup' ? (
+    <BackupSettings key={vaultOwnerKey(activeConnectionId, scopeProfile)} />
   ) : (
     <SessionsSettings subpage={subpage} />
   )

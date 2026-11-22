@@ -41,7 +41,7 @@ This page is the top-level map of Reign internals. Use it to orient yourself in 
 ┌───────────────────┐              ┌──────────────────────┐
 │ Session Storage   │              │ Tool Backends         │
 │ (SQLite + FTS5)   │              │ Terminal (7 backends) │
-│ reign_state.py   │              │ Browser (5 backends)  │
+│ persistence/      │              │ Browser (5 backends)  │
 │ gateway/session.py│              │ Web (4 backends)      │
 └───────────────────┘              │ MCP (dynamic)         │
                                    │ File, Vision, etc.    │
@@ -56,7 +56,8 @@ reign/
 ├── cli.py                    # ReignCLI facade — mixins in reign_cli/cli_*_mixin.py
 ├── model_tools.py            # Tool discovery, schema collection, dispatch
 ├── toolsets.py               # Tool groupings and platform presets
-├── reign_state.py           # SQLite session/state database facade (+ reign_state_*.py siblings)
+├── persistence/              # Storage contracts; persistence/sqlite/ is the SQLite session/state backend
+├── persistence_assembly.py   # open_persistence(): the one entry point to a profile's store
 ├── reign_constants.py       # REIGN_HOME, profile-aware paths
 ├── batch_runner.py           # Batch trajectory generation
 │
@@ -118,7 +119,6 @@ reign/
 │   ├── hooks.py              # Hook discovery and lifecycle events
 │   ├── mirror.py             # Cross-session message mirroring
 │   ├── status.py             # Token locks, profile-scoped process tracking
-│   ├── builtin_hooks/        # Extension point for always-registered hooks (none shipped)
 │   └── platforms/            # Core ingress adapters: api_server, webhook,
 │                             #   msgraph_webhook
 │
@@ -126,8 +126,9 @@ reign/
 │                             #   whatsapp, matrix, mattermost, email, sms, dingtalk,
 │                             #   feishu, wecom, irc, line, teams, google_chat,
 │                             #   buzz, ntfy, photon, raft, simplex, whatsapp_cloud,
-│                             #   signal, weixin, bluebubbles, qqbot, yuanbao
-│                             #   (Home Assistant: `homeassistant` catalog plugin)
+│                             #   signal, weixin, bluebubbles, qqbot
+│                             #   (Home Assistant: `homeassistant` catalog plugin;
+│                             #    Yuanbao: `yuanbao` Reign Labs plugin)
 │
 ├── acp_adapter/              # ACP server (VS Code / Zed / JetBrains)
 ├── cron/                     # Scheduler (jobs.py, scheduler.py)
@@ -150,7 +151,7 @@ User input → ReignCLI.process_input()
     → runtime_provider.resolve_runtime_provider()
     → API call (chat_completions / codex_responses / anthropic_messages)
     → tool_calls? → model_tools.handle_function_call() → loop
-    → final response → display → save to SessionDB
+    → final response → display → save to the session store
 ```
 
 ### Gateway Message

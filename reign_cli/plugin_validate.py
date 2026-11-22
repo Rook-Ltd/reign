@@ -20,6 +20,7 @@ import subprocess
 import sys
 import tempfile
 from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -28,6 +29,7 @@ from reign_cli.plugin_validate_desktop import check_desktop_surface
 from reign_cli.plugin_validate_private_imports import check_private_imports
 from reign_cli.plugin_validate_locales import check_language_packs
 from reign_cli.plugins_manifest import _CONFIG_SCHEMA_TYPES
+from reign_cli._startup_fast import project_root_str
 
 _UPPER_SNAKE_RE = re.compile(r"^[A-Z][A-Z0-9_]*$")
 # Admission accepts exactly the ``config_schema`` types the loader type-checks at load time (and the
@@ -205,16 +207,20 @@ def _check_oauth(report: ValidationReport, manifest: dict, plugin_dir: Path) -> 
 # Self-contained harness run in a scratch child process. Imports the plugin
 # module using the same file-location mechanics PluginManager uses, calls
 # register() against a recording stub ctx, and prints a sentinel-prefixed
-# JSON line of what was actually registered. Only the import-safe public API
-# name bridge is bootstrapped before the plugin. The other host import is
-# `providers` for `kind: model-provider`, whose contract IS
+# JSON line of what was actually registered. Deliberately imports NOTHING
+# from reign so a hostile plugin only sees a bare interpreter — the exceptions are the
+# stdlib-only compat finder (old module names keep resolving), the import-safe Hermes
+# public API name bridge, and `providers` for `kind: model-provider`, whose contract IS
 # calling providers.register_provider at import.
 _PROBE_SCRIPT = r"""
 import importlib.util
 import json
 import sys
 
+from reign_agent.compat import install as install_compat
 from reign_cli.plugin_host_api import install
+
+install_compat()
 install()
 
 plugin_dir = sys.argv[1]
@@ -223,6 +229,9 @@ options = json.loads(sys.argv[3])
 # Public method names of the real PluginContext, computed by the parent so the
 # stub's attribute surface cannot drift from the class plugins run against.
 context_methods = set(options["context_methods"])
+# Service properties (``ctx.llm``, ``ctx.state``, ...): plugins capture them in register() and
+# use them later, so the probe hands back an inert service whose methods are no-ops.
+context_properties = set(options.get("context_properties", ()))
 provider_kind = options["kind"] == "model-provider"
 
 recorded = {"tools": [], "hooks": [], "middleware": [], "commands": [], "providers": [], "trusted_inbound": []}
@@ -269,7 +278,41 @@ class RecordingContext:
                 return None
 
             return _noop
+        if name == "state":
+            return _ProbeState()
+        if name in context_properties:
+            return _InertService()
         raise AttributeError(name)
+
+
+class _ProbeState:
+    # Same shape as PluginState (real Path values, get() returns the default) over an empty store
+    # in the probe's scratch REIGN_HOME, which the parent deletes after the run.
+    def __init__(self):
+        import os
+        from pathlib import Path
+        self.data_dir = Path(os.environ["REIGN_HOME"]) / "plugin-data" / "probe"
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.path = self.data_dir / "state.json"
+        self.quota_bytes = 1024 * 1024
+        self._data = {}
+
+    def get(self, key, default=None):
+        return self._data.get(key, default)
+
+    def set(self, key, value):
+        self._data[key] = value
+
+
+class _InertService:
+    def __getattr__(self, name):
+        if name.startswith("__"):
+            raise AttributeError(name)
+
+        def _noop(*args, **kwargs):
+            return None
+
+        return _noop
 
 
 def emit(payload):
@@ -334,11 +377,12 @@ emit(recorded)
 def _probe_options(manifest: dict) -> dict:
     from reign_cli.plugins import PluginContext
 
+    public = [n for n in dir(PluginContext) if not n.startswith("_")]
     return {
         "kind": str(manifest.get("kind") or ""),
-        "context_methods": sorted(
-            n for n in dir(PluginContext)
-            if not n.startswith("_") and callable(getattr(PluginContext, n))
+        "context_methods": sorted(n for n in public if callable(getattr(PluginContext, n))),
+        "context_properties": sorted(
+            n for n in public if isinstance(getattr(PluginContext, n), (property, cached_property))
         ),
     }
 
@@ -359,7 +403,7 @@ def _run_capability_probe(
         env = dict(probe[1] if probe else os.environ)
         env["REIGN_HOME"] = scratch
         # The probe imports this tree's ``providers``; name the tree instead of relying on the cwd.
-        repo_root = str(Path(__file__).resolve().parents[1])
+        repo_root = project_root_str()
         env["PYTHONPATH"] = os.pathsep.join(p for p in (repo_root, env.get("PYTHONPATH", "")) if p)
         python, *options = probe[0] if probe else [sys.executable]
         try:
@@ -626,7 +670,7 @@ def _check_security_scan(report: ValidationReport, plugin_dir: Path) -> None:
     """Run the install-time scanner at admission, so a pin a reviewer approves is one the
     installer will accept: ``dangerous`` fails the entry; ``caution`` findings surface as
     warnings for the reviewer (the installer trusts them once the pin is merged)."""
-    from tools.plugin_guard import scan_plugin
+    from reign_cli.plugins_install_scan import scan_plugin
 
     result = scan_plugin(plugin_dir)
     flagged = [f for f in result.findings if f.severity in ("critical", "high")]

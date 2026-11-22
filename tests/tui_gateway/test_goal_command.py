@@ -540,10 +540,7 @@ def test_goal_draft_uses_session_profile_without_blocking_rpc_reader(
 ):
     from reign_cli import goals
     from reign_constants import get_reign_home
-    import reign_state
 
-    # Restore call-time profile resolution; conftest pins this constant to one DB.
-    monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", reign_state._IMPORT_DEFAULT_DB_PATH)
     sid, key, record = session
     secondary = tmp_path / "secondary"
     secondary.mkdir()

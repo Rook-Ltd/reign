@@ -1040,6 +1040,20 @@ class TestVisionCpuBurstCap:
         assert seen_threads[0].startswith("vision-encode"), seen_threads
 
     @pytest.mark.asyncio
+    async def test_encode_runs_as_the_caller_profile(self, tmp_path):
+        """The pool worker runs under the caller's contextvars: a turn routed to another profile
+        encodes with that profile's home, not the launch profile's."""
+        import importlib
+        from reign_constants import get_reign_home, reset_reign_home_override, set_reign_home_override
+        vt = importlib.import_module("tools.vision_tools")
+        token = set_reign_home_override(str(tmp_path / "profiles" / "b"))
+        try:
+            seen = await vt._run_encode_on_cpu_executor(get_reign_home)
+        finally:
+            reset_reign_home_override(token)
+        assert seen == tmp_path / "profiles" / "b"
+
+    @pytest.mark.asyncio
     async def test_encode_bursts_bounded_but_llm_stays_concurrent(self):
         """Encode concurrency is clamped to the cap; the LLM call is not.
 

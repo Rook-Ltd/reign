@@ -2,9 +2,9 @@
 
 from typing import NoReturn
 
-from reign_cli._old_updater import stop_for_relaunch
+from reign_cli._old_updater import stop_historical_updater
 
 
 def maybe_repair_npm_engine(*args, **kwargs) -> NoReturn:
     # Returning would let old callers retry or continue their stale update.
-    stop_for_relaunch()
+    stop_historical_updater("reign_cli.npm_engine.maybe_repair_npm_engine")

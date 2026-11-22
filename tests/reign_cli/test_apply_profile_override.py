@@ -72,6 +72,49 @@ def _run_apply_profile_override(
 
 
 @pytest.mark.parametrize("argv", [
+    ["reign", "-p", "work", "config", "path"],  # explicit flag
+    ["reign", "config", "path"],  # sticky active_profile file
+])
+def test_unexpected_profile_lookup_failure_exits_nonzero(
+    tmp_path, monkeypatch, capsys, argv,
+):
+    """An unexpected failure resolving a REQUESTED profile must exit non-zero,
+    not silently fall back to the default profile (#152716): the fallback
+    would read and write the default profile's config, .env and state.db."""
+    import reign_cli.profiles as profiles_mod
+
+    def _broken_lookup(_name):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(profiles_mod, "resolve_profile_env", _broken_lookup)
+    with pytest.raises(SystemExit) as exc:
+        _run_apply_profile_override(
+            tmp_path, monkeypatch, reign_home=None, active_profile="work", argv=argv,
+        )
+    assert exc.value.code == 1
+    assert "profile override failed" in capsys.readouterr().err
+
+
+def test_broken_profile_lookup_ignored_when_no_profile_requested(
+    tmp_path, monkeypatch,
+):
+    """With no profile requested, a broken profile lookup must not block
+    startup: the silent fallback survives only for the unrequested case
+    (#152716)."""
+    import reign_cli.profiles as profiles_mod
+
+    def _broken_lookup(_name):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr(profiles_mod, "resolve_profile_env", _broken_lookup)
+    result = _run_apply_profile_override(
+        tmp_path, monkeypatch, reign_home=None, active_profile=None,
+        argv=["reign", "config", "path"],
+    )
+    assert result is None
+
+
+@pytest.mark.parametrize("argv", [
     ["reign", "profile", "list"],
     ["reign", "profile", "use", "default"],
     ["reign", "uninstall"],

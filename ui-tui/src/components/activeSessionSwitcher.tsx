@@ -1,10 +1,10 @@
 import { Box, Text, useInput, useStdout } from '@reign/ink'
 import type { SessionListResult, SessionListRow } from '@reign/shared/gateway-events'
+import type { SessionActiveItem, SessionActiveListResponse, SessionCloseResponse } from '@reign/shared/gateway-types'
+import { sessionScopedModelArg } from '@reign/shared/slash-input'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { sessionScopedModelArg } from '../domain/slash.js'
 import type { GatewayClient } from '../gatewayClient.js'
-import type { SessionActiveItem, SessionActiveListResponse, SessionCloseResponse } from '../gatewayTypes.js'
 import { useSessionDelete } from '../hooks/useSessionDelete.js'
 import { messages } from '../i18n/runtime.js'
 import { useT } from '../i18n/useT.js'

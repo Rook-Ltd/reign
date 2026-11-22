@@ -5,6 +5,7 @@ import { PassThrough } from 'node:stream'
 
 import { useStore } from '@nanostores/react'
 import { renderSync, Text } from '@reign/ink'
+import { canonicalEvent, canonicalResult } from '@reign/shared/gateway-canonical'
 import React from 'react'
 import { expect, it, vi } from 'vitest'
 
@@ -13,7 +14,6 @@ import { captureDestination } from '../app/submissionDestination.js'
 import { turnController } from '../app/turnController.js'
 import { $uiState, patchUiState, resetUiState } from '../app/uiStore.js'
 import { useSubmission } from '../app/useSubmission.js'
-import { canonicalEvent, canonicalResult } from '../canonicalGateway.js'
 import { useQueue } from '../hooks/useQueue.js'
 import { loadPendingInputs } from '../lib/pendingInputs.js'
 

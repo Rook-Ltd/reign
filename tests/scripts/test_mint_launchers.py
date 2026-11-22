@@ -42,7 +42,7 @@ def payload_tree(tmp_path: Path):
     py_dir = tmp_path / "stage" / "tools" / "py-1"
     repo = tmp_path / "stage" / "repo"
     site = tmp_path / "stage" / "venv" / "Lib" / "site-packages"
-    for d in (bin_dir, py_dir, repo / "reign_cli", repo / "pm", site):
+    for d in (bin_dir, py_dir, repo / "reign_cli", repo / "reign_agent" / "compat", repo / "pm", site):
         d.mkdir(parents=True, exist_ok=True)
 
     # A real interpreter at the shebang's target: the launcher will create
@@ -67,6 +67,8 @@ def payload_tree(tmp_path: Path):
 
     # Exercise the real bootstrap before the fixture entry point.
     for relative in ("reign_bootstrap.py", "reign_constants.py", "reign_cli/__init__.py",
+                     "reign_agent/__init__.py", "reign_agent/compat/__init__.py",
+                     "reign_agent/compat/finder.py", "reign_agent/compat/moves.py",
                      "pm/environments.py", "pm/filesystem.py", "reign_cli/runtime_state.py",
                      "reign_cli/_early_recovery.py", "reign_cli/_parser.py",
                      # prepare_launch returns early for a fixture repo (no .git), but the bootstrap

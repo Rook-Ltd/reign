@@ -7,6 +7,7 @@ import time
 from unittest.mock import patch, MagicMock
 
 import pytest
+from tests.fixtures.storage_holder import raw_holder
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -16,7 +17,7 @@ import pytest
 
 @pytest.fixture
 def reign_home(tmp_path, monkeypatch):
-    """Isolated REIGN_HOME so SessionDB.state_meta writes don't clobber the real one."""
+    """Isolated REIGN_HOME so state_meta writes don't clobber the real one."""
     from pathlib import Path
 
     home = tmp_path / ".reign"
@@ -263,32 +264,28 @@ class TestSessionDbCacheAfterProfileDelete:
     def test_delete_then_recreate_gets_a_live_store(self, reign_home):
         import shutil
 
-        import reign_state
-        import reign_state_registry as registry
         from reign_constants import reset_reign_home_override, set_reign_home_override
+        from persistence_assembly import close_stores_under
         from reign_cli.goals import GoalState, _get_session_db, load_goal, save_goal
 
-        # conftest re-points DEFAULT_DB_PATH at one fixed file; the registry must resolve the
-        # scoped profile home here, as production does.
-        with patch.object(reign_state, "DEFAULT_DB_PATH", reign_state._IMPORT_DEFAULT_DB_PATH):
-            profile = reign_home / "profiles" / "p1"
+        profile = reign_home / "profiles" / "p1"
+        profile.mkdir(parents=True)
+        token = set_reign_home_override(profile)
+        try:
+            save_goal("s1", GoalState(goal="before delete"))
+            stale = raw_holder(_get_session_db())
+            assert close_stores_under(profile) == 1
+            shutil.rmtree(profile)
             profile.mkdir(parents=True)
-            token = set_reign_home_override(profile)
-            try:
-                save_goal("s1", GoalState(goal="before delete"))
-                stale = _get_session_db()
-                assert registry.close_all_under(profile) == 1
-                shutil.rmtree(profile)
-                profile.mkdir(parents=True)
 
-                save_goal("s2", GoalState(goal="after recreate"))
+            save_goal("s2", GoalState(goal="after recreate"))
 
-                assert _get_session_db() is not stale
-                assert (profile / "state.db").exists()
-                assert load_goal("s2").goal == "after recreate"
-            finally:
-                reset_reign_home_override(token)
-                registry.close_all_under(profile)
+            assert raw_holder(_get_session_db()) is not stale
+            assert (profile / "state.db").exists()
+            assert load_goal("s2").goal == "after recreate"
+        finally:
+            reset_reign_home_override(token)
+            close_stores_under(profile)
 
 
 class TestGoalManagerSubgoals:
@@ -936,17 +933,17 @@ class TestBlockedVerdict:
 
 
 def test_goal_session_db_is_the_registry_shared_handle(reign_home):
-    """GoalManager must borrow the process-wide registry handle for ``state.db`` rather than
-    minting a bare ``SessionDB()``: a second writer per profile carries its own token-writer
-    thread and close-time checkpoint beside the gateway's handle (the #90837 corruption shape)."""
+    """GoalManager must borrow the process-wide registry store for ``state.db`` rather than
+    opening its own: a second writer per profile carries its own token-writer thread and
+    close-time checkpoint beside the gateway's handle (the #90837 corruption shape)."""
     from reign_cli import goals
-    import reign_state_registry as registry
+    from persistence.sqlite import _registry as registry
 
     db = goals._get_session_db()
     assert db is not None
     try:
-        assert any(shared is db for shared in registry.live_shared_session_dbs())
+        assert any(shared is raw_holder(db) for shared in registry.live_shared_session_dbs())
         assert goals._get_session_db() is db
     finally:
         goals._DB_CACHE.clear()
-        registry.release_or_close(db)
+        db.close()

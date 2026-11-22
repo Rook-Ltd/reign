@@ -18,11 +18,8 @@ def client(monkeypatch, tmp_path, _isolate_reign_home):
         from starlette.testclient import TestClient
     except ImportError:
         pytest.skip("fastapi/starlette not installed")
-    import reign_state
-    from reign_constants import get_reign_home
     from reign_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
-    monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", get_reign_home() / "state.db")
     catalog_dir = tmp_path / "catalog"
     catalog_dir.mkdir()
     (catalog_dir / "alpha-plugin.yaml").write_text(yaml.safe_dump({

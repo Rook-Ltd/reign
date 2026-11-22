@@ -16,7 +16,7 @@ apps/desktop/src/components/ui/decode-text.tsx
    11: *    (matches the nousnet-web download-button decode effect).
 
 locales/ko.yaml
-   3757: t184: "reign mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
+   3799: t184: "reign mcp는 Nous가 승인한 MCP를 키 한 번으로 설치할 수 있는 대화형 선택기를 열어요."
 
 optional-skills/creative/pretext/templates/donut-orbit.html
    6: <title>NOUS · pretext</title>
@@ -35,8 +35,8 @@ scripts/releases/authors_legacy.py
    1717: "nouseman666@gmail.com": "nouseman666",  # PR #19088
 
 tests/agent/test_anthropic_preserved_thinking_replay.py
-   14: NOUS = ("nous", "https://inference-api.nousresearch.com/v1/messages")
-   204: "route:nous": ("claude-opus-4-6", NOUS, 1),
+   18: NOUS = ("nous", "https://inference-api.nousresearch.com/v1/messages")
+   206: "route:nous": ("claude-opus-4-6", NOUS, 1),
 
 tests/agent/test_credential_pool_profile_oauth_fork.py
    171: pdir = _profile(fleet, "nousstrip")
@@ -49,11 +49,37 @@ tests/agent/test_skill_utils.py
 tests/cron/test_cron_prompt_injection_skill.py
    159: "  hermes:\n"
 
+tests/gateway/test_local_debug_never_uploads.py
+   124: @pytest.mark.parametrize('text', ['/debug nous upload', '/debug upload nous', '/debug NOUS UPLOAD'])
+
+tests/rebrand/test_external_catalog_identity.py
+   15: relative = "plugin-catalog/hermes-example.yaml"
+   19: "name": "hermes-example",
+   21: "subdir": "plugins/hermes-example",
+   22: "description": "The external Hermes plugin keeps its HERMES_VENDOR_KEY credential name.",
+   23: "requires_hermes": ">=0.23.0",
+   24: "capabilities": {"provides_tools": ["hermes_lookup"], "requires_env": ["HERMES_VENDOR_KEY"]},
+   39: assert result.pop("requires_reign") == original.pop("requires_hermes")
+   46: relative = "plugins/config_backends/remote/vendor/hermes-fixture.json"
+   ... 1 more
+
 tests/reign_cli/test_curator_status.py
    48: "  hermes:\n"
 
 tests/reign_cli/test_debug.py
-   1082: c = self._captured("/debug NOUS")
+   1036: @pytest.mark.parametrize("cmd", ["/debug", "/debug nous", "/debug NOUS please",
+   1084: c = self._captured("/debug NOUS Upload")
+
+tests/reign_cli/test_import_keep_host.py
+   53: _write(src, ".env", "OPENROUTER_API_KEY=SRC-OR\nTELEGRAM_BOT_TOKEN=SRC-TG\nNOUS_API_KEY=SRC-NOUS\n")
+   55: "nous": {"access_token": "SRC-NOUS", "refresh_token": "SRC-NOUS-RT"},
+   64: _write(dst, ".env", "NOUS_API_KEY=DST-NOUS\nAPI_SERVER_KEY=DST-API\nOPENROUTER_API_KEY=DST-OR\n")
+   66: "nous": {"access_token": "DST-NOUS", "refresh_token": "DST-NOUS-RT"}}}))
+   130: "NOUS_API_KEY": "DST-NOUS", "API_SERVER_KEY": "DST-API"}
+   133: assert auth["providers"]["nous"] == {"access_token": "DST-NOUS", "refresh_token": "DST-NOUS-RT"}
+   135: assert "SRC-NOUS" not in (dst / "auth.json").read_text() + (dst / ".env").read_text()
+   145: "nous": {"access_token": "SRC-NOUS-P"}, "anthropic": {"access_token": "SRC-ANT-P"}}}))
+   ... 4 more
 
 tests/scripts/test_release_r2.py
    133: ('PUT', '/hermes-releases/HermesBundled-0.28.0-win-x64.msix', {},
@@ -68,6 +94,6 @@ web/src/index.css
    144: /* Nousnet's reign layout bumps `small` and `code` to readable
 
 website/docusaurus.config.ts
-   195: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
+   238: copyright: `Reign by Rook · Built on Hermes Agent (MIT) · ${new Date().getFullYear()}`,
 
-residual: 35 lines in 18 files
+residual: 58 lines in 21 files

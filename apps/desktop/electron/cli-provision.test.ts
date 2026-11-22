@@ -127,6 +127,38 @@ test('qualified CLI paths expose their filenames, not shared canonical command k
   }
 })
 
+test.runIf(process.platform !== 'win32')(
+  'a live link into an older build beside the payload moves forward; another install keeps its link',
+  (): void => {
+    const root: string = fs.mkdtempSync(path.join(os.tmpdir(), 'reign-cli-links-'))
+    const binDir: string = path.join(root, 'bin')
+
+    const command = (store: string, build: string): string =>
+      path.join(root, store, build, 'agent-payload', 'bin', 'reign')
+
+    const current: string = command('bundles', 'build-2')
+
+    try {
+      for (const destination of [current, command('bundles', 'build-1'), command('opt', 'Reign')]) {
+        fs.mkdirSync(path.dirname(destination), { recursive: true })
+        fs.writeFileSync(destination, destination)
+      }
+
+      fs.mkdirSync(binDir)
+      fs.symlinkSync(command('bundles', 'build-1'), path.join(binDir, 'reign'))
+      provisionCliLinks({ reign: current }, binDir, (): void => {})
+      assert.equal(fs.readlinkSync(path.join(binDir, 'reign')), current)
+
+      fs.unlinkSync(path.join(binDir, 'reign'))
+      fs.symlinkSync(command('opt', 'Reign'), path.join(binDir, 'reign'))
+      provisionCliLinks({ reign: current }, binDir, (): void => {})
+      assert.equal(fs.readlinkSync(path.join(binDir, 'reign')), command('opt', 'Reign'))
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true })
+    }
+  }
+)
+
 test('a failed link swap preserves its source and target, then provisions later commands', context => {
   const { root, binDir, source } = fixture()
   const target = path.join(binDir, 'reign')

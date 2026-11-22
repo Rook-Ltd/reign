@@ -37,6 +37,9 @@ ACCEPT = [
     # a profile literally NAMED "gateway"
     "reign -p gateway gateway run",
     "python -m reign_cli.main --profile gateway gateway run",
+    # gateway-level flags before the action (`reign gateway --accept-hooks run` parses)
+    "reign gateway --accept-hooks run --no-supervise",
+    "reign gateway --accept-hooks",
     # quoted Windows paths with spaces (shlex-aware tokenization)
     r'"C:\Program Files\Reign\reign-gateway.exe"',
     r'"C:\Program Files\Reign\gateway\run.py" run',
@@ -48,6 +51,8 @@ REJECT = [
     "python -m reign_cli.main gateway status",           # other subcommand
     "python -m reign_cli.main gateway restart",
     "python -m reign_cli.main gateway stop",
+    "reign gateway --accept-hooks status",
+    "reign gateway --help",                               # prints help, runs nothing
     "python -m reign_cli.main --profile x dashboard",    # non-gateway subcommand
     "some random python -m mygateway thing",
     "",

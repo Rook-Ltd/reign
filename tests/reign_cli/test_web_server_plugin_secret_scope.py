@@ -33,13 +33,11 @@ class TestPluginAPISecretScopeProductionMount:
         except ImportError:
             pytest.skip("fastapi/starlette not installed")
 
-        import reign_state
         from reign_constants import get_reign_home
         from reign_cli import profiles
         from reign_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
         default_home = get_reign_home()
-        monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", default_home / "state.db")
 
         # Anchor the named-profiles root to the isolated home so ``?profile=workerb``
         # resolves inside the test sandbox (mirrors test_web_server_skills_profiles).

@@ -48,7 +48,7 @@ def test_local_delivery_resolves_sibling_reign(tmp_path, monkeypatch):
     monkeypatch.setattr("sys.executable", str(bin_dir / "python"))
     # The checkout's own published launcher (.reign/bin, written by scripts/run_tests.sh's venv
     # step) outranks the sibling by design (#124868): keep it out of this probe.
-    monkeypatch.setattr(bot_relay, "__file__", str(tmp_path / "checkout" / "tools" / "bot_relay.py"))
+    monkeypatch.setattr("reign_cli._startup_fast.project_root_str", lambda: str(tmp_path / "checkout"))
 
     assert bot_relay._reign_cli() == str(sibling)
 
@@ -61,7 +61,7 @@ def test_local_delivery_uses_shutil_which_when_no_sibling(tmp_path, monkeypatch)
     monkeypatch.setattr("sys.executable", str(empty / "python"))
     # Keep this checkout's own published install launcher out of the resolution
     # when probing the fallback ladder (#124868).
-    monkeypatch.setattr(bot_relay, "__file__", str(empty / "bot_relay.py"))
+    monkeypatch.setattr("reign_cli._startup_fast.project_root_str", lambda: str(empty))
     which_hit = str(tmp_path / "usr-local-bin" / "reign")
     monkeypatch.setattr(
         bot_relay.shutil, "which", lambda name: which_hit if name == "reign" else None
@@ -75,6 +75,6 @@ def test_local_delivery_falls_back_to_bare_name(tmp_path, monkeypatch):
     empty.mkdir(parents=True)
     monkeypatch.setattr("sys.executable", str(empty / "python"))
     monkeypatch.setattr(bot_relay.shutil, "which", lambda name: None)
-    monkeypatch.setattr(bot_relay, "__file__", str(empty / "bot_relay.py"))
+    monkeypatch.setattr("reign_cli._startup_fast.project_root_str", lambda: str(empty))
 
     assert bot_relay._reign_cli() == "reign"

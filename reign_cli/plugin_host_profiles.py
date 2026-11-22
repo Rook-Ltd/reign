@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List
 
 from reign_cli.plugin_host_wire import PluginHostUnavailable, decode, signature_from
+from reign_cli._startup_fast import project_root_str
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +91,7 @@ def _extract(plugin_dir: Path, module_name: str) -> dict[str, Any]:
     """Import the plugin in a throwaway host process with no credentials and read its profiles."""
     from reign_cli.plugin_isolation import HOST_PROCESS_ENV, host_launcher
     from reign_constants import get_reign_home
-    repo_root = str(Path(__file__).resolve().parents[1])
+    repo_root = project_root_str()
     # Absolute: the child starts in the home, so a relative REIGN_HOME or plugin dir would resolve twice.
     home = str(get_reign_home().resolve())
     env = {key: os.environ[key] for key in ("PATH", "LANG", "LC_ALL", "TZ", "SYSTEMROOT") if key in os.environ}

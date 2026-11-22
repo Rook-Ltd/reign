@@ -39,14 +39,12 @@ def _gateway_state(home: Path) -> None:
 def client(monkeypatch, _isolate_reign_home):
     from starlette.testclient import TestClient
 
-    import reign_state
     import reign_constants
     import gateway.status as _gw_status
     from reign_constants import get_reign_home
     from reign_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
     home = get_reign_home()
-    monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", home / "state.db")
     monkeypatch.setattr(reign_constants, "_default_reign_root_memo", None)
     # Liveness is a verified identity: this pytest process passes as the gateway
     # only while its probed command line matches the home being asked about

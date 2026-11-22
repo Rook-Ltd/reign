@@ -6,6 +6,7 @@ import type { EnvVarInfo } from '@/types/reign'
 
 export type SettingsView =
   | 'about'
+  | 'backup'
   | 'billing'
   | 'connections'
   | 'gateway'

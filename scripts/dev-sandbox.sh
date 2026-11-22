@@ -11,9 +11,9 @@
 #   scripts/dev-sandbox.sh python -m reign_cli.main
 #   scripts/dev-sandbox.sh reign desktop
 #   scripts/dev-sandbox.sh electron .
-#   scripts/dev-sandbox.sh -- npm run dev   # from apps/desktop/
+#   scripts/dev-sandbox.sh -- pnpm run dev   # from apps/desktop/
 #   scripts/dev-sandbox.sh --persistent reign desktop
-#   scripts/dev-sandbox.sh --persistent -- npm run dev
+#   scripts/dev-sandbox.sh --persistent -- pnpm run dev
 #
 # Seed the sandbox REIGN_HOME from an existing directory (e.g. your main
 # ~/.reign) so config, sessions, skills, etc. are pre-populated:
@@ -65,7 +65,7 @@ Examples:
   $ENTRYPOINT reign desktop
   $ENTRYPOINT --persistent reign desktop
   $ENTRYPOINT --from ~/.reign reign desktop
-  $ENTRYPOINT -- npm run dev
+  $ENTRYPOINT -- pnpm run dev
 EOF
 }
 

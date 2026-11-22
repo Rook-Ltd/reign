@@ -363,25 +363,25 @@ class TestDisabledToolsetsPlatformBundle:
     must not remove core tools from other enabled toolsets."""
 
     def test_disabling_platform_bundle_preserves_core_tools(self):
-        """Disabling reign-yuanbao should not strip core tools from reign-telegram."""
+        """Disabling reign-feishu should not strip core tools from reign-telegram."""
         from model_tools import get_tool_definitions
 
         tools_telegram = get_tool_definitions(
             enabled_toolsets=["reign-telegram"],
             quiet_mode=True,
         )
-        tools_telegram_no_yuanbao = get_tool_definitions(
+        tools_telegram_no_feishu = get_tool_definitions(
             enabled_toolsets=["reign-telegram"],
-            disabled_toolsets=["reign-yuanbao"],
+            disabled_toolsets=["reign-feishu"],
             quiet_mode=True,
         )
         names_telegram = {t["function"]["name"] for t in tools_telegram}
-        names_no_yuanbao = {t["function"]["name"] for t in tools_telegram_no_yuanbao}
+        names_no_feishu = {t["function"]["name"] for t in tools_telegram_no_feishu}
 
         # Disabling a *different* platform bundle must not remove any tools
-        assert names_telegram == names_no_yuanbao, (
-            f"Tools lost after disabling reign-yuanbao: "
-            f"{names_telegram - names_no_yuanbao}"
+        assert names_telegram == names_no_feishu, (
+            f"Tools lost after disabling reign-feishu: "
+            f"{names_telegram - names_no_feishu}"
         )
 
     def test_disabling_platform_bundle_removes_own_tools(self):
