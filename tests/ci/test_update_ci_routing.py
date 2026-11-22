@@ -153,7 +153,7 @@ def _run_workflow(rel: str, *, inputs: dict[str, Any], detect: dict[str, Any] | 
             all_ran = all(n in ran for n in needs)
             ctx = {
                 "inputs": inputs,
-                "github": {"event_name": event_name, "ref_type": "branch"},
+                "github": {"event_name": (detect or {}).get("event_name", event_name), "ref_type": "branch"},
                 "needs": {n: {"outputs": (ran.get(n) or {}).get("outputs", {}),
                               "result": "success" if n in ran else "skipped"} for n in needs},
                 "__status__": {"always": True, "success": all_ran, "failure": False, "cancelled": False},
@@ -845,6 +845,8 @@ def test_a_canary_e2e_run_reaches_every_e2e_suite():
                         detect=_detect_outputs(cc.classify([]), "workflow_run", inputs), event_name="workflow_run")
     for lane in ("e2e", "e2e_upgrade", "e2e_desktop_update"):
         reached = _consumers_reached(run, lane)
+        # Reign: tests-os (the Windows suites) runs only on a manual dispatch, never from a canary.
+        reached = {path: hit for path, hit in reached.items() if not path.startswith("tests-os/")}
         assert reached and all(reached.values()), f"{lane}: {reached}"
     assert "e2e-desktop-core" in run
 

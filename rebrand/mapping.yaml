@@ -132,6 +132,7 @@ protect:                  # regex; matches are restored verbatim after replaceme
   - 'hermes-brain:qwen3-14b-ctx16k'
   - 'carry "hermes" in their tag'
   # Named security incident and a contributor handle cited in code comments
+  - 'hermes_state-deprecated-use-the-storage-interface'   # upstream docs anchor the reign_state stand-in links to
   - 'hermes-0day'
   - '@5L-hermes01'
   - '[Nn]ous[- ][Hh]ermes\b'
@@ -217,6 +218,7 @@ check_allow:
   - '[Nn]ous[Rr]esearch'
   - 'nousresearch\.com'
   - '[Hh]ermes[-_ ]?[2-4](?:\.\d+)?'
+  - 'hermes_state-deprecated-use-the-storage-interface'   # upstream docs anchor the reign_state stand-in links to
   - 'hermes-0day'
   - '5L-hermes01'
   - 'hermes-gateway-(?:v1|ticket\.)'      # upstream mobile app's WS subprotocols (web_server_chat.py)
@@ -1028,8 +1030,8 @@ post_replace:
   - files:                # Reign gates tests-os on github.event_name == 'workflow_dispatch' (ci.yaml rules
       - tests/ci/test_update_ci_routing.py   # above), so the replayed jobs see the event detect replays
     replace:
-      - plain: '"github": {"event_name": "pull_request", "ref_type": "branch"},'
-        with:  '"github": {"event_name": (detect or {}).get("event_name", "pull_request"), "ref_type": "branch"},'
+      - plain: '"github": {"event_name": event_name, "ref_type": "branch"},'
+        with:  '"github": {"event_name": (detect or {}).get("event_name", event_name), "ref_type": "branch"},'
       - plain: 'assert "tests" in run and "tests-os" in run  # the unit lanes still run'
         with:  'assert "tests" in run  # the Linux unit lanes still run; Reign dispatches tests-os by hand'
   - files:                # Rook's desktop-windows-installer.yml publishes prereleases from desktop-v* tags

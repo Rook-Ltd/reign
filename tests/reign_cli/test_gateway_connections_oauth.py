@@ -24,7 +24,7 @@ from reign_cli import gateway_connections_oauth as oauth
 from reign_cli import gateway_connections_reach as reach
 from reign_cli import web_server
 
-REMOTE = "https://remote.example:8443/hermes"
+REMOTE = "https://remote.example:8443/reign"
 
 
 class FakeRemote:

@@ -34,6 +34,8 @@ def test_every_check_runs_whatever_an_earlier_check_did(filename, job):
         if step.get("uses") == SUCCESS_ONLY:
             continue
         condition = str(step.get("if", ""))
+        if condition.strip().lower() == "false":
+            continue  # a disabled step never runs, so it hides nothing (Reign turns off the icon diff)
         if "!cancelled()" not in condition and "always()" not in condition:
             offenders.append(step.get("name") or step.get("id") or step.get("uses"))
     assert not offenders, f"{filename}:{job} steps that stop after any earlier failure: {offenders}"
