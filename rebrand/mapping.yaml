@@ -1129,8 +1129,8 @@ post_replace:
   - files:
       - ".github/workflows/lint.yml"
     replace:
-      - plain: "        run: python scripts/check --only health --base HEAD^1\n"
-        with:  "        run: |\n          if ! git diff --quiet HEAD^1 HEAD -- rebrand/UPSTREAM.md; then\n            echo \"::notice::Upstream sync PR: upstream ratchets its own code, so Reign skips it here\"\n            exit 0\n          fi\n          python scripts/check --only health --base HEAD^1\n"
+      - plain: "        run: just check --only health --base HEAD^1\n"
+        with:  "        run: |\n          if ! git diff --quiet HEAD^1 HEAD -- rebrand/UPSTREAM.md; then\n            echo \"::notice::Upstream sync PR: upstream ratchets its own code, so Reign skips it here\"\n            exit 0\n          fi\n          just check --only health --base HEAD^1\n"
 
   # reign1's CPU is x86-64-v2 (no AVX2), and setup-python's Ubuntu 26.04 builds need
   # x86-64-v3 ("CPU ISA level is lower than required"). uv's Python builds run on v2, so
