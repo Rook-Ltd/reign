@@ -16,6 +16,8 @@ import pytest
 from tools import approval
 from tools.approval import detect_dangerous_command, detect_hardline_command
 
+from tests.tools._linear_time import assert_scans_in_linear_time
+
 
 def _is_dangerous(cmd: str) -> bool:
     res = detect_dangerous_command(cmd)
@@ -219,16 +221,15 @@ class TestPowerShellPositionalScriptAndAbbreviatedSwitches:
         assert not _is_dangerous(cmd), cmd
 
 
-    @pytest.mark.parametrize("command", [
-        'echo "' + "wmic shadowcopy " * 2000 + 'list"; echo ok',
-        'echo "' + "ssh -x " * 2000 + 'cat"; echo ok',
-        "; ssh -x" * 3000,
-        "\n ssh -x" * 3000,
-    ])
-    def test_repeated_launcher_words_scan_in_linear_time(self, command):
-        start = time.perf_counter()
-        assert not _is_dangerous(command)
-        assert time.perf_counter() - start < 2, command[:30]
+    @pytest.mark.parametrize("build,n", [
+        (lambda n: 'echo "' + "wmic shadowcopy " * n + 'list"; echo ok', 2000),
+        (lambda n: 'echo "' + "ssh -x " * n + 'cat"; echo ok', 2000),
+        (lambda n: "; ssh -x" * n, 3000),
+        (lambda n: "\n ssh -x" * n, 3000),
+    ], ids=["wmic-in-quotes", "ssh-in-quotes", "ssh-semicolons", "ssh-newlines"])
+    def test_repeated_launcher_words_scan_in_linear_time(self, build, n):
+        assert not _is_dangerous(build(n))
+        assert_scans_in_linear_time(_is_dangerous, build, n)
 
 
 class TestDriveLetterRoots:

@@ -1,10 +1,10 @@
 """Windows hardline rules inside PowerShell -Command scripts and around attached redirects (#87419)."""
 
-import time
-
 import pytest
 
 from tools.approval import detect_dangerous_command, detect_hardline_command
+
+from tests.tools._linear_time import assert_scans_in_linear_time
 
 
 @pytest.mark.parametrize("cmd", [
@@ -253,18 +253,17 @@ def test_later_list_element_below_the_root_stays_approvable(cmd):
     assert detect_dangerous_command(cmd)[0], cmd
 
 
-@pytest.mark.parametrize("command", [
-    "Get-Date" + "\r" * 8000 + "; x",
-    "Get-Date" + " \r" * 4000 + "; x",
-    "Get-Date" + "\rri -r" * 14000 + "; x",
-    "Get-Date" + "\rri x" * 16000 + "; x",
-    "Get-Date" + "\rpwsh -a" * 1500 + "; x",
+@pytest.mark.parametrize("build,n", [
+    (lambda n: "Get-Date" + "\r" * n + "; x", 8000),
+    (lambda n: "Get-Date" + " \r" * n + "; x", 4000),
+    (lambda n: "Get-Date" + "\rri -r" * n + "; x", 14000),
+    (lambda n: "Get-Date" + "\rri x" * n + "; x", 16000),
+    (lambda n: "Get-Date" + "\rpwsh -a" * n + "; x", 1500),
 ], ids=["cr", "space-cr", "cr-delete-verb", "cr-delete-operand", "cr-launcher"])
-def test_bare_cr_runs_scan_in_linear_time(command):
+def test_bare_cr_runs_scan_in_linear_time(build, n):
     # A bare CR starts a PowerShell statement; a run of them must not make each CR rescan the rest of the run.
-    start = time.perf_counter()
-    assert not detect_hardline_command(command)[0]
-    assert time.perf_counter() - start < 2
+    assert not detect_hardline_command(build(n))[0]
+    assert_scans_in_linear_time(detect_hardline_command, build, n)
 
 
 @pytest.mark.parametrize("cmd", [

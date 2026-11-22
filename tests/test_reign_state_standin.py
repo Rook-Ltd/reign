@@ -381,11 +381,11 @@ def test_a_writable_store_for_a_file_not_named_state_db_is_refused(quiet, tmp_pa
 
 
 def test_a_name_outside_the_list_points_at_the_migration_guide(quiet, store, legacy):
-    with pytest.raises(AttributeError, match="reign_state-deprecated-use-the-storage-interface"):
+    with pytest.raises(AttributeError, match="hermes_state-deprecated-use-the-storage-interface"):
         _ = reign_state.load_fts5_cjk_extension
     with pytest.raises(ImportError):
         from reign_state import SessionSessionsMixin
-    with pytest.raises(AttributeError, match="reign_state-deprecated-use-the-storage-interface"):
+    with pytest.raises(AttributeError, match="hermes_state-deprecated-use-the-storage-interface"):
         legacy.get_session_title("s1")
     assert not [name for name in dir(reign_state) if not name.startswith("_") and name not in reign_state.__all__]
 
