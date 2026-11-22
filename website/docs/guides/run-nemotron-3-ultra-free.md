@@ -66,13 +66,13 @@ After it finishes, reload your shell:
 source ~/.bashrc   # or source ~/.zshrc
 ```
 
-### 2. Run Quick Setup
+### 2. Run setup
 
 ```bash
 reign setup
 ```
 
-Select **Quick Setup**. Reign opens a browser tab and waits for you to finish the next steps.
+At **How do you want to power Reign?**, select **Sign in to Nous Portal**. Reign opens a browser tab and waits for you to finish the next steps.
 
 ### 3. Create a Nous Portal account
 
@@ -94,7 +94,7 @@ The `:free` tag is what keeps it on the no-cost tier, so make sure you pick that
 
 ### 6. Start chatting
 
-Complete the remaining Quick Setup prompts, then run:
+Setup finishes with a short list of next steps. Then run:
 
 ```bash
 reign

@@ -27,7 +27,7 @@ def test_standalone_fallback_pool_keeps_profile_scope(tmp_path, monkeypatch):
     )
     from reign_constants import get_reign_home, set_reign_home_override
     import cron.scheduler as sched
-    import tools.send_message_tool as smt
+    import gateway.outbound.send as smt
 
     default_home = tmp_path / "default"
     sec_home = tmp_path / "profiles" / "ops"

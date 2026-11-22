@@ -46,7 +46,8 @@ def test_bootstrap_repairs_before_dependency_activation(tmp_path, monkeypatch, m
     home.mkdir()
     for name in ("reign_bootstrap.py", "reign_constants.py"):
         shutil.copy2(repo / name, core / name)
-    shutil.copytree(repo / "pm", core / "pm", ignore=shutil.ignore_patterns("__pycache__"))
+    for package in ("pm", "reign_agent"):
+        shutil.copytree(repo / package, core / package, ignore=shutil.ignore_patterns("__pycache__"))
     cli = core / "reign_cli"
     cli.mkdir()
     # Include the real preimport protocol, including its ownership check. Do

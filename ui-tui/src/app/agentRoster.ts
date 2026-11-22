@@ -1,8 +1,8 @@
 import { useStore } from '@nanostores/react'
+import type { SubagentListResponse } from '@reign/shared/gateway-types'
 import { atom } from 'nanostores'
 import { useMemo } from 'react'
 
-import type { SubagentListResponse } from '../gatewayTypes.js'
 import type { SubagentProgress } from '../types.js'
 
 import { useTurnSelector } from './turnStore.js'

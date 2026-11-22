@@ -7,7 +7,14 @@ export const esGatewayHost: GatewayHostTranslations = {
     'Los ajustes de conexión solo se pueden cambiar desde la app Reign Desktop en el equipo que la ejecuta.',
   webappHostTitle: 'Host de Reign',
   webappHostDesc:
-    'La Webapp siempre usa el host de Reign que la sirve. Para cambiar de gateway, iniciar sesión en Reign Cloud o gestionar conexiones guardadas, usa la app Reign Desktop.',
+    'La Webapp siempre se ejecuta en el host de Reign que la sirve. Las conexiones guardadas de abajo son la lista de esta máquina, compartida con la app Reign Desktop; los demás gateways se alcanzan a través de este host.',
+  webappOauthPaste: {
+    title: 'Terminar de iniciar sesión',
+    description: 'Si la pestaña de inicio de sesión terminó en una dirección que no carga (este navegador no está en la máquina del gateway), pega esa dirección aquí.',
+    placeholder: 'http://127.0.0.1:…/webapp/gateway-connections/oauth/callback?…',
+    finish: 'Terminar',
+    failed: 'No se pudo terminar el inicio de sesión'
+  },
   webAccess: {
     title: 'Acceso web',
     intro: 'Abre Reign de este ordenador desde tu teléfono u otro ordenador, con tu cuenta de Nous. Quien inicie sesión puede ejecutar comandos en este ordenador.',

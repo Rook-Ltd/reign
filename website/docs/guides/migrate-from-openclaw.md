@@ -6,7 +6,7 @@ description: "Complete guide to migrating your OpenClaw / Clawdbot setup to Reig
 
 # Migrate from OpenClaw
 
-`reign import-agent openclaw` imports your OpenClaw (or legacy Clawdbot/Moldbot) setup into Reign. This guide covers exactly what gets migrated, the config key mappings, and what to verify after migration.
+`reign import-agent openclaw` imports your OpenClaw (or legacy Clawdbot/Moldbot) setup into Reign. This guide covers exactly what gets migrated, the config key mappings, and what to verify after migration. Deciding between the two first? [Reign vs OpenClaw](https://hermes-agent.nousresearch.com/compare/openclaw) compares licensing, models and hosting with sources.
 
 The command comes from the official **`agent-importers` plugin** in the [plugin catalog](../user-guide/features/plugins.md), which also imports Claude Code, Codex CLI and Cursor setups ([Import from Other Agents](../user-guide/import-from-other-agents.md)). The older spelling `reign claw migrate` still works once the plugin is installed and runs the same import.
 

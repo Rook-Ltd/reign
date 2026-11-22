@@ -29,7 +29,6 @@ PLATFORMS: OrderedDict[str, PlatformInfo] = OrderedDict([
     ("wecom_callback", PlatformInfo(label="💬 WeCom Callback",  default_toolset="reign-wecom-callback")),
     ("weixin",         PlatformInfo(label="💬 Weixin",          default_toolset="reign-weixin")),
     ("qqbot",          PlatformInfo(label="💬 QQBot",           default_toolset="reign-qqbot")),
-    ("yuanbao",        PlatformInfo(label="🤖 Yuanbao",         default_toolset="reign-yuanbao")),
     ("webhook",        PlatformInfo(label="🔗 Webhook",         default_toolset="reign-webhook")),
     ("api_server",     PlatformInfo(label="🌐 API Server",      default_toolset="reign-api-server")),
     ("cron",           PlatformInfo(label="⏰ Cron",            default_toolset="reign-cron")),

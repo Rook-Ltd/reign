@@ -255,7 +255,6 @@ describe('browser-hosted Desktop bridge', () => {
     expect(win.reignDesktop?.getSecretStorageEncryption).toBeUndefined()
     expect(win.reignDesktop?.setSecretStorageEncryption).toBeUndefined()
     expect(win.reignDesktop?.openSessionInTerminal).toBeUndefined()
-    expect(win.reignDesktop?.connections).toBeUndefined()
     expect(win.reignDesktop?.onOpenFindBarRequested).toBeUndefined()
     expect(win.reignDesktop?.petOverlay).toBeUndefined()
     expect(win.reignDesktop?.quickEntry).toBeUndefined()

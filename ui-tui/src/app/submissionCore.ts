@@ -1,7 +1,7 @@
+import type { InputDetectDropResponse, PromptSubmitResponse, SessionActivateResponse } from '@reign/shared/gateway-types'
 import { isUndeliveredCorrectionRefusal } from '@reign/shared/json-rpc-channel'
 
 import type { GatewayClient } from '../gatewayClient.js'
-import type { InputDetectDropResponse, PromptSubmitResponse, SessionActivateResponse } from '../gatewayTypes.js'
 import type { QueueItem } from '../hooks/useQueue.js'
 import { t } from '../i18n/runtime.js'
 import { stageImagePath } from '../lib/imageAttachments.js'

@@ -24,7 +24,6 @@ _ENV = ("REIGN_INTERACTIVE", "REIGN_GATEWAY_SESSION", "REIGN_EXEC_ASK", "REIGN_Y
 
 def _clear_approvals():
     approval_module._session_approved.clear()
-    approval_module._pending.clear()
     approval_module._permanent_approved.clear()
     approval_module._permanent_approved_by_home.clear()
 

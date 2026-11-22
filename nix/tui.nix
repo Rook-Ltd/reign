@@ -1,6 +1,6 @@
-# Self-contained Reign TUI, compiled by the same recipe as npm.
+# Self-contained Reign TUI, compiled by the same recipe as pnpm.
 { reignNpmLib, ... }:
-reignNpmLib.buildNpmPackage {
+reignNpmLib.buildPnpmPackage {
   dirs = [
     "ui-tui"
     "apps/shared"

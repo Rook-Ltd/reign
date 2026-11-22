@@ -49,19 +49,22 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      # Upstream moved the JS workspace to pnpm (v0.23.1): the locked Node/pnpm come from
+      # pm/lock.json, the same way upstream's own Windows desktop jobs install them.
+      - name: Prepare locked Desktop build toolchain
+        uses: ./.github/actions/setup-pm
         with:
-          node-version: 26
-          cache: npm
+          toolchain: all
 
-      - name: grab npm 12
-        run: npm i -g npm@12
-
-      # Full npm ci (not --ignore-scripts): electron's postinstall downloads
-      # the binary electron-builder packages, and node-pty builds natively.
+      # Full install (not --ignore-scripts): native addons need their lifecycle scripts.
       - uses: ./.github/actions/retry
         with:
-          command: npm ci
+          command: just js-install
+
+      # Electron 42+ has no postinstall; unpack the binary electron-builder packages.
+      - name: Prepare locked Electron runtime
+        shell: bash
+        run: just electron-runtime
 
       - name: Read desktop version
         id: meta
@@ -79,7 +82,7 @@ jobs:
           IS_PR: ${{ github.event_name == 'pull_request' }}
         run: |
           if [[ "$IS_PR" == true ]]; then unset GITHUB_SHA; fi
-          npm run dist:win:nsis
+          pnpm run dist:win:nsis
 
       - name: Show output
         shell: bash

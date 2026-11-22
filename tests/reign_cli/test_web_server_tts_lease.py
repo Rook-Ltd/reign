@@ -35,11 +35,8 @@ def client(monkeypatch, isolated_profiles):
     except ImportError:
         pytest.skip("fastapi/starlette not installed")
 
-    import reign_state
-    from reign_constants import get_reign_home
     from reign_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
-    monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", get_reign_home() / "state.db")
     c = TestClient(app)
     c.headers[_SESSION_HEADER_NAME] = _SESSION_TOKEN
     return c

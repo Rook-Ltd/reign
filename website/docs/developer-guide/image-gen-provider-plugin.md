@@ -289,8 +289,7 @@ export MY_BACKEND_API_KEY=your-test-key
 reign plugins enable my-backend
 
 # Pick it as the active provider
-echo "image_gen:" >> $REIGN_HOME/config.yaml
-echo "  provider: my-backend" >> $REIGN_HOME/config.yaml
+reign config set image_gen.provider my-backend
 
 # Exercise it
 reign -z "Generate an image of a corgi in a spacesuit"

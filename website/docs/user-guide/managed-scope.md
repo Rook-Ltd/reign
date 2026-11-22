@@ -47,7 +47,21 @@ the feature.
 The location can be relocated with the `REIGN_MANAGED_DIR` environment variable
 (for containers or non-`/etc` deployments). This is a deployment/bootstrap path
 knob — like `REIGN_HOME` — set by the same administrator who owns the managed
-files. It is **never persisted** to any `.env` by Reign.
+files. Reign ignores the variable (in any letter case) in every `.env`, secret
+source and top-level `config.yaml` key, and logs a warning when it skips one: set
+it in the launch environment (service unit `Environment=`, container image), not
+in `~/.reign/.env`. On NixOS, `services.reign.environment` is written to
+`$REIGN_HOME/.env`, so it can't carry this variable: use
+`systemd.services.reign.environment` (and
+`systemd.services.reign-backend.environment` when the backend runs),
+`environment.variables` for interactive shells, or, in container mode, an `--env`
+entry in `services.reign.container.extraOptions` with the directory mounted
+through `container.extraVolumes`. The Home Manager module writes
+`services.reign.environment` to the same `.env`: set the variable on the
+user units instead, with `systemd.user.services.reign.Service.Environment`
+(and `reign-backend`) on Linux, or
+`launchd.agents.reign.config.EnvironmentVariables` (and `reign-backend`)
+on macOS.
 
 ```bash
 # Point managed scope at a custom directory (set by IT / the deployment, not the user)

@@ -52,7 +52,7 @@ def _load_reign_index() -> Optional[dict]:
     for accept_encoding in ("gzip, deflate", "identity"):
         try:
             resp = hub()._skills_hub_http_get(
-                REIGN_INDEX_URL, timeout=15, follow_redirects=True,
+                REIGN_INDEX_URL, timeout=15,
                 headers={"Accept-Encoding": accept_encoding},
             )
             if resp.status_code != 200:

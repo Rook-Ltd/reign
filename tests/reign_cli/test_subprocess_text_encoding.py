@@ -12,7 +12,9 @@ from pathlib import Path
 
 import pytest
 
-REIGN_CLI = Path(__file__).resolve().parents[2] / "reign_cli"
+from reign_agent.compat.paths import current_path
+
+REIGN_CLI = Path(__file__).resolve().parents[2] / current_path("reign_cli")
 
 
 def _iter_call_text_nodes(tree: ast.AST) -> list[ast.Call]:

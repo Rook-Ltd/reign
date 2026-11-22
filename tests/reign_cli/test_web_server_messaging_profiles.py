@@ -46,11 +46,8 @@ def client(monkeypatch, isolated_profiles):
     except ImportError:
         pytest.skip("fastapi/starlette not installed")
 
-    import reign_state
-    from reign_constants import get_reign_home
     from reign_cli.web_server import app, _SESSION_HEADER_NAME, _SESSION_TOKEN
 
-    monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", get_reign_home() / "state.db")
     # The dashboard process's os.environ may carry root-install credentials;
     # make sure the scoped path never falls back to them.
     monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)

@@ -204,6 +204,17 @@ test('a named profile backend does not inherit secrets the root .env/.op.env loa
   })
 })
 
+test('a named profile backend keeps the launch REIGN_MANAGED_DIR when the root .env plants one', () => {
+  withReignRoot({ ...ROOT_SCOPE_FILES, '.env': 'REIGN_MANAGED_DIR=/home/user/planted\n' }, root => {
+    const currentEnv = { ...ROOT_LAUNCHED_ENV, REIGN_MANAGED_DIR: '/etc/org-policy' }
+    const env = profileBackendParentEnv({ reignHome: root, profile: 'urbot', currentEnv, platform: 'linux' })
+
+    // Launch-only (reign_constants.LAUNCH_ONLY_ENV_KEYS): the loader never took the .env line, so
+    // the value in Desktop's env is the administrator's, not launch-profile residue.
+    assert.equal(env.REIGN_MANAGED_DIR, '/etc/org-policy')
+  })
+})
+
 test('the launch profile backend inherits the Desktop env unchanged', () => {
   withReignRoot(ROOT_SCOPE_FILES, root => {
     for (const profile of ['default', null, undefined]) {

@@ -3,7 +3,6 @@ resolved through the module object so test patches on ``reign_cli.setup.<name>``
 
 import logging
 from tools import tool_backend_helpers
-from reign_cli import nous_subscription
 
 logger = logging.getLogger("reign_cli.setup")
 
@@ -196,6 +195,7 @@ def _print_section_header(title):
 def _print_setup_summary(config: dict, reign_home):
     """Print the setup completion summary."""
     from reign_constants import display_reign_home as _dhh
+    from reign_cli import nous_subscription
     # Provider readiness — the one thing setup must produce. A user who cancelled the API-key
     # prompt mid-wizard used to exit "successfully" with NO working model; say so loudly.
     try:

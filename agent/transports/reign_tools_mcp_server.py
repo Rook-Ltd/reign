@@ -136,11 +136,10 @@ def main(argv: Optional[list[str]] = None) -> int:
     """Entry point for `python -m agent.transports.reign_tools_mcp_server`."""
     argv = argv or sys.argv[1:]
     verbose = "--verbose" in argv or "-v" in argv
-    logging.basicConfig(
-        level=logging.INFO if verbose else logging.WARNING,
-        stream=sys.stderr,  # MCP uses stdio for protocol — logs MUST go to stderr
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    )
+    from reign_logging import DisplayNameFormatter
+    stderr_handler = logging.StreamHandler(sys.stderr)  # MCP uses stdio for protocol — logs MUST go to stderr
+    stderr_handler.setFormatter(DisplayNameFormatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+    logging.basicConfig(level=logging.INFO if verbose else logging.WARNING, handlers=[stderr_handler])
     # Keep Reign' own banners off stdout (the MCP wire).
     os.environ.setdefault("REIGN_QUIET", "1")
     os.environ.setdefault("REIGN_REDACT_SECRETS", "true")

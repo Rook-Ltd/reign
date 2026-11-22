@@ -35,9 +35,6 @@ def make_scenario(provider, tmp_path, monkeypatch):
         # state.db live-system guard treats $HOME/.reign as production.
         reign_home = tmp_path / name
         monkeypatch.setenv("REIGN_HOME", str(reign_home))
-        import reign_state
-
-        monkeypatch.setattr(reign_state, "DEFAULT_DB_PATH", reign_home / "state.db")
         slow = mode == "slow"
         if slow:
             # The compression request timeout has a 300 s production floor; pin it (and the host idle

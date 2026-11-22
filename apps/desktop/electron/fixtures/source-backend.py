@@ -23,7 +23,8 @@ def main() -> None:
     root = Path(os.environ["REIGN_HOME"]) / "reign"
     root.mkdir(parents=True)
     for name in (
-        "reign_cli", "reign_platform", "pm", "agent", "tools", "gateway", "tui_gateway", "cron", "plugins",
+        "reign_agent", "reign_cli", "reign_platform", "pm", "agent", "tools", "gateway", "tui_gateway", "cron",
+        "plugins", "utils", "persistence", "session_rules",
     ):
         shutil.copytree(repository / name, root / name,
                         ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))

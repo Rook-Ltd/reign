@@ -46,6 +46,8 @@ def _pm_source(project, home):
     root = Path(__file__).resolve().parents[2]
     for relative in (
         "reign", "reign_bootstrap.py", "reign_constants.py", "reign_cli/__init__.py",
+        "reign_agent/__init__.py", "reign_agent/compat/__init__.py", "reign_agent/compat/finder.py",
+        "reign_agent/compat/moves.py",
         "pm/environments.py", "pm/filesystem.py", "reign_cli/runtime_state.py",
         "reign_cli/_early_recovery.py", "reign_cli/_parser.py",
         "reign_cli/venv_sync.py", "reign_cli/steward.py", "reign_cli/stderr_timestamp.py",

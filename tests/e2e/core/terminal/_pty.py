@@ -14,6 +14,7 @@ from __future__ import annotations
 import fcntl
 import os
 import re
+import shutil
 import signal
 import sqlite3
 import struct
@@ -126,7 +127,11 @@ class PtyReign:
         assert operator not in (self.reign_home.resolve(), *self.reign_home.resolve().parents), (
             f"sandbox {self.reign_home} sits inside the operator's Reign home")
         if llm is not None:
-            write_reign_home(self.reign_home, llm.base_url, extra_config=extra_config)
+            # No passive update check (the tui_pty sandbox's rule): on an official checkout the
+            # CLI and its attached gateway both resolve the stable release against real GitHub,
+            # and the gateway, which outlives /exit, is mid `git ls-remote` whenever GitHub is slow.
+            write_reign_home(self.reign_home, llm.base_url,
+                              extra_config="updates:\n  check: false\n" + extra_config)
         self.llm = llm
         self.screen = Screen(rows, cols)
         self.raw = bytearray()
@@ -139,6 +144,16 @@ class PtyReign:
             TMPDIR=str(root / "tmp"), TERM="xterm-256color", COLORTERM="truecolor",
             PYTHONUNBUFFERED="1", REIGN_STATE_DB_GUARD_BYPASS="1",
         )
+        if "--tui" in argv_tail:
+            # The prebuilt-bundle launch, as tui_pty does. A checkout launch first asks whether
+            # ui-tui/dist is current, which only PM's node may answer; the sandbox home has no PM
+            # store, so it rebuilds from source and lazily downloads python/node/pnpm before the UI
+            # can take the terminal (on CI that download stalled past wait_ready's 120s).
+            from tests.e2e.core.tui_pty._helpers import private_tui_dir
+            env["REIGN_TUI_DIR"] = str(private_tui_dir(root))
+            node = shutil.which("node")
+            if node:  # the runner's node, so the launcher never lazily installs one into the sandbox
+                env["REIGN_NODE"] = node
         master, slave = os.openpty()
         self._set_winsize(master, rows, cols)
         self.master = master

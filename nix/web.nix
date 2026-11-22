@@ -1,6 +1,6 @@
 # Dashboard compilation consumes prepared icons; no npm lifecycle preparation.
 { reignNpmLib, generatedIcons, ... }:
-reignNpmLib.buildNpmPackage {
+reignNpmLib.buildPnpmPackage {
   dirs = [
     "web"
     "apps/shared"

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agent.account_usage import build_nous_credits_snapshot
+from agent.account_usage_nous import build_nous_credits_snapshot
 from reign_cli.nous_account import (
     NousPaidServiceAccessInfo,
     NousPortalAccountInfo,

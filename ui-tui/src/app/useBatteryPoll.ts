@@ -1,8 +1,8 @@
 import { useStore } from '@nanostores/react'
+import type { SystemBatteryResponse } from '@reign/shared/gateway-types'
 import { useEffect } from 'react'
 
 import type { GatewayClient } from '../gatewayClient.js'
-import type { SystemBatteryResponse } from '../gatewayTypes.js'
 import { asRpcResult } from '../lib/rpc.js'
 
 import type { BatteryCategory, BatteryInfo } from './interfaces.js'

@@ -215,7 +215,7 @@ The fallback system also covers auxiliary tasks independently — vision, compre
 ### Session Persistence
 
 After each turn:
-- Messages are saved to the session store (SQLite via `reign_state.py`)
+- Messages are saved to the session store (SQLite through the storage interface in `persistence/`)
 - Memory changes are flushed to `MEMORY.md` / `USER.md`
 - The session can be resumed later via `/resume` or `reign chat --resume`
 
