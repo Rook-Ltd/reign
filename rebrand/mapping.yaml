@@ -1091,10 +1091,6 @@ post_replace:
         with:  "    if: github.event_name == 'workflow_dispatch' && \\1"
       - regex: "    if: (needs\\.detect\\.outputs\\.python == 'true'[^\n]*)\n    uses: \\./\\.github/workflows/tests-os\\.yml"
         with:  "    if: github.event_name == 'workflow_dispatch' && (\\1)\n    uses: ./.github/workflows/tests-os.yml"
-      # Reign ships Rook icons (rebrand/place_images.py), not scripts/generate-icons.mjs output
-      # from the nous-girl art, so upstream's freshness diff would always fail.
-      - plain: "    needs: detect\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
-        with:  "    needs: detect\n    if: false  # Reign ships Rook icons (rebrand/place_images.py)\n    uses: ./.github/workflows/icons-freshness-check.yml\n"
   - files:
       - ".github/workflows/install-e2e.yml"
     replace:

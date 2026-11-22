@@ -33,12 +33,13 @@ TESTS_ROOT = REPO_ROOT / "tests"
 # "neutral": the backend-neutral helper modules (session_rules and the modules
 # beside it that import no application package).
 # "persistence_sqlite": the SQLite backend, persistence/sqlite/.
+# "rebrand": Reign's rebrand/sync tooling (rebrand/ is a script directory, not a package).
 _NON_MIRROR_DIRS = {
     "compat", "installation", "_fixtures", "contracts", "neutral", "persistence_sqlite",
     "ci", "conformance", "dashboard", "desktop", "docker", "e2e", "evals",
     "fakes", "fixtures", "install", "integration", "manual",
     "monitoring", "perf_guards", "scripts", "secret_sources",
-    "security", "skills", "verify", "website", "computer_use",
+    "security", "skills", "verify", "website", "computer_use", "rebrand",
 }
 
 # Root-level modules whose tests sit directly in tests/ (no package to mirror).
