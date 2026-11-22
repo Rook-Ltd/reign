@@ -2,9 +2,25 @@
 
 import sys
 
-from reign_cli.plugin_host_api import install as _install_plugin_host_api
 
-_install_plugin_host_api()
+class _HermesPluginNames:
+    """Loads the Hermes plugin API shim (plugin_host_api) on the first ``hermes_*`` import.
+
+    This package must stay import-light: update launchers and recovery import it from a minimal
+    file closure, before any repair, with nothing but the stdlib trusted (see _early_recovery).
+    """
+
+    @staticmethod
+    def find_spec(fullname, path=None, target=None):
+        if not fullname.startswith("hermes_"):
+            return None
+        from reign_cli.plugin_host_api import _FINDER
+
+        return _FINDER.find_spec(fullname, path, target)
+
+
+if not any(getattr(finder, "__qualname__", "") == "_HermesPluginNames" for finder in sys.meta_path):
+    sys.meta_path.insert(0, _HermesPluginNames)
 
 __release_date__ = "2026.9.24"
 # Declared for type checkers and the old-updater surface audit; served lazily by __getattr__.
