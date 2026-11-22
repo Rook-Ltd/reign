@@ -47,6 +47,6 @@ def record_sync_branches(repo: Path, full_commit: str, previous_head: str, branc
         _git(repo, "update-ref", f"refs/heads/{catalog_branch}", catalog_commit)
         print(f"  {catalog_branch} -> {catalog_commit[:10]} (data-only PR against {branch})")
     if output := os.environ.get("GITHUB_OUTPUT"):
-        with Path(output).open("a") as stream:
+        with Path(output).open("a", encoding="utf-8") as stream:
             stream.write(f"catalog_branch={catalog_branch}\n")
     return code_commit
