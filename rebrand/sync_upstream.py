@@ -83,6 +83,10 @@ def pnpm_cmd(wt: Path) -> list[str] | None:
     return ["npx", "-y", f"pnpm@{version}", "--dir", str(wt)]
 
 
+# Package-manager installs: generous, but a hung registry must not stall the weekly job forever.
+NPM_TIMEOUT = 1800
+
+
 def regenerate_lockfiles(wt: Path) -> None:
     import pm
 
@@ -90,13 +94,13 @@ def regenerate_lockfiles(wt: Path) -> None:
     # Upstream moved the root workspace to pnpm (v0.23.1+); its .npmrc makes npm refuse there.
     pnpm = pnpm_cmd(wt)
     if pnpm:
-        subprocess.run([*pnpm, "install", "--lockfile-only", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True)
+        subprocess.run([*pnpm, "install", "--lockfile-only", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True, timeout=NPM_TIMEOUT)
     for d in (("plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge") if pnpm else
               (".", "plugins/platforms/photon/sidecar", "scripts/whatsapp-bridge")):
         subprocess.run(["npm", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
-                       cwd=wt / d, env=ENV, check=True)
+                       cwd=wt / d, env=ENV, check=True, timeout=NPM_TIMEOUT)
     subprocess.run(["npx", "-y", "npm@12", "install", "--package-lock-only", "--ignore-scripts", "--no-audit", "--no-fund"],
-                   cwd=wt / "website", env=ENV, check=True)
+                   cwd=wt / "website", env=ENV, check=True, timeout=NPM_TIMEOUT)
 
 
 def replay(ref: str, wt: Path, args: argparse.Namespace) -> tuple[str, dict[str, int]]:
@@ -121,20 +125,21 @@ def replay(ref: str, wt: Path, args: argparse.Namespace) -> tuple[str, dict[str,
         print("  eslint --fix (renames change sort order)")
         pnpm = pnpm_cmd(wt)
         if pnpm:
-            subprocess.run([*pnpm, "install", "--frozen-lockfile", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True,
+            subprocess.run([*pnpm, "install", "--frozen-lockfile", "--ignore-scripts"], cwd=tempfile.gettempdir(), env=ENV, check=True, timeout=NPM_TIMEOUT,
                            stdout=subprocess.DEVNULL)
         else:
-            subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=ENV, check=True,
+            subprocess.run(["npm", "ci", "--ignore-scripts", "--no-audit", "--no-fund"], cwd=wt, env=ENV, check=True, timeout=NPM_TIMEOUT,
                            stdout=subprocess.DEVNULL)
         for d, paths in (("apps/shared", ["src/"]), ("apps/desktop", ["src/", "electron/"]), ("ui-tui", ["src/", "packages/"])):
             eslint = [*pnpm[:-1], str(wt / d), "exec", "eslint"] if pnpm else ["npx", "eslint"]
-            r = subprocess.run([*eslint, "--fix", *paths], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, text=True, capture_output=True, check=False)
+            r = subprocess.run([*eslint, "--fix", *paths], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, text=True, capture_output=True, check=False,
+                               timeout=NPM_TIMEOUT)
             if r.returncode:
                 print(f"   {d}: errors eslint cannot fix remain (JS & TS checks will fail)")
         # Renamed strings in the English catalog change the committed i18n key index.
         for d in ("apps/desktop", "ui-tui"):
             run = [*pnpm[:-1], str(wt / d), "run"] if pnpm else ["npm", "run"]
-            subprocess.run([*run, "i18n:keys"], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, check=False, stdout=subprocess.DEVNULL)
+            subprocess.run([*run, "i18n:keys"], cwd=tempfile.gettempdir() if pnpm else wt / d, env=ENV, check=False, timeout=NPM_TIMEOUT, stdout=subprocess.DEVNULL)
         # Same for Python: renamed names reorder sorted __all__ lists (RUF022), which the
         # blocking `ruff check .` rejects. Uses the ruff CI pins.
         pin = sh(str(PY), "-m", "scripts.code_health", "--print-pins", cwd=wt, check=False, quiet=True).strip()
